@@ -33,9 +33,10 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col items-center text-center space-y-2 border-r pr-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={customer.photoUrl || 'https://via.placeholder.com/150'} 
-              alt={customer.fullName} 
+              alt={customer.fullName || customer.name || 'Customer photo'} 
               className="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md" 
             />
             <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">

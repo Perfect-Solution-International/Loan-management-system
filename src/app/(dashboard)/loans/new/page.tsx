@@ -1,169 +1,392 @@
-// src/app/(dashboard)/page.tsx
-'use client';
+/* eslint-disable react-hooks/purity */
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useState, useMemo, Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, CheckCircle2, Calculator, PlusCircle } from "lucide-react";
+import { useData } from "@/providers/data-provider";
+import { MONEY } from "@/constants";
+import type { Customer, Loan } from "@/types";
 
-export default function DashboardHomePage() {
+function IssueNewLoanContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedCustomerId = searchParams.get("customerId") || "";
+
+  const { customers, addLoan } = useData();
+
+  const [customerId, setCustomerId] = useState(
+    preselectedCustomerId || (customers[0]?.id || "")
+  );
+  const [grossAmount, setGrossAmount] = useState<number>(100000);
+  const [interestRate, setInterestRate] = useState<number>(3);
+  const [ratePeriod, setRatePeriod] = useState<"Monthly" | "Weekly" | "Daily">("Monthly");
+  const [frequency, setFrequency] = useState<"Monthly" | "Weekly" | "Daily">("Monthly");
+  const [duration, setDuration] = useState<number>(12);
+  const [capitalDeduction, setCapitalDeduction] = useState<number>(0);
+  const [interestDeduction, setInterestDeduction] = useState<number>(0);
+  const [otherFees, setOtherFees] = useState<number>(0);
+  const [purpose, setPurpose] = useState("Business Expansion / Working Capital");
+  const [submitted, setSubmitted] = useState(false);
+
+  // Live Calculations
+  const calculations = useMemo(() => {
+    const gross = Number(grossAmount) || 0;
+    const rate = Number(interestRate) || 0;
+    const dur = Number(duration) > 0 ? Number(duration) : 1;
+    const capDed = Number(capitalDeduction) || 0;
+    const intDed = Number(interestDeduction) || 0;
+    const fees = Number(otherFees) || 0;
+
+    const totalDeductions = capDed + intDed + fees;
+    const netDisbursement = Math.max(0, gross - totalDeductions);
+    const totalInterest = (gross * rate) / 100;
+    const totalRepayment = gross + totalInterest;
+    const installmentAmount = totalRepayment / dur;
+
+    return {
+      gross,
+      totalDeductions,
+      netDisbursement,
+      totalInterest,
+      totalRepayment,
+      installmentAmount,
+      numberOfInstallments: dur,
+    };
+  }, [grossAmount, interestRate, duration, capitalDeduction, interestDeduction, otherFees]);
+
+  const selectedCustomer = customers.find((c: Customer) => c.id === customerId);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerId || !grossAmount) return;
+
+    const newLoan: Loan = {
+      id: `LN-${Date.now().toString().slice(-4)}`,
+      customerId,
+      customerName: selectedCustomer?.name || "Customer",
+      principal: calculations.gross,
+      amount: calculations.gross,
+      capitalDeduction: Number(capitalDeduction) || 0,
+      interestDeduction: Number(interestDeduction) || 0,
+      otherFees: Number(otherFees) || 0,
+      interestRate: Number(interestRate) || 0,
+      ratePeriod,
+      repaymentFrequency: frequency,
+      duration: Number(duration) || 12,
+      issueDate: new Date().toISOString().slice(0, 10),
+      firstPaymentDate: new Date().toISOString().slice(0, 10),
+      purpose,
+      status: "Active",
+      interest: calculations.totalInterest,
+      totalRepayment: calculations.totalRepayment,
+      netDisbursement: calculations.netDisbursement,
+      installment: calculations.installmentAmount,
+      loanNo: `LN-2026-${Date.now().toString().slice(-3)}`,
+    };
+
+    addLoan(newLoan);
+    setSubmitted(true);
+
+    setTimeout(() => {
+      router.push("/loans");
+    }, 1200);
+  };
+
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Top Welcome Banner */}
-      <div className="bg-linear-to-r from-slate-900 via-blue-950 to-blue-900 rounded-2xl p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-2">
-          <span className="bg-blue-600/40 text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-500/30">
-            PSI One Core System
-          </span>
-          <h1 className="text-3xl font-extrabold tracking-tight">Loan Management Dashboard</h1>
-          <p className="text-slate-300 text-sm max-w-xl">
-            Streamline customer registrations, track capital & interest deductions, manage loan disbursements, and monitor real-time collections effortlessly.
+    <div className="p-8 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+            OPERATIONS / NEW LOAN
+          </p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+            Issue New Loan Contract
+          </h1>
+          <p className="text-xs text-slate-500">
+            Configure principal terms, deductions, repayment schedules, and borrower details.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/loans/new"
-            className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm shadow-lg transition duration-200 flex items-center gap-2">
-            <span>+ Issue New Loan</span>
-          </Link>
-          <Link
-            href="#"
-            className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold text-sm backdrop-blur-md transition duration-200 border border-white/10">
-            View Reports
-          </Link>
-        </div>
+        <Link
+          href="/loans"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-xs transition"
+        >
+          <ArrowLeft size={14} /> Back to Loans
+        </Link>
       </div>
 
-      {/* Financial Metrics Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
-          <div className="flex justify-between items-start">
+      {submitted && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold">
+          <CheckCircle2 className="text-emerald-600" size={20} />
+          Loan contract registered and disbursed successfully! Redirecting...
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Form Inputs */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Customer Selection Card */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
+              1. Select Borrower
+            </h3>
+
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Active Portfolio</p>
-              <h3 className="text-2xl font-extrabold text-gray-800 mt-2">LKR 14,850,000</h3>
+              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                Customer Profile *
+              </label>
+              <select
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {customers.map((c: Customer) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — NIC: {c.nic} ({c.town})
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl font-bold">📈</div>
-          </div>
-          <p className="text-xs text-green-600 font-semibold mt-4 flex items-center gap-1">
-            <span>+12.5%</span> <span className="text-gray-400 font-normal">from last month</span>
-          </p>
-        </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Today's Collections</p>
-              <h3 className="text-2xl font-extrabold text-gray-800 mt-2">LKR 425,300</h3>
+            {selectedCustomer && (
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-bold text-slate-800">{selectedCustomer.name}</p>
+                  <p className="text-slate-500">
+                    Phone: {selectedCustomer.phone} · Monthly Income: {MONEY(selectedCustomer.monthlyIncome || 0)}
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-full text-[10px]">
+                  {selectedCustomer.status}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Loan Configuration Card */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
+              2. Loan Terms & Structure
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Gross Loan Amount (LKR) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1000"
+                  step="1000"
+                  value={grossAmount}
+                  onChange={(e) => setGrossAmount(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Interest Rate (%) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.1"
+                  value={interestRate}
+                  onChange={(e) => setInterestRate(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Repayment Frequency
+                </label>
+                <select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value as "Monthly" | "Weekly" | "Daily")}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Monthly">Monthly</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="Daily">Daily</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Duration (Number of Installments) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Rate Period
+                </label>
+                <select
+                  value={ratePeriod}
+                  onChange={(e) => setRatePeriod(e.target.value as "Monthly" | "Weekly" | "Daily")}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Monthly">Per Month</option>
+                  <option value="Weekly">Per Week</option>
+                  <option value="Daily">Per Day</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Loan Purpose
+                </label>
+                <input
+                  type="text"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  placeholder="e.g. Agriculture / Vehicle purchase"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
-            <div className="p-3 bg-green-50 text-green-600 rounded-xl font-bold">💵</div>
           </div>
-          <p className="text-xs text-green-600 font-semibold mt-4 flex items-center gap-1">
-            <span>98.2%</span> <span className="text-gray-400 font-normal">collection efficiency</span>
-          </p>
-        </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Registered Customers</p>
-              <h3 className="text-2xl font-extrabold text-gray-800 mt-2">1,482</h3>
+          {/* Deductions Card */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
+              3. Upfront Deductions & Fees
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Capital Deduction (LKR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={capitalDeduction}
+                  onChange={(e) => setCapitalDeduction(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Interest Deduction (LKR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={interestDeduction}
+                  onChange={(e) => setInterestDeduction(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  Other Admin Fees (LKR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={otherFees}
+                  onChange={(e) => setOtherFees(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl font-bold">👥</div>
           </div>
-          <p className="text-xs text-purple-600 font-semibold mt-4 flex items-center gap-1">
-            <span>+24</span> <span className="text-gray-400 font-normal">newly added today</span>
-          </p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Pending Approvals</p>
-              <h3 className="text-2xl font-extrabold text-amber-600 mt-2">8 Loans</h3>
+        {/* Right Col: Calculation Summary & Submit */}
+        <div className="space-y-6">
+          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl space-y-5">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Calculator size={18} className="text-blue-400" />
+              <h3 className="font-bold text-sm tracking-wide">
+                Financial Summary
+              </h3>
             </div>
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl font-bold">⏳</div>
-          </div>
-          <p className="text-xs text-amber-600 font-semibold mt-4 flex items-center gap-1">
-            <span>Requires Action</span>
-          </p>
-        </div>
-      </div>
 
-      {/* Quick Access & Recent Activities Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Quick Actions Panel */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 lg:col-span-1">
-          <h3 className="font-bold text-gray-800 text-lg border-b pb-3">Quick Navigation</h3>
-          <div className="space-y-2">
-            <Link 
-              href="/loans/new" 
-              className="flex items-center justify-between p-3.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-sm transition">
-              <span>💰 Create New Loan Wizard</span>
-              <span>→</span>
-            </Link>
-            <Link 
-              href="#" 
-              className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 font-medium text-sm transition">
-              <span>👥 Register New Customer</span>
-              <span>→</span>
-            </Link>
-            <Link 
-              href="#" 
-              className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 font-medium text-sm transition">
-              <span>📊 Daily Collection Reports</span>
-              <span>→</span>
-            </Link>
-            <Link 
-              href="#" 
-              className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 font-medium text-sm transition">
-              <span>⚙️ System Deductions Config</span>
-              <span>→</span>
-            </Link>
-          </div>
-        </div>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Gross Principal</span>
+                <span className="font-bold text-slate-200">
+                  {MONEY(calculations.gross)}
+                </span>
+              </div>
 
-        {/* Recent Loan Activities Table Preview */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 lg:col-span-2">
-          <div className="flex justify-between items-center border-b pb-3">
-            <h3 className="font-bold text-gray-800 text-lg">Recent Loan Transactions</h3>
-            <span className="text-xs text-blue-600 font-semibold cursor-pointer hover:underline">View All</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-gray-400 uppercase text-xs">
-                <tr>
-                  <th className="p-3 rounded-l-lg">Customer</th>
-                  <th className="p-3">Loan ID</th>
-                  <th className="p-3">Gross Amount</th>
-                  <th className="p-3">Frequency</th>
-                  <th className="p-3 rounded-r-lg">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                <tr>
-                  <td className="p-3 font-semibold text-gray-800">K. A. Nimal Perera</td>
-                  <td className="p-3 text-xs font-mono">LN-2026-001</td>
-                  <td className="p-3 font-medium">LKR 100,000</td>
-                  <td className="p-3">Monthly</td>
-                  <td className="p-3"><span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Active</span></td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-semibold text-gray-800">S. A. Sunil Silva</td>
-                  <td className="p-3 text-xs font-mono">LN-2026-002</td>
-                  <td className="p-3 font-medium">LKR 50,000</td>
-                  <td className="p-3">Weekly</td>
-                  <td className="p-3"><span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Active</span></td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-semibold text-gray-800">M. R. Kamal Fernando</td>
-                  <td className="p-3 text-xs font-mono">LN-2026-003</td>
-                  <td className="p-3 font-medium">LKR 250,000</td>
-                  <td className="p-3">Monthly</td>
-                  <td className="p-3"><span className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">Pending</span></td>
-                </tr>
-              </tbody>
-            </table>
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Total Deductions</span>
+                <span className="font-bold text-red-400">
+                  - {MONEY(calculations.totalDeductions)}
+                </span>
+              </div>
+
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Net Disbursement</span>
+                <span className="font-bold text-emerald-400 text-sm">
+                  {MONEY(calculations.netDisbursement)}
+                </span>
+              </div>
+
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Total Interest ({interestRate}%)</span>
+                <span className="font-bold text-slate-200">
+                  {MONEY(calculations.totalInterest)}
+                </span>
+              </div>
+
+              <div className="flex justify-between py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Total Repayment</span>
+                <span className="font-black text-white text-sm">
+                  {MONEY(calculations.totalRepayment)}
+                </span>
+              </div>
+
+              <div className="flex justify-between py-1 pt-2">
+                <div>
+                  <p className="text-slate-400">Installment ({frequency})</p>
+                  <p className="text-[10px] text-slate-500">
+                    {calculations.numberOfInstallments} payments
+                  </p>
+                </div>
+                <span className="font-black text-blue-400 text-base">
+                  {MONEY(calculations.installmentAmount)}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <PlusCircle size={16} /> Disburse & Activate Loan
+            </button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
+  );
+}
+
+export default function IssueNewLoanPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500 text-sm">Loading loan creation wizard...</div>}>
+      <IssueNewLoanContent />
+    </Suspense>
   );
 }

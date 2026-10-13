@@ -1,51 +1,70 @@
+export type CustomerStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "Active" | "Inactive";
+
 export interface Customer {
   id: string;
-  fullName: string;
-  nicNumber: string;
-  dateOfBirth: string;
+  name: string;
+  fullName?: string;
+  nic: string;
+  phone: string;
+  alternatePhone?: string;
+  email?: string;
+  dob?: string;
   gender?: string;
-  residentialAddress: string;
+  primaryContact?: string;
+  address: string;
   village: string;
   town: string;
   district: string;
-  primaryContact: string;
-  alternativeContact?: string;
-  email?: string;
   occupation?: string;
-  monthlyIncome?: number;
-  customerPhotoUrl?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  monthlyIncome: number;
+  emergencyContact?: string;
+  guarantor?: string;
+  status: CustomerStatus;
+  registeredAt?: string;
+  photoUrl?: string;
 }
 
-export type InterestMethod = 'DAILY' | 'WEEKLY' | 'MONTHLY';
-export type DeductionType = 'FIXED' | 'PERCENTAGE';
+export type LoanStatus = "Pending" | "Active" | "Completed" | "Rejected" | "Overdue";
 
-export interface LoanFormValues {
+export interface Loan {
+  id: string;
   customerId: string;
-  grossLoanAmount: number;
-  capitalDeductionType: DeductionType;
-  capitalDeductionValue: number;
-  interestDeductionMethod: 'UPFRONT' | 'COLLECTED_VIA_INSTALLMENTS';
+  customerName?: string;
+  loanNo?: string;
+  amount?: number;
+  principal: number;
+  capitalDeduction: number;
+  interestDeduction: number;
+  otherFees: number;
   interestRate: number;
-  interestPeriod: InterestMethod;
-  repaymentFrequency: InterestMethod;
-  loanDurationMonths: number;
-  numberOfInstallments: number;
-  loanIssueDate: string;
-  firstRepaymentDate: string;
-  loanPurpose: string;
-  additionalFees: number;
-  guarantorInfo?: string;
-  notes?: string;
+  ratePeriod: "Daily" | "Weekly" | "Monthly";
+  repaymentFrequency: "Daily" | "Weekly" | "Monthly";
+  duration: number;
+  issueDate: string;
+  firstPaymentDate: string;
+  purpose?: string;
+  status: LoanStatus;
+  interest: number;
+  totalRepayment: number;
+  netDisbursement: number;
+  installment: number;
 }
 
-export interface LoanSummary {
-  grossLoanAmount: number;
-  capitalDeductionAmount: number;
-  interestDeductionAmount: number;
-  otherFees: number;
+export interface Payment {
+  id: string;
+  loanId: string;
+  customerId: string;
+  amount: number;
+  date: string;
+  type: "Capital" | "Interest" | "Other";
+}
+
+export interface LoanCalculation {
+  grossAmount: number;
   totalDeductions: number;
   netDisbursement: number;
+  totalInterest: number;
   totalRepayment: number;
   installmentAmount: number;
+  numberOfInstallments: number;
 }

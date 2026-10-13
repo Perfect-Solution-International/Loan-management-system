@@ -196,7 +196,7 @@ export default function LoginPage() {
         </div>
 
         <footer className="login-copyright">
-          © {new Date().getFullYear()} PSI ONE. All rights reserved.
+          © 2026 PSI ONE. All rights reserved.
         </footer>
       </section>
     </main>
