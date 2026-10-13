@@ -1,32 +1,21 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import type { Metadata } from 'next';
+import './globals.css';
+import Sidebar from '@/components/layout/Sidebar';
 
 export const metadata: Metadata = {
-  title: {
-    default: "PSI One Loan Management System",
-    template: "%s | PSI One",
-  },
-  description: "Customer, loan, repayment, and collection management for PSI One.",
+  title: 'PSI One Loan Management System',
+  description: 'Centralized web application for loan operations',
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en">
+      <body className="bg-slate-100 font-sans antialiased">
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto">{children}</main>
+        </div>
+      </body>
     </html>
   );
 }
