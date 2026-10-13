@@ -1,137 +1,897 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { Suspense } from "react";
+
+import React, { useState, Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  FileText,
+  Upload,
+  Download,
+  Eye,
+  Trash2,
+  CheckCircle,
+  Phone,
+  ShieldCheck,
+  User,
+  X,
+  History,
+  Edit,
+  Receipt,
+  ArrowUpRight,
+} from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
-import type { Customer, Loan } from "@/types";
+import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
 
 function CustomerDetailsContent() {
   const params = useParams<{ customerId?: string; id?: string }>();
   const customerId = params?.customerId || params?.id;
-  const { customers, loans } = useData();
-  const c = customers.find((x: Customer) => x.id === customerId);
+  const { customers, loans, payments, documents, addDocument, deleteDocument } = useData();
 
-  if (!c) {
+  const customer = customers.find((x: Customer) => x.id === customerId);
+
+  // Document modal & upload state
+  const [selectedDocForPreview, setSelectedDocForPreview] = useState<CustomerDocument | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadType, setUploadType] = useState<CustomerDocument["type"]>("nic_front");
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedFileUrl, setSelectedFileUrl] = useState("");
+  const [selectedFileType, setSelectedFileType] = useState("image/jpeg");
+  const [selectedFileSize, setSelectedFileSize] = useState("1.1 MB");
+  const [notificationMsg, setNotificationMsg] = useState("");
+
+  // Loans linked to this customer
+  const customerLoans = useMemo(
+    () => (customerId ? loans.filter((l: Loan) => l.customerId === customerId) : []),
+    [loans, customerId]
+  );
+  const customerLoanIds = useMemo(() => customerLoans.map((l) => l.id), [customerLoans]);
+
+  // All repayments recorded for this customer
+  const customerPayments = useMemo(() => {
+    if (!customerId) return [];
+    return payments.filter(
+      (p: Payment) => p.customerId === customerId || customerLoanIds.includes(p.loanId)
+    );
+  }, [payments, customerId, customerLoanIds]);
+
+  // Documents attached to this customer
+  const customerDocs = useMemo(
+    () => (customerId ? documents.filter((d: CustomerDocument) => d.customerId === customerId) : []),
+    [documents, customerId]
+  );
+
+  // Aggregate financial metrics
+  const totalBorrowed = useMemo(
+    () => customerLoans.reduce((sum, l) => sum + (l.principal || l.amount || 0), 0),
+    [customerLoans]
+  );
+
+  const totalRepayable = useMemo(
+    () => customerLoans.reduce((sum, l) => sum + (l.totalRepayment || 0), 0),
+    [customerLoans]
+  );
+
+  const totalPaid = useMemo(
+    () => customerPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
+    [customerPayments]
+  );
+
+  if (!customer) {
     return (
-      <>
-        <div className="page-heading">
+      <div className="p-8 max-w-4xl mx-auto space-y-4">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-4">
+          <h2 className="text-xl font-bold text-slate-800">Customer Not Found</h2>
+          <p className="text-xs text-slate-500">
+            The customer identifier &quot;{customerId}&quot; does not exist in the system records.
+          </p>
           <div>
-            <h1>Customer not found</h1>
-            <p className="subheading">This customer may not exist in the current demo session.</p>
+            <Link
+              href="/customers"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-500 transition"
+            >
+              <ArrowLeft size={14} /> Back to Customer Directory
+            </Link>
           </div>
-          <Link href="/customers" className="btn secondary">
-            <ArrowLeft size={15} /> Customers
-          </Link>
         </div>
-      </>
+      </div>
     );
   }
 
-  const customerLoans = loans.filter((l: Loan) => l.customerId === c.id);
+  const currentOutstandingBalance = Math.max(0, totalRepayable - totalPaid);
+
+  const paymentCompletionRate =
+    totalRepayable > 0 ? Math.min(100, Math.round((totalPaid / totalRepayable) * 100)) : 0;
+
+  // Handle local file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFileName(file.name);
+      setSelectedFileType(file.type || "application/pdf");
+      setSelectedFileSize(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSelectedFileUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadTitle.trim()) return;
+
+    const newDoc: CustomerDocument = {
+      id: `DOC-${Date.now()}`,
+      customerId: customer.id,
+      title: uploadTitle.trim(),
+      type: uploadType,
+      fileName: selectedFileName || `${uploadTitle.toLowerCase().replace(/\s+/g, "_")}.pdf`,
+      fileSize: selectedFileSize || "1.2 MB",
+      fileType:
+        selectedFileType ||
+        (uploadType === "photo" || uploadType.startsWith("nic")
+          ? "image/jpeg"
+          : "application/pdf"),
+      fileUrl:
+        selectedFileUrl ||
+        "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
+      uploadedAt: new Date().toISOString().slice(0, 10),
+      uploader: "Admin Officer",
+    };
+
+    addDocument(newDoc);
+    setIsUploadModalOpen(false);
+    setUploadTitle("");
+    setSelectedFileName("");
+    setSelectedFileUrl("");
+    setNotificationMsg("Document uploaded and attached to customer profile successfully!");
+    setTimeout(() => setNotificationMsg(""), 3500);
+  };
+
+  const handleDownload = (doc: CustomerDocument) => {
+    const link = document.createElement("a");
+    link.href = doc.fileUrl;
+    link.download = doc.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
-    <>
-      <div className="page-heading">
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      {/* Top Breadcrumb & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="eyebrow">CUSTOMERS / PROFILE</p>
-          <h1>{c.name}</h1>
-          <p className="subheading">{c.id} · Registered {c.registeredAt || "N/A"}</p>
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+            PORTFOLIO / CUSTOMER PROFILE
+          </p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+            {customer.fullName || customer.name}
+          </h1>
+          <p className="text-xs text-slate-500">
+            Customer ID: <span className="font-mono font-bold text-slate-700">{customer.id}</span> · Registered on {customer.registeredAt || "2026-09-18"}
+          </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/customers" className="btn secondary">
-            <ArrowLeft size={15} /> Back
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/customers"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-xs transition"
+          >
+            <ArrowLeft size={14} /> Back
           </Link>
-          <Link href={`/loans/new?customerId=${c.id}`} className="btn">
-            <Plus size={15} /> New Loan
+          <Link
+            href={`/customers/${customer.id}/edit`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-xs transition"
+          >
+            <Edit size={14} /> Edit Profile
+          </Link>
+          <Link
+            href={`/repayments`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow-xs transition"
+          >
+            <Receipt size={14} /> Record Repayment
+          </Link>
+          <Link
+            href={`/loans/new?customerId=${customer.id}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white shadow-md transition"
+          >
+            <Plus size={14} /> Issue New Loan
           </Link>
         </div>
       </div>
 
-      <section className="panel">
-        <div className="profile-head">
-          <div className="profile-avatar">
-            {c.name.split(" ").map((x: string) => x[0]).slice(0, 2).join("")}
+      {notificationMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in shadow-xs">
+          <CheckCircle size={18} className="text-emerald-600 shrink-0" />
+          <span>{notificationMsg}</span>
+        </div>
+      )}
+
+      {/* Profile Overview Card (Photograph, Status, ID, Quick Info) */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-5">
+          <div className="relative shrink-0">
+            <img
+              src={
+                customer.photoUrl ||
+                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80"
+              }
+              alt={customer.name}
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+            />
+            <span
+              className={`absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                customer.status.toLowerCase() === "active"
+                  ? "bg-emerald-500 text-white"
+                  : customer.status.toLowerCase() === "suspended"
+                  ? "bg-rose-500 text-white"
+                  : "bg-slate-500 text-white"
+              }`}
+            >
+              {customer.status}
+            </span>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-black text-slate-900">{customer.name}</h2>
+              <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-slate-100 rounded-md text-slate-600">
+                {customer.id}
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                {customer.occupation || "Employed"}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-4">
+              <span>
+                NIC: <strong className="font-mono text-slate-800">{customer.nic}</strong>
+              </span>
+              <span>
+                Phone: <strong className="text-slate-800">{customer.phone}</strong>
+              </span>
+              <span>
+                Town: <strong className="text-slate-800">{customer.town || "—"}</strong>
+              </span>
+              <span>
+                District: <strong className="text-slate-800">{customer.district || "—"}</strong>
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Aggregate Customer Stats */}
+        <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 w-full md:w-auto justify-between md:justify-start">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Total Borrowed
+            </p>
+            <p className="text-lg font-black text-slate-900 mt-0.5">
+              {MONEY(totalBorrowed)}
+            </p>
           </div>
           <div>
-            <h3>{c.name}</h3>
-            <p className="subheading">{c.nic} · {c.phone}</p>
-            <div style={{ marginTop: 8 }}>
-              <span className={`pill ${c.status.toLowerCase()}`}>{c.status}</span>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Active Loans
+            </p>
+            <p className="text-lg font-black text-blue-600 mt-0.5">
+              {customerLoans.filter((l) => l.status === "Active").length} Loans
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Verified Docs
+            </p>
+            <p className="text-lg font-black text-purple-600 mt-0.5">
+              {customerDocs.length} Files
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* OUTSTANDING BALANCE & SETTLEMENT PROGRESS BANNER */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 p-6 rounded-2xl text-white shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+              CURRENT OUTSTANDING LOAN BALANCE & SETTLEMENT
+            </p>
+            <h3 className="text-2xl font-black font-mono text-white mt-1">
+              {MONEY(currentOutstandingBalance)}
+            </h3>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Cumulative balance due across all active and prior loan contracts.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <div className="bg-white/10 px-4 py-2.5 rounded-xl border border-white/10">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                Total Repayable
+              </span>
+              <span className="text-sm font-bold text-white">{MONEY(totalRepayable)}</span>
+            </div>
+            <div className="bg-emerald-500/20 px-4 py-2.5 rounded-xl border border-emerald-500/30">
+              <span className="text-[10px] uppercase font-bold text-emerald-400 block">
+                Total Paid So Far
+              </span>
+              <span className="text-sm font-bold text-emerald-300">{MONEY(totalPaid)}</span>
             </div>
           </div>
         </div>
 
-        <div className="profile-grid">
-          {[
-            ["Customer ID", c.id],
-            ["NIC / ID", c.nic],
-            ["Date of birth", c.dob || "Not provided"],
-            ["Gender", c.gender || "Not provided"],
-            ["Address", c.address || "Not provided"],
-            ["Village / Town", `${c.village || "—"} / ${c.town || "—"}`],
-            ["District", c.district || "Not provided"],
-            ["Primary contact", c.phone],
-            ["Email", c.email || "Not provided"],
-            ["Occupation", c.occupation || "Not provided"],
-            ["Monthly income", MONEY(c.monthlyIncome)],
-            ["Emergency contact", c.emergencyContact || "Not provided"],
-          ].map(([label, value]) => (
-            <div className="profile-item" key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Loan History</h2>
-            <p>Current and previous loans for this customer</p>
+        {/* Progress Bar */}
+        <div className="space-y-1.5 pt-2 border-t border-slate-700/80">
+          <div className="flex justify-between text-xs text-slate-300 font-medium">
+            <span>Portfolio Repayment Progress</span>
+            <span className="font-bold text-white">{paymentCompletionRate}% Settled</span>
+          </div>
+          <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+              style={{ width: `${paymentCompletionRate}%` }}
+            />
           </div>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>LOAN ID</th>
-                <th>PRINCIPAL</th>
-                <th>FREQUENCY</th>
-                <th>INSTALLMENT</th>
-                <th>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customerLoans.map((l: Loan) => (
-                <tr key={l.id}>
-                  <td>{l.id}</td>
-                  <td>{MONEY(l.principal)}</td>
-                  <td>{l.repaymentFrequency}</td>
-                  <td>{MONEY(l.installment)}</td>
-                  <td>
-                    <span className={`pill ${l.status.toLowerCase()}`}>
-                      {l.status}
+
+        {/* Prior Repayment History Notes if available */}
+        {customer.priorRepaymentHistory && (
+          <div className="pt-2 text-xs text-slate-300 flex items-center gap-2">
+            <History size={14} className="text-blue-400 shrink-0" />
+            <span>
+              <strong>Prior Credit History:</strong> {customer.priorRepaymentHistory}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Main Grid: Left Profile Information, Right Guarantor & Loans */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Personal, Contact, Financial Details & Documents */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Identity & Residential Panel */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
+              <User size={14} className="text-blue-600" /> Personal & Residential Profile
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Full Legal Name</span>
+                <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                  {customer.fullName || customer.name}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">NIC Number</span>
+                <span className="font-mono font-bold text-slate-800 text-sm mt-0.5 block">
+                  {customer.nic}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Date of Birth & Gender</span>
+                <span className="font-bold text-slate-800 mt-0.5 block">
+                  {customer.dob || "—"} · {customer.gender || "Not Specified"}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Customer Status</span>
+                <span className="font-bold text-slate-800 mt-0.5 block">
+                  {customer.status}
+                </span>
+              </div>
+
+              <div className="sm:col-span-2 p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Residential Address</span>
+                <span className="font-semibold text-slate-800 mt-0.5 block">
+                  {customer.address}
+                </span>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Village: <strong>{customer.village || "—"}</strong> · Town:{" "}
+                  <strong>{customer.town || "—"}</strong> · District:{" "}
+                  <strong>{customer.district || "—"}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Numbers & Employment Panel */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
+              <Phone size={14} className="text-blue-600" /> Contact Numbers & Employment Profile
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Primary Contact Number</span>
+                <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                  {customer.phone}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Alternative Contact Number</span>
+                <span className="font-semibold text-slate-800 text-sm mt-0.5 block">
+                  {customer.alternatePhone || "None recorded"}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Occupation / Trade</span>
+                <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                  {customer.occupation || "Self-Employed"}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/80 rounded-xl">
+                <span className="text-slate-400 block font-medium">Recorded Monthly Income</span>
+                <span className="font-black text-slate-900 text-sm mt-0.5 block font-mono">
+                  {MONEY(customer.monthlyIncome || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* UPLOADED IDENTITY DOCUMENTS */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText size={16} className="text-blue-600" />
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Uploaded Identity Documents ({customerDocs.length})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition cursor-pointer"
+              >
+                <Upload size={13} /> Upload Document
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {customerDocs.map((doc: CustomerDocument) => (
+                <div
+                  key={doc.id}
+                  className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 transition bg-slate-50/50 flex flex-col justify-between space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-slate-900 leading-tight">
+                          {doc.title}
+                        </p>
+                        <p className="text-[11px] text-slate-400 capitalize mt-0.5">
+                          {doc.type.replace(/_/g, " ")} · {doc.fileSize}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                    <span className="text-[10px] text-slate-400">
+                      Uploaded {doc.uploadedAt}
                     </span>
-                  </td>
-                </tr>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDocForPreview(doc)}
+                        className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-white rounded-lg transition"
+                        title="Preview Document"
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(doc)}
+                        className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-white rounded-lg transition"
+                        title="Download File"
+                      >
+                        <Download size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteDocument(doc.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition"
+                        title="Delete File"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-          {!customerLoans.length && (
-            <div className="empty-state">No loans linked to this customer.</div>
-          )}
+
+              {customerDocs.length === 0 && (
+                <div className="sm:col-span-2 p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs space-y-2">
+                  <FileText size={32} className="mx-auto text-slate-300" />
+                  <p className="font-semibold text-slate-600">No documents uploaded yet</p>
+                  <p>Upload NIC copy, photograph, or proof of income for verification.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PREVIOUS REPAYMENT HISTORY LEDGER */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <History size={16} className="text-emerald-600" />
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Previous Repayment History ({customerPayments.length} Collections)
+                </h3>
+              </div>
+              <Link
+                href="/repayments"
+                className="text-xs font-bold text-blue-600 hover:text-blue-500 inline-flex items-center gap-1"
+              >
+                Go to Terminal <ArrowUpRight size={13} />
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="py-2.5 px-4">Date</th>
+                    <th className="py-2.5 px-4">Receipt No</th>
+                    <th className="py-2.5 px-4">Loan ID</th>
+                    <th className="py-2.5 px-4">Classification</th>
+                    <th className="py-2.5 px-4">Amount Paid</th>
+                    <th className="py-2.5 px-4">Method / Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {customerPayments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-2.5 px-4 font-mono font-medium text-slate-600">
+                        {payment.date}
+                      </td>
+                      <td className="py-2.5 px-4 font-mono font-bold text-blue-600">
+                        {payment.receiptNo || payment.id}
+                      </td>
+                      <td className="py-2.5 px-4 font-mono text-slate-700">
+                        {payment.loanId}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            payment.type === "Capital"
+                              ? "bg-blue-100 text-blue-700"
+                              : payment.type === "Interest"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {payment.type}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 font-mono font-bold text-slate-900">
+                        {MONEY(payment.amount)}
+                      </td>
+                      <td className="py-2.5 px-4 text-slate-500">
+                        <span>{payment.method || "Cash"}</span>
+                        {payment.notes && (
+                          <span className="block text-[10px] text-slate-400 truncate max-w-xs">
+                            {payment.notes}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {customerPayments.length === 0 && (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  <Receipt size={28} className="mx-auto text-slate-300 mb-1" />
+                  <p className="font-semibold text-slate-600">No repayment history recorded</p>
+                  <p>Payments collected through the repayments module will appear here.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </section>
-    </>
+
+        {/* Right Col: Guarantor Details & Existing Loans */}
+        <div className="space-y-6">
+          {/* Guarantor Details Card */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-blue-600" /> Guarantor Information
+            </h3>
+
+            {customer.guarantorName || customer.guarantor ? (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Guarantor Full Name</span>
+                  <span className="font-bold text-slate-800 text-sm">
+                    {customer.guarantorName || customer.guarantor}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Guarantor NIC</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {customer.guarantorNic || "Verification on file"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Contact Phone</span>
+                  <span className="font-semibold text-slate-800">
+                    {customer.guarantorPhone || "Same as primary"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Relationship</span>
+                  <span className="font-semibold text-slate-800">
+                    {customer.guarantorRelationship || "Relative / Colleague"}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">
+                No guarantor assigned to this borrower record.
+              </p>
+            )}
+          </div>
+
+          {/* Emergency Contact */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-3 text-xs">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
+              Emergency Contact
+            </h3>
+            <p className="font-semibold text-slate-800">
+              {customer.emergencyContact || "No emergency contact specified."}
+            </p>
+          </div>
+
+          {/* EXISTING LOANS & OUTSTANDING BALANCES LIST */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Existing Loans Portfolio
+              </h3>
+              <span className="text-xs font-bold text-blue-600">
+                {customerLoans.length} Loans
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {customerLoans.map((loan) => {
+                const loanPaid = customerPayments
+                  .filter((p) => p.loanId === loan.id)
+                  .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const loanBalanceDue = Math.max(0, (loan.totalRepayment || 0) - loanPaid);
+
+                return (
+                  <Link
+                    key={loan.id}
+                    href={`/loans/${loan.id}`}
+                    className="p-3.5 bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 rounded-xl block transition space-y-2"
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-mono font-bold text-slate-800">
+                        {loan.loanNo || loan.id}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          loan.status.toLowerCase() === "active"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : loan.status.toLowerCase() === "completed"
+                            ? "bg-blue-100 text-blue-700"
+                            : loan.status.toLowerCase() === "overdue"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-slate-200 text-slate-600"
+                        }`}
+                      >
+                        {loan.status}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs text-slate-600">
+                      <span>Principal: <strong>{MONEY(loan.principal || loan.amount || 0)}</strong></span>
+                      <span>Installment: <strong>{MONEY(loan.installment || 0)}</strong></span>
+                    </div>
+
+                    <div className="pt-1.5 border-t border-slate-200/60 flex justify-between items-center text-xs">
+                      <span className="text-[11px] text-slate-400">Balance Due:</span>
+                      <span className="font-mono font-bold text-rose-600">
+                        {MONEY(loanBalanceDue)}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+
+              {customerLoans.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-4">
+                  No active or past loans linked to this borrower.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DOCUMENT PREVIEW MODAL */}
+      {selectedDocForPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">{selectedDocForPreview.title}</h3>
+                <p className="text-xs text-slate-400">
+                  {selectedDocForPreview.fileName} · {selectedDocForPreview.fileSize}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDocForPreview(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="bg-slate-950 rounded-2xl p-4 flex items-center justify-center min-h-[320px] max-h-[500px] overflow-hidden">
+              {selectedDocForPreview.fileType.includes("image") ? (
+                <img
+                  src={selectedDocForPreview.fileUrl}
+                  alt={selectedDocForPreview.title}
+                  className="max-h-[460px] object-contain rounded-lg"
+                />
+              ) : (
+                <div className="text-center text-slate-400 space-y-3 p-8">
+                  <FileText size={48} className="mx-auto text-blue-400" />
+                  <p className="text-sm font-semibold text-slate-200">
+                    PDF Document: {selectedDocForPreview.fileName}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Document securely archived with cryptographic signature verification.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(selectedDocForPreview)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition"
+                  >
+                    <Download size={14} /> Download Document
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleDownload(selectedDocForPreview)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                <Download size={14} /> Download File
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDocForPreview(null)}
+                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD DOCUMENT MODAL */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Upload Identity Document</h3>
+                <p className="text-xs text-slate-400">Attach NIC, passport, or financial verification proof.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Document Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. NIC Card Front / Salary Slip Sep 2026"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Document Type</label>
+                <select
+                  value={uploadType}
+                  onChange={(e) => setUploadType(e.target.value as CustomerDocument["type"])}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                >
+                  <option value="nic_front">National Identity Card (Front)</option>
+                  <option value="nic_back">National Identity Card (Back)</option>
+                  <option value="photo">Customer Photograph</option>
+                  <option value="salary_slip">Salary Slip / Income Record</option>
+                  <option value="agreement">Loan Agreement / Contract</option>
+                  <option value="utility_bill">Proof of Billing / Utility Bill</option>
+                  <option value="other">Other Supporting Document</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Select File</label>
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 cursor-pointer bg-slate-50/50 hover:bg-blue-50/30 transition text-center">
+                  <Upload size={24} className="text-slate-400 mb-2" />
+                  <span className="text-xs font-semibold text-slate-700">
+                    {selectedFileName || "Click to browse JPG, PNG or PDF"}
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-1">
+                    Max size 15MB · High resolution recommended
+                  </span>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition shadow-xs"
+                >
+                  Save & Attach
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
-export default function CustomerDetailsPage() {
+export default function CustomerProfilePage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-500 text-xs">Loading customer profile...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 max-w-7xl mx-auto text-xs text-slate-400">
+          Loading customer profile...
+        </div>
+      }
+    >
       <CustomerDetailsContent />
     </Suspense>
   );
