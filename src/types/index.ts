@@ -72,6 +72,13 @@ export interface Loan {
   totalRepayment: number;
   netDisbursement: number;
   installment: number;
+  guarantorName?: string;
+  guarantorNic?: string;
+  guarantorPhone?: string;
+  guarantorRelationship?: string;
+  guarantorAddress?: string;
+  disbursementMethod?: "Cash" | "Bank Transfer" | "Cheque";
+  notes?: string;
 }
 
 export interface Payment {
