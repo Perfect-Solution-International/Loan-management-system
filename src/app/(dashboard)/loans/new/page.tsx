@@ -14,7 +14,6 @@ import {
   User,
   Phone,
   MapPin,
-  Briefcase,
   FileText,
   CreditCard,
   History,
@@ -175,16 +174,6 @@ function CustomerProfileModal({
             </Grid2>
           </Section>
 
-          {/* Occupation */}
-          <Section icon={<Briefcase size={13} />} title="Occupation & Income">
-            <Grid2>
-              <InfoBox label="Occupation" value={customer.occupation || "—"} />
-              <InfoBox
-                label="Monthly Income"
-                value={customer.monthlyIncome ? MONEY(customer.monthlyIncome) : "—"}
-              />
-            </Grid2>
-          </Section>
 
           {/* Documents */}
           <Section icon={<FileText size={13} />} title={`Uploaded Documents (${customerDocs.length})`}>

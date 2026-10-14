@@ -16,7 +16,6 @@ import {
   FileText,
   Phone,
   MapPin,
-  Briefcase,
   CreditCard,
   History,
   DollarSign,
@@ -227,7 +226,7 @@ export default function CustomersPage() {
                               {displayName}
                             </p>
                             <p className="text-[11px] text-slate-500">
-                              {customer.occupation || "—"}
+                              {customer.village || customer.town || "Registered Customer"}
                             </p>
                           </div>
                         </div>
@@ -437,16 +436,6 @@ export default function CustomersPage() {
                 </div>
               </section>
 
-              <section>
-                <ProfileSectionTitle icon={<Briefcase size={14} />} label="Occupation & Income" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                  <ProfileRow label="Occupation" value={selectedCustomer.occupation || "—"} />
-                  <ProfileRow
-                    label="Monthly Income"
-                    value={selectedCustomer.monthlyIncome ? MONEY(selectedCustomer.monthlyIncome) : "—"}
-                  />
-                </div>
-              </section>
 
               {/* ── Uploaded Identity Documents ───────────────────────────── */}
               <section>

@@ -10,10 +10,8 @@ import {
   CheckCircle2,
   RefreshCw,
   Upload,
-  Shield,
   Phone,
   MapPin,
-  Briefcase,
   UserCheck,
   FileText,
   CreditCard,
@@ -53,25 +51,6 @@ const SRI_LANKA_DISTRICTS = [
   "Kegalle",
 ];
 
-const PHOTO_PRESETS = [
-  {
-    label: "Male Professional 1",
-    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    label: "Male Professional 2",
-    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    label: "Female Professional 1",
-    url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    label: "Female Professional 2",
-    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-  },
-];
-
 interface AttachedDoc {
   id: string;
   title: string;
@@ -105,21 +84,20 @@ export default function NewCustomerPage() {
   // Keep customerId in sync if customers load asynchronously or change
   React.useEffect(() => {
     setCustomerId((prev) => {
-      // If prev is not yet set or is a placeholder, initialize it
       if (!prev) return generateCustomerId();
       return prev;
     });
   }, [generateCustomerId]);
   
-  // 1. Core Profile Details
+  // 1. Core Profile Details (Clean defaults with NO unwanted auto-fill or dummy data)
   const [form, setForm] = useState({
     // Photograph
-    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+    photoUrl: "",
     
     // Identity
     fullName: "",
     nic: "",
-    dob: "1990-05-15",
+    dob: "",
     gender: "Male",
     
     // Residential address & Location
@@ -136,63 +114,43 @@ export default function NewCustomerPage() {
     emergencyContactPhone: "",
     emergencyContactRelationship: "Spouse",
     
-    // Occupation
-    occupation: "",
-    monthlyIncome: "65000",
-    
     // Customer Status
     status: "Active" as CustomerStatus,
-
-    // Guarantor
-    guarantorName: "",
-    guarantorNic: "",
-    guarantorPhone: "",
-    guarantorRelationship: "Relative",
 
     // Existing Loan Details
     hasExistingLoan: false,
     existingLoanNo: "",
-    existingLoanPrincipal: "100000",
-    existingInterestRate: "3.0",
-    existingDuration: "6",
+    existingLoanPrincipal: "",
+    existingInterestRate: "",
+    existingDuration: "",
     existingFrequency: "Monthly" as "Daily" | "Weekly" | "Monthly",
-    existingIssueDate: () => new Date().toISOString().slice(0, 10),
-    existingPurpose: "Prior business expansion credit",
+    existingIssueDate: "",
+    existingPurpose: "",
     
     // Outstanding balance & Previous Repayment History
-    previousAmountPaid: "35000",
-    previousInstallmentsPaid: "2",
-    previousLastPaymentDate: () => new Date().toISOString().slice(0, 10),
+    previousAmountPaid: "",
+    previousInstallmentsPaid: "",
+    previousLastPaymentDate: "",
     previousPaymentMethod: "Cash" as "Cash" | "Bank Transfer" | "Cheque",
-    previousRepaymentNotes: "On-time repayments recorded under previous schedule",
+    previousRepaymentNotes: "",
     customOutstandingBalance: "",
   });
 
-  // 2. Uploaded Identity Documents List
-  const [attachedDocs, setAttachedDocs] = useState<AttachedDoc[]>([
-    {
-      id: "init-nic-front",
-      title: "NIC Card Front",
-      type: "nic_front",
-      fileName: "nic_front_scanned.jpg",
-      fileSize: "1.4 MB",
-      fileType: "image/jpeg",
-      fileUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "init-nic-back",
-      title: "NIC Card Back",
-      type: "nic_back",
-      fileName: "nic_back_scanned.jpg",
-      fileSize: "1.1 MB",
-      fileType: "image/jpeg",
-      fileUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
-    },
-  ]);
+  // Dedicated NIC Front and Back upload state
+  const [nicFrontUrl, setNicFrontUrl] = useState("");
+  const [nicFrontFileName, setNicFrontFileName] = useState("");
+  const [nicFrontFileSize, setNicFrontFileSize] = useState("");
+
+  const [nicBackUrl, setNicBackUrl] = useState("");
+  const [nicBackFileName, setNicBackFileName] = useState("");
+  const [nicBackFileSize, setNicBackFileSize] = useState("");
+
+  // 2. Uploaded Supporting Documents List ('Other Docs')
+  const [attachedDocs, setAttachedDocs] = useState<AttachedDoc[]>([]);
 
   // Document add sub-modal / fields
   const [newDocTitle, setNewDocTitle] = useState("");
-  const [newDocType, setNewDocType] = useState<CustomerDocument["type"]>("salary_slip");
+  const [newDocType, setNewDocType] = useState<CustomerDocument["type"]>("other");
   const [newDocFileName, setNewDocFileName] = useState("");
   const [newDocFileUrl, setNewDocFileUrl] = useState("");
   const [newDocFileType, setNewDocFileType] = useState("application/pdf");
@@ -230,11 +188,45 @@ export default function NewCustomerPage() {
     }
   };
 
-  // Handle local file selection for Identity Document attachment
-  const handleDocFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local file selection for dedicated NIC Front Image
+  const handleNicFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setNicFrontFileName(file.name);
+      setNicFrontFileSize(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setNicFrontUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle local file selection for dedicated NIC Back Image
+  const handleNicBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNicBackFileName(file.name);
+      setNicBackFileSize(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setNicBackUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle local file selection for Other Docs attachment (supports multiple files at once)
+  const handleDocFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (files.length === 1) {
+      const file = files[0];
       setNewDocFileName(file.name);
+      if (!newDocTitle) {
+        setNewDocTitle(file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "));
+      }
       setNewDocFileType(file.type || "application/pdf");
       setNewDocFileSize(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
       const reader = new FileReader();
@@ -242,6 +234,25 @@ export default function NewCustomerPage() {
         setNewDocFileUrl(event.target?.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      // Multiple files selected: directly add all of them to attachedDocs list
+      Array.from(files).forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const docItem: AttachedDoc = {
+            id: `doc-${Date.now()}-${index}`,
+            title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+            type: newDocType || "other",
+            fileName: file.name,
+            fileSize: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+            fileType: file.type || "application/pdf",
+            fileUrl: event.target?.result as string,
+          };
+          setAttachedDocs((prev) => [...prev, docItem]);
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
     }
   };
 
@@ -339,17 +350,13 @@ export default function NewCustomerPage() {
       phone: form.phone.trim(),
       alternatePhone: form.alternatePhone.trim() || undefined,
       email: form.email.trim() || undefined,
-      occupation: form.occupation.trim() || "Self-Employed",
-      monthlyIncome: Number(form.monthlyIncome) || 50000,
+      monthlyIncome: 0,
       emergencyContact: emergencyContactStr,
-      guarantor: form.guarantorName.trim() || undefined,
-      guarantorName: form.guarantorName.trim() || undefined,
-      guarantorNic: form.guarantorNic.trim() || undefined,
-      guarantorPhone: form.guarantorPhone.trim() || undefined,
-      guarantorRelationship: form.guarantorRelationship || undefined,
       status: form.status,
       registeredAt: new Date().toISOString().slice(0, 10),
-      photoUrl: form.photoUrl,
+      photoUrl: form.photoUrl || undefined,
+      nicFrontUrl: nicFrontUrl || undefined,
+      nicBackUrl: nicBackUrl || undefined,
       hasExistingLoan: form.hasExistingLoan,
       existingLoanNotes: form.hasExistingLoan
         ? `Existing loan: ${form.existingLoanNo || "LN-PRIOR"} | Outstanding: ${MONEY(
@@ -365,6 +372,37 @@ export default function NewCustomerPage() {
     };
 
     addCustomer(newCustomer);
+
+    // 2. Attach Dedicated NIC Front & Back Documents if uploaded
+    if (nicFrontUrl) {
+      addDocument({
+        id: `DOC-NICF-${Date.now()}`,
+        customerId: newCustomer.id,
+        title: "National Identity Card (Front)",
+        type: "nic_front",
+        fileName: nicFrontFileName || "nic_front.jpg",
+        fileSize: nicFrontFileSize || "1.2 MB",
+        fileType: "image/jpeg",
+        fileUrl: nicFrontUrl,
+        uploadedAt: new Date().toISOString().slice(0, 10),
+        uploader: "Registration Desk",
+      });
+    }
+
+    if (nicBackUrl) {
+      addDocument({
+        id: `DOC-NICB-${Date.now()}`,
+        customerId: newCustomer.id,
+        title: "National Identity Card (Back)",
+        type: "nic_back",
+        fileName: nicBackFileName || "nic_back.jpg",
+        fileSize: nicBackFileSize || "1.2 MB",
+        fileType: "image/jpeg",
+        fileUrl: nicBackUrl,
+        uploadedAt: new Date().toISOString().slice(0, 10),
+        uploader: "Registration Desk",
+      });
+    }
 
     // 2. Attach All Uploaded Identity Documents
     attachedDocs.forEach((doc, idx) => {
@@ -406,10 +444,7 @@ export default function NewCustomerPage() {
         ratePeriod: "Monthly",
         repaymentFrequency: form.existingFrequency,
         duration: Number(form.existingDuration) || 6,
-        issueDate:
-          typeof form.existingIssueDate === "function"
-            ? form.existingIssueDate()
-            : String(form.existingIssueDate),
+        issueDate: form.existingIssueDate || new Date().toISOString().slice(0, 10),
         firstPaymentDate: new Date().toISOString().slice(0, 10),
         purpose: form.existingPurpose || "Prior loan record",
         status: loanStatus,
@@ -428,10 +463,7 @@ export default function NewCustomerPage() {
           loanId: existingLoan.id,
           customerId: newCustomer.id,
           amount: computedLoanCalculations.paid,
-          date:
-            typeof form.previousLastPaymentDate === "function"
-              ? form.previousLastPaymentDate()
-              : String(form.previousLastPaymentDate),
+          date: form.previousLastPaymentDate || new Date().toISOString().slice(0, 10),
           type: "Capital",
           notes:
             form.previousRepaymentNotes ||
@@ -488,7 +520,7 @@ export default function NewCustomerPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
         {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -523,14 +555,28 @@ export default function NewCustomerPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             {/* Photo Avatar Preview */}
             <div className="relative group shrink-0">
-              <img
-                src={form.photoUrl}
-                alt="Customer Preview"
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
-              />
-              <span className="absolute -bottom-2 -right-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-blue-600 text-white shadow-xs">
-                Photo
-              </span>
+              {form.photoUrl ? (
+                <div className="relative">
+                  <img
+                    src={form.photoUrl}
+                    alt="Customer Preview"
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-xs cursor-pointer transition"
+                    title="Remove Photo"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400">
+                  <Camera size={26} className="text-slate-400 mb-1" />
+                  <span className="text-[10px] font-bold">No Photo</span>
+                </div>
+              )}
             </div>
 
             {/* Photo Controls */}
@@ -540,8 +586,8 @@ export default function NewCustomerPage() {
                   Upload Customer Photograph (JPG, PNG)
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition">
-                    <Upload size={14} /> Browse from Device
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition">
+                    <Upload size={14} /> Browse Photo from Device
                     <input
                       type="file"
                       accept="image/png, image/jpeg, image/webp"
@@ -549,26 +595,15 @@ export default function NewCustomerPage() {
                       className="hidden"
                     />
                   </label>
-                  <span className="text-xs text-slate-600">or select quick preset portrait:</span>
+                  {form.photoUrl && (
+                    <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                      <CheckCircle2 size={13} /> Photo selected
+                    </span>
+                  )}
                 </div>
-              </div>
-
-              {/* Quick Presets */}
-              <div className="flex flex-wrap gap-2">
-                {PHOTO_PRESETS.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, photoUrl: preset.url }))}
-                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border transition ${
-                      form.photoUrl === preset.url
-                        ? "bg-blue-50 border-blue-400 text-blue-700"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Select a clear portrait image of the customer for identity verification.
+                </p>
               </div>
 
               {/* Customer ID Display / Edit */}
@@ -580,6 +615,7 @@ export default function NewCustomerPage() {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
+                      autoComplete="off"
                       value={customerId}
                       onChange={(e) => setCustomerId(e.target.value)}
                       className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -623,6 +659,7 @@ export default function NewCustomerPage() {
               <input
                 type="text"
                 name="fullName"
+                autoComplete="off"
                 required
                 value={form.fullName}
                 onChange={handleChange}
@@ -638,6 +675,7 @@ export default function NewCustomerPage() {
               <input
                 type="text"
                 name="nic"
+                autoComplete="off"
                 required
                 value={form.nic}
                 onChange={handleChange}
@@ -665,6 +703,7 @@ export default function NewCustomerPage() {
               <input
                 type="date"
                 name="dob"
+                autoComplete="off"
                 value={form.dob}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
@@ -697,6 +736,7 @@ export default function NewCustomerPage() {
               <input
                 type="text"
                 name="address"
+                autoComplete="off"
                 value={form.address}
                 onChange={handleChange}
                 placeholder="No. 45/2, Temple Road"
@@ -711,6 +751,7 @@ export default function NewCustomerPage() {
               <input
                 type="text"
                 name="village"
+                autoComplete="off"
                 value={form.village}
                 onChange={handleChange}
                 placeholder="e.g. Mahabage, Kiribathgoda"
@@ -723,6 +764,7 @@ export default function NewCustomerPage() {
               <input
                 type="text"
                 name="town"
+                autoComplete="off"
                 value={form.town}
                 onChange={handleChange}
                 placeholder="e.g. Kelaniya, Colombo 03"
@@ -772,6 +814,7 @@ export default function NewCustomerPage() {
               <input
                 type="tel"
                 name="phone"
+                autoComplete="off"
                 required
                 value={form.phone}
                 onChange={handleChange}
@@ -787,6 +830,7 @@ export default function NewCustomerPage() {
               <input
                 type="tel"
                 name="alternatePhone"
+                autoComplete="off"
                 value={form.alternatePhone}
                 onChange={handleChange}
                 placeholder="0112345678"
@@ -799,6 +843,7 @@ export default function NewCustomerPage() {
               <input
                 type="email"
                 name="email"
+                autoComplete="off"
                 value={form.email}
                 onChange={handleChange}
                 placeholder="customer@example.lk"
@@ -811,6 +856,7 @@ export default function NewCustomerPage() {
               <input
                 type="text"
                 name="emergencyContactName"
+                autoComplete="off"
                 value={form.emergencyContactName}
                 onChange={handleChange}
                 placeholder="e.g. Malini Perera"
@@ -823,6 +869,7 @@ export default function NewCustomerPage() {
               <input
                 type="tel"
                 name="emergencyContactPhone"
+                autoComplete="off"
                 value={form.emergencyContactPhone}
                 onChange={handleChange}
                 placeholder="0719998888"
@@ -848,59 +895,142 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* SECTION 5: OCCUPATION & INCOME */}
+        {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
-              <Briefcase size={18} />
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <CreditCard size={18} />
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">
-                Occupation, Trade & Monthly Income
+                National Identity Card (NIC) Images
               </h2>
               <p className="text-[11px] text-slate-600">
-                Borrower livelihood classification and financial earning capacity.
+                Dedicated upload slots for clear scanned images or photos of borrower&apos;s NIC (Front &amp; Back).
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Occupation / Trade / Employer
-              </label>
-              <input
-                type="text"
-                name="occupation"
-                value={form.occupation}
-                onChange={handleChange}
-                placeholder="e.g. Retail Grocery Store Owner / Government Teacher"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* NIC Front */}
+            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  NIC Front Image
+                </span>
+                {nicFrontUrl && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
+
+              {nicFrontUrl ? (
+                <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                  <img
+                    src={nicFrontUrl}
+                    alt="NIC Front Preview"
+                    className="w-full h-40 object-cover bg-slate-100"
+                  />
+                  <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                    <div className="truncate pr-2">
+                      <p className="text-[11px] font-bold text-slate-800 truncate">
+                        {nicFrontFileName || "nic_front.jpg"}
+                      </p>
+                      <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNicFrontUrl("");
+                        setNicFrontFileName("");
+                        setNicFrontFileSize("");
+                      }}
+                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
+                  <Upload size={22} className="text-slate-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    Click to browse PNG, JPG or PDF
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={handleNicFrontUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Monthly Income (LKR)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  name="monthlyIncome"
-                  step="1000"
-                  value={form.monthlyIncome}
-                  onChange={handleChange}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-                />
-                <span className="absolute right-3.5 top-2 text-xs text-slate-600 font-bold">
-                  LKR
+            {/* NIC Back */}
+            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  NIC Back Image
                 </span>
+                {nicBackUrl && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    ✓ Uploaded
+                  </span>
+                )}
               </div>
+
+              {nicBackUrl ? (
+                <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                  <img
+                    src={nicBackUrl}
+                    alt="NIC Back Preview"
+                    className="w-full h-40 object-cover bg-slate-100"
+                  />
+                  <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                    <div className="truncate pr-2">
+                      <p className="text-[11px] font-bold text-slate-800 truncate">
+                        {nicBackFileName || "nic_back.jpg"}
+                      </p>
+                      <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNicBackUrl("");
+                        setNicBackFileName("");
+                        setNicBackFileSize("");
+                      }}
+                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
+                  <Upload size={22} className="text-slate-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    Click to browse PNG, JPG or PDF
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={handleNicBackUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
           </div>
         </div>
 
-        {/* SECTION 6: UPLOADED IDENTITY DOCUMENTS (IN-FORM ATTACHMENT) */}
+        {/* SECTION 6: OTHER DOCS & SUPPORTING DOCUMENTS */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
@@ -909,48 +1039,57 @@ export default function NewCustomerPage() {
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-900">
-                  Uploaded Identity Documents ({attachedDocs.length})
+                  Other Docs &amp; Supporting Documents ({attachedDocs.length})
                 </h2>
                 <p className="text-[11px] text-slate-600">
-                  Attach NIC front/back, salary slips, and utility proof directly to the new customer record.
+                  Upload multiple supporting documents (utility bills, salary slips, signed lease/loan agreements, or other proofs).
                 </p>
               </div>
             </div>
           </div>
 
           {/* Current Attached Documents List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {attachedDocs.map((doc) => (
-              <div
-                key={doc.id}
-                className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
-                    <FileText size={16} />
-                  </div>
-                  <div className="truncate">
-                    <p className="text-xs font-bold text-slate-800 truncate">{doc.title}</p>
-                    <p className="text-[10px] text-slate-600">
-                      {doc.type} · {doc.fileSize} · {doc.fileName}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveDoc(doc.id)}
-                  className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition shrink-0"
-                  title="Remove document"
+          {attachedDocs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {attachedDocs.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
                 >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                      <FileText size={16} />
+                    </div>
+                    <div className="truncate">
+                      <p className="text-xs font-bold text-slate-800 truncate">{doc.title}</p>
+                      <p className="text-[10px] text-slate-600">
+                        {doc.type.replace(/_/g, " ")} · {doc.fileSize} · {doc.fileName}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDoc(doc.id)}
+                    className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition shrink-0 cursor-pointer"
+                    title="Remove document"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic py-1">
+              No additional supporting documents attached yet. Use the upload box below to attach files.
+            </p>
+          )}
 
-          {/* Add Another Document Inline Form */}
+          {/* Add Supporting Documents Inline Form */}
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-            <p className="text-xs font-bold text-slate-700">Attach Additional Document:</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-700">Attach Supporting Document:</p>
+              <span className="text-[10px] text-slate-500">Supports selecting multiple files at once</span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-[11px] font-semibold text-slate-500 block mb-1">
@@ -958,7 +1097,8 @@ export default function NewCustomerPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Salary Slip - Sep 2026"
+                  autoComplete="off"
+                  placeholder="e.g. Utility Bill - Water Board"
                   value={newDocTitle}
                   onChange={(e) => setNewDocTitle(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -974,24 +1114,24 @@ export default function NewCustomerPage() {
                   onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="salary_slip">Salary Slip / Income Proof</option>
-                  <option value="utility_bill">Utility Bill / Address Proof</option>
-                  <option value="agreement">Signed Loan Agreement</option>
-                  <option value="nic_front">NIC Front Copy</option>
-                  <option value="nic_back">NIC Back Copy</option>
                   <option value="other">Other Supporting Document</option>
+                  <option value="utility_bill">Utility Bill / Address Proof</option>
+                  <option value="salary_slip">Salary Slip / Income Proof</option>
+                  <option value="agreement">Signed Loan Agreement</option>
+                  <option value="photo">Photograph / Portrait</option>
                 </select>
               </div>
 
               <div>
                 <label className="text-[11px] font-semibold text-slate-500 block mb-1">
-                  Upload File (JPG, PNG, PDF)
+                  Upload Files (JPG, PNG, PDF)
                 </label>
                 <div className="flex gap-2">
                   <label className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-50">
-                    <Upload size={13} /> {newDocFileName ? newDocFileName.slice(0, 15) : "Browse"}
+                    <Upload size={13} /> {newDocFileName ? newDocFileName.slice(0, 15) : "Browse (Multiple)"}
                     <input
                       type="file"
+                      multiple
                       accept=".pdf,.png,.jpg,.jpeg"
                       onChange={handleDocFileUpload}
                       className="hidden"
@@ -1000,7 +1140,7 @@ export default function NewCustomerPage() {
                   <button
                     type="button"
                     onClick={handleAddDocumentToForm}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                   >
                     Attach
                   </button>
@@ -1189,72 +1329,7 @@ export default function NewCustomerPage() {
           )}
         </div>
 
-        {/* SECTION 8: GUARANTOR DETAILS */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <Shield size={18} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                Guarantor Information (Optional)
-              </h2>
-              <p className="text-[11px] text-slate-600">
-                Co-signer or guarantor identity for loan collateral security.
-              </p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Guarantor Full Name</label>
-              <input
-                type="text"
-                name="guarantorName"
-                value={form.guarantorName}
-                onChange={handleChange}
-                placeholder="e.g. Sunil Gamini Silva"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Guarantor NIC</label>
-              <input
-                type="text"
-                name="guarantorNic"
-                value={form.guarantorNic}
-                onChange={handleChange}
-                placeholder="196812345678"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Guarantor Phone</label>
-              <input
-                type="tel"
-                name="guarantorPhone"
-                value={form.guarantorPhone}
-                onChange={handleChange}
-                placeholder="0714445555"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Relationship</label>
-              <input
-                type="text"
-                name="guarantorRelationship"
-                value={form.guarantorRelationship}
-                onChange={handleChange}
-                placeholder="Father / Colleague"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Action Controls */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">

@@ -13,6 +13,8 @@ import {
   MapPin,
   Phone,
   Camera,
+  X,
+  FileText,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import type { Customer, CustomerStatus } from "@/types";
@@ -45,25 +47,6 @@ const SRI_LANKA_DISTRICTS = [
   "Kegalle",
 ];
 
-const PHOTO_PRESETS = [
-  {
-    label: "Male Professional 1",
-    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    label: "Male Professional 2",
-    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    label: "Female Professional 1",
-    url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    label: "Female Professional 2",
-    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-  },
-];
-
 function EditCustomerForm({ customer }: { customer: Customer }) {
   const router = useRouter();
   const { updateCustomer } = useData();
@@ -71,7 +54,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
   const [form, setForm] = useState({
     fullName: customer.fullName || customer.name || "",
     nic: customer.nic || "",
-    dob: customer.dob || "1990-01-01",
+    dob: customer.dob || "",
     gender: customer.gender || "Male",
     address: customer.address || "",
     village: customer.village || "",
@@ -80,16 +63,10 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
     phone: customer.phone || "",
     alternatePhone: customer.alternatePhone || "",
     email: customer.email || "",
-    occupation: customer.occupation || "",
-    monthlyIncome: String(customer.monthlyIncome || 50000),
     status: customer.status,
-    photoUrl:
-      customer.photoUrl ||
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
-    guarantorName: customer.guarantorName || customer.guarantor || "",
-    guarantorNic: customer.guarantorNic || "",
-    guarantorPhone: customer.guarantorPhone || "",
-    guarantorRelationship: customer.guarantorRelationship || "",
+    photoUrl: customer.photoUrl || "",
+    nicFrontUrl: customer.nicFrontUrl || "",
+    nicBackUrl: customer.nicBackUrl || "",
   });
 
   const [notificationMsg, setNotificationMsg] = useState("");
@@ -107,6 +84,28 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       const reader = new FileReader();
       reader.onload = (event) => {
         setForm((prev) => ({ ...prev, photoUrl: event.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleNicFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setForm((prev) => ({ ...prev, nicFrontUrl: event.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleNicBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setForm((prev) => ({ ...prev, nicBackUrl: event.target?.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -132,14 +131,10 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       phone: form.phone.trim(),
       alternatePhone: form.alternatePhone.trim() || undefined,
       email: form.email.trim() || undefined,
-      occupation: form.occupation.trim(),
-      monthlyIncome: Number(form.monthlyIncome) || 0,
       status: form.status,
-      photoUrl: form.photoUrl,
-      guarantorName: form.guarantorName.trim() || undefined,
-      guarantorNic: form.guarantorNic.trim() || undefined,
-      guarantorPhone: form.guarantorPhone.trim() || undefined,
-      guarantorRelationship: form.guarantorRelationship.trim() || undefined,
+      photoUrl: form.photoUrl || undefined,
+      nicFrontUrl: form.nicFrontUrl || undefined,
+      nicBackUrl: form.nicBackUrl || undefined,
     });
 
     setNotificationMsg("Customer profile updated successfully!");
@@ -178,7 +173,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
         {/* Photograph & Status */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -207,21 +202,44 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <div className="relative shrink-0">
-              <img
-                src={form.photoUrl}
-                alt="Customer Preview"
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
-              />
+            {/* Photo Avatar Preview */}
+            <div className="relative group shrink-0">
+              {form.photoUrl ? (
+                <div className="relative">
+                  <img
+                    src={form.photoUrl}
+                    alt="Customer Preview"
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-xs cursor-pointer transition"
+                    title="Remove Photo"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 gap-1.5 shadow-2xs">
+                  <Camera size={26} className="text-slate-400" />
+                  <span className="text-[10px] font-bold text-slate-500">No Photo</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3 flex-1">
-              <label className="text-xs font-bold text-slate-700 block">
-                Update Customer Photograph
-              </label>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block">
+                  Customer Photograph
+                </label>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Clear facial portrait for verification and loan dossier.
+                </p>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition">
-                  <Upload size={14} /> Upload New Image
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold cursor-pointer transition">
+                  <Upload size={14} /> Upload Photograph
                   <input
                     type="file"
                     accept="image/*"
@@ -229,23 +247,127 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                     className="hidden"
                   />
                 </label>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {PHOTO_PRESETS.map((preset, idx) => (
+                {form.photoUrl && (
                   <button
-                    key={idx}
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, photoUrl: preset.url }))}
-                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border transition ${
-                      form.photoUrl === preset.url
-                        ? "bg-blue-50 border-blue-400 text-blue-700"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
+                    onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                    className="text-xs text-red-600 hover:text-red-700 font-semibold cursor-pointer underline"
                   >
-                    {preset.label}
+                    Remove
                   </button>
-                ))}
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dedicated NIC Front & Back Images */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+              <FileText size={18} />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                National Identity Card (NIC) Images
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                Dedicated image uploads for borrower NIC front and back surfaces.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* NIC Front */}
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  NIC Front Side
+                </label>
+                {form.nicFrontUrl && (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                    Uploaded
+                  </span>
+                )}
+              </div>
+
+              {form.nicFrontUrl ? (
+                <div className="space-y-2">
+                  <div className="relative group rounded-xl overflow-hidden border border-slate-200 bg-white">
+                    <img
+                      src={form.nicFrontUrl}
+                      alt="NIC Front"
+                      className="w-full h-36 object-contain bg-slate-900/5 p-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, nicFrontUrl: "" }))}
+                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-xs cursor-pointer"
+                      title="Remove NIC Front"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-blue-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
+                  <Upload size={22} className="text-blue-500" />
+                  <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleNicFrontUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* NIC Back */}
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  NIC Back Side
+                </label>
+                {form.nicBackUrl && (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                    Uploaded
+                  </span>
+                )}
+              </div>
+
+              {form.nicBackUrl ? (
+                <div className="space-y-2">
+                  <div className="relative group rounded-xl overflow-hidden border border-slate-200 bg-white">
+                    <img
+                      src={form.nicBackUrl}
+                      alt="NIC Back"
+                      className="w-full h-36 object-contain bg-slate-900/5 p-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, nicBackUrl: "" }))}
+                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-xs cursor-pointer"
+                      title="Remove NIC Back"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-blue-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
+                  <Upload size={22} className="text-blue-500" />
+                  <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleNicBackUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
           </div>
         </div>
@@ -361,16 +483,16 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
           </div>
         </div>
 
-        {/* Contact Numbers & Occupation */}
+        {/* Contact & Communication Details */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
               <Phone size={18} />
             </div>
-            <h2 className="text-sm font-bold text-slate-900">Contact Numbers & Occupation</h2>
+            <h2 className="text-sm font-bold text-slate-900">Contact & Communication Details</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Primary Contact Phone</label>
               <input
@@ -395,24 +517,13 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Occupation / Trade</label>
+              <label className="text-xs font-bold text-slate-700">Email Address</label>
               <input
-                type="text"
-                name="occupation"
-                value={form.occupation}
+                type="email"
+                name="email"
+                value={form.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Monthly Income (LKR)</label>
-              <input
-                type="number"
-                name="monthlyIncome"
-                step="1000"
-                value={form.monthlyIncome}
-                onChange={handleChange}
+                placeholder="customer@example.com"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>

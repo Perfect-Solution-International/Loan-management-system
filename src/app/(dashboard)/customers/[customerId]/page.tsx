@@ -37,7 +37,7 @@ function CustomerDetailsContent() {
   const [selectedDocForPreview, setSelectedDocForPreview] = useState<CustomerDocument | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadTitle, setUploadTitle] = useState("");
-  const [uploadType, setUploadType] = useState<CustomerDocument["type"]>("nic_front");
+  const [uploadType, setUploadType] = useState<CustomerDocument["type"]>("other");
   const [selectedFileName, setSelectedFileName] = useState("");
   const [selectedFileUrl, setSelectedFileUrl] = useState("");
   const [selectedFileType, setSelectedFileType] = useState("image/jpeg");
@@ -404,10 +404,10 @@ function CustomerDetailsContent() {
             </div>
           </div>
 
-          {/* Contact Numbers & Employment Panel */}
+          {/* Contact & Communication Profile */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-              <Phone size={14} className="text-blue-600" /> Contact Numbers & Employment Profile
+              <Phone size={14} className="text-blue-600" /> Contact & Communication Details
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -426,16 +426,16 @@ function CustomerDetailsContent() {
               </div>
 
               <div className="p-3 bg-slate-50/80 rounded-xl">
-                <span className="text-slate-400 block font-medium">Occupation / Trade</span>
-                <span className="font-bold text-slate-800 text-sm mt-0.5 block">
-                  {customer.occupation || "Self-Employed"}
+                <span className="text-slate-400 block font-medium">Email Address</span>
+                <span className="font-semibold text-slate-800 text-sm mt-0.5 block">
+                  {customer.email || "—"}
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50/80 rounded-xl">
-                <span className="text-slate-400 block font-medium">Recorded Monthly Income</span>
-                <span className="font-black text-slate-900 text-sm mt-0.5 block font-mono">
-                  {MONEY(customer.monthlyIncome || 0)}
+                <span className="text-slate-400 block font-medium">Emergency Contact</span>
+                <span className="font-semibold text-slate-800 text-sm mt-0.5 block">
+                  {customer.emergencyContact || "—"}
                 </span>
               </div>
             </div>
@@ -831,13 +831,11 @@ function CustomerDetailsContent() {
                   onChange={(e) => setUploadType(e.target.value as CustomerDocument["type"])}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
                 >
-                  <option value="nic_front">National Identity Card (Front)</option>
-                  <option value="nic_back">National Identity Card (Back)</option>
-                  <option value="photo">Customer Photograph</option>
+                  <option value="other">Other Supporting Document</option>
+                  <option value="utility_bill">Proof of Billing / Utility Bill</option>
                   <option value="salary_slip">Salary Slip / Income Record</option>
                   <option value="agreement">Loan Agreement / Contract</option>
-                  <option value="utility_bill">Proof of Billing / Utility Bill</option>
-                  <option value="other">Other Supporting Document</option>
+                  <option value="photo">Customer Photograph</option>
                 </select>
               </div>
 

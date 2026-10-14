@@ -64,10 +64,6 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
               <p className="text-xs text-gray-400 uppercase font-semibold">Address</p>
               <p className="font-medium">{customer.address}, {customer.village}, {customer.town}</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase font-semibold">Occupation</p>
-              <p className="font-medium">{customer.occupation || 'N/A'}</p>
-            </div>
           </div>
         </div>
 
