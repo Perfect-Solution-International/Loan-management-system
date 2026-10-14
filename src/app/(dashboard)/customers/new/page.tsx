@@ -86,17 +86,30 @@ export default function NewCustomerPage() {
   const router = useRouter();
   const { customers, addCustomer, addDocument, addLoan, addPayment } = useData();
 
-  // Helper to generate a sequential or unique Customer ID
-  const generateCustomerId = () => {
+  // Helper to generate sequential Customer ID starting from CUS-001, CUS-002, etc.
+  const generateCustomerId = React.useCallback(() => {
     const highestNum = customers.reduce((max, c) => {
-      const match = c.id.match(/\d+/);
-      const num = match ? parseInt(match[0], 10) : 0;
-      return num > max ? num : max;
-    }, 1000);
-    return `CUS-${highestNum + 1}`;
-  };
+      const match = c.id.match(/^CUS-(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        return num > max ? num : max;
+      }
+      return max;
+    }, 0);
+    const nextNum = highestNum + 1;
+    return `CUS-${String(nextNum).padStart(3, "0")}`;
+  }, [customers]);
 
   const [customerId, setCustomerId] = useState(() => generateCustomerId());
+
+  // Keep customerId in sync if customers load asynchronously or change
+  React.useEffect(() => {
+    setCustomerId((prev) => {
+      // If prev is not yet set or is a placeholder, initialize it
+      if (!prev) return generateCustomerId();
+      return prev;
+    });
+  }, [generateCustomerId]);
   
   // 1. Core Profile Details
   const [form, setForm] = useState({
@@ -202,8 +215,7 @@ export default function NewCustomerPage() {
   };
 
   const handleRegenerateId = () => {
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    setCustomerId(`CUS-${randomSuffix}`);
+    setCustomerId(generateCustomerId());
   };
 
   // Handle local file selection for Customer Photograph

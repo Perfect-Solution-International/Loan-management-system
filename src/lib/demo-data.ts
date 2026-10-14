@@ -2,7 +2,7 @@ import type { Customer, Loan, Payment, CustomerDocument, SystemSettings, StaffUs
 
 export const initialCustomers: Customer[] = [
   {
-    id: "CUS-1001",
+    id: "CUS-001",
     name: "Kasun Perera",
     fullName: "Kasun Madushanka Perera",
     nic: "199125601234",
@@ -30,7 +30,7 @@ export const initialCustomers: Customer[] = [
     nicBackUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
   },
   {
-    id: "CUS-1002",
+    id: "CUS-002",
     name: "Nimali Fernando",
     fullName: "Nimali Anoma Fernando",
     nic: "199485601234",
@@ -57,7 +57,7 @@ export const initialCustomers: Customer[] = [
     nicFrontUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
   },
   {
-    id: "CUS-1003",
+    id: "CUS-003",
     name: "Saman Kumara",
     fullName: "Saman Priyantha Kumara",
     nic: "198875601234",
@@ -83,7 +83,7 @@ export const initialCustomers: Customer[] = [
     photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
   },
   {
-    id: "CUS-1004",
+    id: "CUS-004",
     name: "Tharushi Silva",
     fullName: "Tharushi Kaveesha Silva",
     nic: "199965601234",
@@ -113,7 +113,7 @@ export const initialCustomers: Customer[] = [
 export const initialLoans: Loan[] = [
   {
     id: "LN-2001",
-    customerId: "CUS-1001",
+    customerId: "CUS-001",
     customerName: "Kasun Perera",
     loanNo: "LN-2026-001",
     principal: 150000,
@@ -136,7 +136,7 @@ export const initialLoans: Loan[] = [
   },
   {
     id: "LN-2002",
-    customerId: "CUS-1002",
+    customerId: "CUS-002",
     customerName: "Nimali Fernando",
     loanNo: "LN-2026-002",
     principal: 80000,
@@ -159,7 +159,7 @@ export const initialLoans: Loan[] = [
   },
   {
     id: "LN-2003",
-    customerId: "CUS-1003",
+    customerId: "CUS-003",
     customerName: "Saman Kumara",
     loanNo: "LN-2026-003",
     principal: 50000,
@@ -186,7 +186,7 @@ export const initialPayments: Payment[] = [
   {
     id: "PAY-001",
     loanId: "LN-2001",
-    customerId: "CUS-1001",
+    customerId: "CUS-001",
     amount: 29500,
     date: "2026-10-01",
     type: "Capital",
@@ -198,7 +198,7 @@ export const initialPayments: Payment[] = [
   {
     id: "PAY-002",
     loanId: "LN-2003",
-    customerId: "CUS-1003",
+    customerId: "CUS-003",
     amount: 5167,
     date: "2026-09-30",
     type: "Interest",
@@ -212,7 +212,7 @@ export const initialPayments: Payment[] = [
 export const initialDocuments: CustomerDocument[] = [
   {
     id: "DOC-001",
-    customerId: "CUS-1001",
+    customerId: "CUS-001",
     title: "National Identity Card (Front)",
     type: "nic_front",
     fileName: "nic_front_kasun.jpg",
@@ -224,7 +224,7 @@ export const initialDocuments: CustomerDocument[] = [
   },
   {
     id: "DOC-002",
-    customerId: "CUS-1001",
+    customerId: "CUS-001",
     title: "National Identity Card (Back)",
     type: "nic_back",
     fileName: "nic_back_kasun.jpg",
@@ -236,7 +236,7 @@ export const initialDocuments: CustomerDocument[] = [
   },
   {
     id: "DOC-003",
-    customerId: "CUS-1001",
+    customerId: "CUS-001",
     title: "Business Registration Certificate",
     type: "salary_slip",
     fileName: "business_registration_cert.pdf",
@@ -248,7 +248,7 @@ export const initialDocuments: CustomerDocument[] = [
   },
   {
     id: "DOC-004",
-    customerId: "CUS-1002",
+    customerId: "CUS-002",
     title: "National Identity Card (Front)",
     type: "nic_front",
     fileName: "nic_front_nimali.png",
@@ -260,7 +260,7 @@ export const initialDocuments: CustomerDocument[] = [
   },
   {
     id: "DOC-005",
-    customerId: "CUS-1002",
+    customerId: "CUS-002",
     title: "Salary Slip - Ministry of Education",
     type: "salary_slip",
     fileName: "payslip_august2026.pdf",

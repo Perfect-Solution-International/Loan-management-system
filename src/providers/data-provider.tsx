@@ -66,12 +66,138 @@ const defaultState: DataContextValue = {
 const DataContext = createContext<DataContextValue>(defaultState);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers || []);
-  const [loans, setLoans] = useState<Loan[]>(initialLoans || []);
-  const [payments, setPayments] = useState<Payment[]>(initialPayments || []);
-  const [documents, setDocuments] = useState<CustomerDocument[]>(initialDocuments || []);
-  const [settings, setSettings] = useState<SystemSettings>(initialSettings);
-  const [staffUsers, setStaffUsers] = useState<StaffUser[]>(initialStaffUsers || []);
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("psi_customers");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored customers", e);
+      }
+    }
+    return initialCustomers || [];
+  });
+
+  const [loans, setLoans] = useState<Loan[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("psi_loans");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored loans", e);
+      }
+    }
+    return initialLoans || [];
+  });
+
+  const [payments, setPayments] = useState<Payment[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("psi_payments");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored payments", e);
+      }
+    }
+    return initialPayments || [];
+  });
+
+  const [documents, setDocuments] = useState<CustomerDocument[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("psi_documents");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored documents", e);
+      }
+    }
+    return initialDocuments || [];
+  });
+
+  const [settings, setSettings] = useState<SystemSettings>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("psi_settings");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored settings", e);
+      }
+    }
+    return initialSettings;
+  });
+
+  const [staffUsers, setStaffUsers] = useState<StaffUser[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("psi_staff_users");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored staff users", e);
+      }
+    }
+    return initialStaffUsers || [];
+  });
+
+  // Sync state to localStorage on changes
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("psi_customers", JSON.stringify(customers));
+      } catch (e) {
+        console.error("Failed to save customers to localStorage", e);
+      }
+    }
+  }, [customers]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("psi_loans", JSON.stringify(loans));
+      } catch (e) {
+        console.error("Failed to save loans to localStorage", e);
+      }
+    }
+  }, [loans]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("psi_payments", JSON.stringify(payments));
+      } catch (e) {
+        console.error("Failed to save payments to localStorage", e);
+      }
+    }
+  }, [payments]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("psi_documents", JSON.stringify(documents));
+      } catch (e) {
+        console.error("Failed to save documents to localStorage", e);
+      }
+    }
+  }, [documents]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("psi_settings", JSON.stringify(settings));
+      } catch (e) {
+        console.error("Failed to save settings to localStorage", e);
+      }
+    }
+  }, [settings]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("psi_staff_users", JSON.stringify(staffUsers));
+      } catch (e) {
+        console.error("Failed to save staff users to localStorage", e);
+      }
+    }
+  }, [staffUsers]);
 
   const addCustomer = (customer: Customer) => {
     setCustomers((prev) => [customer, ...prev]);
