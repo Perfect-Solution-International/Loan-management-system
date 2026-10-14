@@ -523,8 +523,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="customer@example.com"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
           </div>

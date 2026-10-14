@@ -98,13 +98,13 @@ export default function NewCustomerPage() {
     fullName: "",
     nic: "",
     dob: "",
-    gender: "Male",
+    gender: "" as "Male" | "Female" | "Other" | "",
     
     // Residential address & Location
     address: "",
     village: "",
     town: "",
-    district: "Colombo",
+    district: "",
     
     // Contact
     phone: "",
@@ -112,7 +112,7 @@ export default function NewCustomerPage() {
     email: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
-    emergencyContactRelationship: "Spouse",
+    emergencyContactRelationship: "",
     
     // Customer Status
     status: "Active" as CustomerStatus,
@@ -342,11 +342,11 @@ export default function NewCustomerPage() {
       fullName: form.fullName.trim(),
       nic: form.nic.trim().toUpperCase(),
       dob: form.dob || undefined,
-      gender: form.gender,
+      gender: (form.gender as "Male" | "Female" | "Other") || "Male",
       address: form.address.trim() || "Main Road",
       village: form.village.trim() || form.town.trim() || "Village Area",
       town: form.town.trim() || "Colombo",
-      district: form.district,
+      district: form.district || "Colombo",
       phone: form.phone.trim(),
       alternatePhone: form.alternatePhone.trim() || undefined,
       email: form.email.trim() || undefined,
@@ -663,8 +663,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.fullName}
                 onChange={handleChange}
-                placeholder="e.g. Kasun Chamara Perera"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -679,8 +678,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.nic}
                 onChange={handleChange}
-                placeholder="e.g. 198512345678 or 851234567V"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold uppercase"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold uppercase"
               />
             </div>
 
@@ -690,8 +688,9 @@ export default function NewCustomerPage() {
                 name="gender"
                 value={form.gender}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
               >
+                <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -706,7 +705,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.dob}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
           </div>
@@ -739,8 +738,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.address}
                 onChange={handleChange}
-                placeholder="No. 45/2, Temple Road"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -754,8 +752,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.village}
                 onChange={handleChange}
-                placeholder="e.g. Mahabage, Kiribathgoda"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -767,8 +764,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.town}
                 onChange={handleChange}
-                placeholder="e.g. Kelaniya, Colombo 03"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -778,8 +774,9 @@ export default function NewCustomerPage() {
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
               >
+                <option value="">Select District</option>
                 {SRI_LANKA_DISTRICTS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -818,8 +815,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="0771234567"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -833,8 +829,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.alternatePhone}
                 onChange={handleChange}
-                placeholder="0112345678"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -846,8 +841,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="customer@example.lk"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -859,8 +853,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.emergencyContactName}
                 onChange={handleChange}
-                placeholder="e.g. Malini Perera"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -872,8 +865,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.emergencyContactPhone}
                 onChange={handleChange}
-                placeholder="0719998888"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -883,8 +875,9 @@ export default function NewCustomerPage() {
                 name="emergencyContactRelationship"
                 value={form.emergencyContactRelationship}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
               >
+                <option value="">Select Relationship</option>
                 <option value="Spouse">Spouse</option>
                 <option value="Parent">Parent</option>
                 <option value="Sibling">Sibling</option>
@@ -1098,10 +1091,9 @@ export default function NewCustomerPage() {
                 <input
                   type="text"
                   autoComplete="off"
-                  placeholder="e.g. Utility Bill - Water Board"
                   value={newDocTitle}
                   onChange={(e) => setNewDocTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1189,10 +1181,10 @@ export default function NewCustomerPage() {
                   <input
                     type="text"
                     name="existingLoanNo"
+                    autoComplete="off"
                     value={form.existingLoanNo}
                     onChange={handleChange}
-                    placeholder="e.g. LN-2026-PRIOR-01"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
                   />
                 </div>
 
@@ -1201,10 +1193,11 @@ export default function NewCustomerPage() {
                   <input
                     type="number"
                     name="existingLoanPrincipal"
+                    autoComplete="off"
                     step="5000"
                     value={form.existingLoanPrincipal}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
                   />
                 </div>
 
@@ -1214,9 +1207,10 @@ export default function NewCustomerPage() {
                     type="number"
                     step="0.1"
                     name="existingInterestRate"
+                    autoComplete="off"
                     value={form.existingInterestRate}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
                   />
                 </div>
 
@@ -1225,10 +1219,11 @@ export default function NewCustomerPage() {
                   <input
                     type="number"
                     name="existingDuration"
+                    autoComplete="off"
                     min="1"
                     value={form.existingDuration}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
                   />
                 </div>
               </div>
@@ -1250,6 +1245,7 @@ export default function NewCustomerPage() {
                     <input
                       type="number"
                       name="previousAmountPaid"
+                      autoComplete="off"
                       step="1000"
                       value={form.previousAmountPaid}
                       onChange={handleChange}
@@ -1265,6 +1261,7 @@ export default function NewCustomerPage() {
                     <input
                       type="number"
                       name="previousInstallmentsPaid"
+                      autoComplete="off"
                       value={form.previousInstallmentsPaid}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
@@ -1296,10 +1293,10 @@ export default function NewCustomerPage() {
                     </label>
                     <textarea
                       name="previousRepaymentNotes"
+                      autoComplete="off"
                       rows={2}
                       value={form.previousRepaymentNotes}
                       onChange={handleChange}
-                      placeholder="e.g. Paid regular weekly installments on time with no delays."
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold resize-none"
                     />
                   </div>
