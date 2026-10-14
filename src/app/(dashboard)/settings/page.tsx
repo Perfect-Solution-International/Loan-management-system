@@ -1238,7 +1238,7 @@ function SettingsContent() {
                 <label className="text-xs font-bold text-slate-700">Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Kasun Fernando"
+                  autoComplete="off"
                   value={staffForm.name}
                   onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
@@ -1250,7 +1250,7 @@ function SettingsContent() {
                 <label className="text-xs font-bold text-slate-700">Work Email Address</label>
                 <input
                   type="email"
-                  placeholder="kasun.f@psione.lk"
+                  autoComplete="off"
                   value={staffForm.email}
                   onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"

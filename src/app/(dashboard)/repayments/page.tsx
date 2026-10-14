@@ -313,7 +313,7 @@ export default function RepaymentsCollectionsPage() {
                     type="number"
                     required
                     min="1"
-                    placeholder={`e.g. ${selectedLoan?.installment || 25000}`}
+                    autoComplete="off"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -346,6 +346,7 @@ export default function RepaymentsCollectionsPage() {
                   <input
                     type="date"
                     required
+                    autoComplete="off"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -361,6 +362,7 @@ export default function RepaymentsCollectionsPage() {
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={collectedBy}
                     onChange={(e) => setCollectedBy(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -373,7 +375,7 @@ export default function RepaymentsCollectionsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Field receipt book #42, slip #88"
+                    autoComplete="off"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

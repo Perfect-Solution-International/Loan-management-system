@@ -816,7 +816,6 @@ function CustomerDetailsContent() {
                 <label className="text-xs font-bold text-slate-700">Document Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. NIC Card Front / Salary Slip Sep 2026"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"

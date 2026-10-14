@@ -54,13 +54,13 @@ function IssueNewLoanContent() {
 
   const [grossAmount, setGrossAmount] = useState<string>("");
   const [interestRate, setInterestRate] = useState<string>("");
-  const [ratePeriod, setRatePeriod] = useState<"Monthly" | "Weekly" | "Daily">("Monthly");
-  const [frequency, setFrequency] = useState<"Monthly" | "Weekly" | "Daily">("Monthly");
+  const [ratePeriod, setRatePeriod] = useState<"Monthly" | "Weekly" | "Daily" | "">("");
+  const [frequency, setFrequency] = useState<"Monthly" | "Weekly" | "Daily" | "">("");
   const [duration, setDuration] = useState<string>("");
   const [purpose, setPurpose] = useState<string>("");
-  const [issueDate, setIssueDate] = useState<string>(todayStr);
-  const [firstPaymentDate, setFirstPaymentDate] = useState<string>(defaultFirstPaymentStr);
-  const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
+  const [issueDate, setIssueDate] = useState<string>("");
+  const [firstPaymentDate, setFirstPaymentDate] = useState<string>("");
+  const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque" | "">("");
 
   // Upfront Deductions (Completely blank on open!)
   const [capitalDeduction, setCapitalDeduction] = useState<string>("");
@@ -73,7 +73,7 @@ function IssueNewLoanContent() {
   const [guarantorName, setGuarantorName] = useState<string>("");
   const [guarantorNic, setGuarantorNic] = useState<string>("");
   const [guarantorPhone, setGuarantorPhone] = useState<string>("");
-  const [guarantorRelationship, setGuarantorRelationship] = useState<string>("Spouse");
+  const [guarantorRelationship, setGuarantorRelationship] = useState<string>("");
   const [guarantorAddress, setGuarantorAddress] = useState<string>("");
 
   // Contract remarks
@@ -259,11 +259,11 @@ function IssueNewLoanContent() {
       otherFees:
         Number(otherFees || 0) + Number(processingFee || 0) + Number(adminFee || 0),
       interestRate: Number(interestRate) || 0,
-      ratePeriod,
-      repaymentFrequency: frequency,
+      ratePeriod: (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily",
+      repaymentFrequency: (frequency || "Monthly") as "Monthly" | "Weekly" | "Daily",
       duration: Number(duration) || 12,
-      issueDate,
-      firstPaymentDate,
+      issueDate: issueDate || todayStr,
+      firstPaymentDate: firstPaymentDate || defaultFirstPaymentStr,
       purpose: purpose.trim() || undefined,
       status: "Active",
       interest: calculations.totalInterest,
@@ -275,7 +275,7 @@ function IssueNewLoanContent() {
       guarantorPhone: guarantorPhone.trim() || undefined,
       guarantorRelationship: guarantorRelationship || undefined,
       guarantorAddress: guarantorAddress.trim() || undefined,
-      disbursementMethod,
+      disbursementMethod: (disbursementMethod || "Cash") as "Cash" | "Bank Transfer" | "Cheque",
       notes: notes.trim() || undefined,
     };
 
@@ -848,7 +848,6 @@ function IssueNewLoanContent() {
                         required
                         value={grossAmount}
                         onChange={(e) => setGrossAmount(e.target.value)}
-                        placeholder="e.g. 100000"
                         className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
                       />
                     </div>
@@ -866,7 +865,6 @@ function IssueNewLoanContent() {
                         required
                         value={interestRate}
                         onChange={(e) => setInterestRate(e.target.value)}
-                        placeholder="e.g. 3.0"
                         className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
                       />
                     </div>
@@ -879,6 +877,7 @@ function IssueNewLoanContent() {
                         onChange={(e) => setRatePeriod(e.target.value as "Monthly" | "Weekly" | "Daily")}
                         className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                       >
+                        <option value="">-- Select Rate Period --</option>
                         <option value="Monthly">Per Month</option>
                         <option value="Weekly">Per Week</option>
                         <option value="Daily">Per Day</option>
@@ -893,6 +892,7 @@ function IssueNewLoanContent() {
                         onChange={(e) => setFrequency(e.target.value as "Monthly" | "Weekly" | "Daily")}
                         className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                       >
+                        <option value="">-- Select Frequency --</option>
                         <option value="Monthly">Monthly</option>
                         <option value="Weekly">Weekly</option>
                         <option value="Daily">Daily</option>
@@ -911,7 +911,6 @@ function IssueNewLoanContent() {
                         required
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
-                        placeholder="e.g. 12"
                         className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                       />
                     </div>
@@ -924,7 +923,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={purpose}
                         onChange={(e) => setPurpose(e.target.value)}
-                        placeholder="e.g. Working Capital, Business Inventory, Vehicle Repair..."
                         className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                       />
                     </div>
@@ -979,7 +977,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={capitalDeduction}
                         onChange={(e) => setCapitalDeduction(e.target.value)}
-                        placeholder="0.00"
                         className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -992,7 +989,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={interestDeduction}
                         onChange={(e) => setInterestDeduction(e.target.value)}
-                        placeholder="0.00"
                         className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1005,7 +1001,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={processingFee}
                         onChange={(e) => setProcessingFee(e.target.value)}
-                        placeholder="0.00"
                         className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1018,7 +1013,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={adminFee}
                         onChange={(e) => setAdminFee(e.target.value)}
-                        placeholder="0.00"
                         className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1031,7 +1025,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={otherFees}
                         onChange={(e) => setOtherFees(e.target.value)}
-                        placeholder="0.00"
                         className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1043,6 +1036,7 @@ function IssueNewLoanContent() {
                         onChange={(e) => setDisbursementMethod(e.target.value as "Cash" | "Bank Transfer" | "Cheque")}
                         className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                       >
+                        <option value="">-- Select Mode --</option>
                         <option value="Cash">Cash Handover</option>
                         <option value="Bank Transfer">Bank Transfer</option>
                         <option value="Cheque">Crossed Cheque</option>
@@ -1071,7 +1065,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={guarantorName}
                         onChange={(e) => setGuarantorName(e.target.value)}
-                        placeholder="e.g. Samantha Perera"
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1083,6 +1076,7 @@ function IssueNewLoanContent() {
                         onChange={(e) => setGuarantorRelationship(e.target.value)}
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
                       >
+                        <option value="">-- Select Relationship --</option>
                         <option value="Spouse">Spouse</option>
                         <option value="Parent">Parent</option>
                         <option value="Sibling">Sibling</option>
@@ -1099,7 +1093,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={guarantorNic}
                         onChange={(e) => setGuarantorNic(e.target.value)}
-                        placeholder="e.g. 198512345678 or 851234567V"
                         className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1111,7 +1104,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={guarantorPhone}
                         onChange={(e) => setGuarantorPhone(e.target.value)}
-                        placeholder="e.g. 077 123 4567"
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1123,7 +1115,6 @@ function IssueNewLoanContent() {
                         autoComplete="off"
                         value={guarantorAddress}
                         onChange={(e) => setGuarantorAddress(e.target.value)}
-                        placeholder="e.g. No. 45, Temple Road, Colombo"
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
                       />
                     </div>
@@ -1141,7 +1132,6 @@ function IssueNewLoanContent() {
                     autoComplete="off"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add any internal underwriting notes, collateral references, or conditions..."
                     className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 resize-none font-medium"
                   />
                 </div>
