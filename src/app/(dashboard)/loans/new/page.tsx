@@ -1062,7 +1062,9 @@ function IssueNewLoanContent() {
                       <label className="text-xs font-bold text-slate-700">Guarantor Full Legal Name</label>
                       <input
                         type="text"
+                        name="loan_guarantor_fullname"
                         autoComplete="off"
+                        spellCheck={false}
                         value={guarantorName}
                         onChange={(e) => setGuarantorName(e.target.value)}
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
@@ -1072,6 +1074,7 @@ function IssueNewLoanContent() {
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700">Relationship to Borrower</label>
                       <select
+                        name="loan_guarantor_relationship"
                         value={guarantorRelationship}
                         onChange={(e) => setGuarantorRelationship(e.target.value)}
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
@@ -1090,7 +1093,9 @@ function IssueNewLoanContent() {
                       <label className="text-xs font-bold text-slate-700">Guarantor NIC Number</label>
                       <input
                         type="text"
+                        name="loan_guarantor_nic"
                         autoComplete="off"
+                        spellCheck={false}
                         value={guarantorNic}
                         onChange={(e) => setGuarantorNic(e.target.value)}
                         className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300"
@@ -1101,7 +1106,9 @@ function IssueNewLoanContent() {
                       <label className="text-xs font-bold text-slate-700">Guarantor Contact Phone</label>
                       <input
                         type="tel"
+                        name="loan_guarantor_phone"
                         autoComplete="off"
+                        spellCheck={false}
                         value={guarantorPhone}
                         onChange={(e) => setGuarantorPhone(e.target.value)}
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
@@ -1112,7 +1119,9 @@ function IssueNewLoanContent() {
                       <label className="text-xs font-bold text-slate-700">Guarantor Residential Address</label>
                       <input
                         type="text"
+                        name="loan_guarantor_address"
                         autoComplete="off"
+                        spellCheck={false}
                         value={guarantorAddress}
                         onChange={(e) => setGuarantorAddress(e.target.value)}
                         className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
