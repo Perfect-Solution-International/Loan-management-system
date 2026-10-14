@@ -5,6 +5,10 @@ import { DataProvider } from '@/providers/data-provider';
 export const metadata: Metadata = {
   title: 'PSI One LMS - Loan Management System',
   description: 'Centralized web application for loan operations',
+  icons: {
+    icon: '/logos/psi-logo.jpg',
+    apple: '/logos/psi-logo.jpg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

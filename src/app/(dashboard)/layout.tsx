@@ -156,9 +156,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-sm sm:text-base font-black text-slate-900 truncate tracking-tight">
-              PSI One Loan Management Portal
-            </h1>
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <img
+                src="/logos/psi-logo.jpg"
+                alt="PSI Logo"
+                className="w-7 h-7 rounded-lg object-contain shadow-xs border border-slate-200 shrink-0"
+              />
+              <h1 className="text-sm sm:text-base font-black text-slate-900 truncate tracking-tight">
+                PSI One Loan Management Portal
+              </h1>
+            </div>
           </div>
 
           <div className="flex items-center space-x-3 shrink-0">
