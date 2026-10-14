@@ -270,8 +270,8 @@ export default function RegisterPage() {
                   Register another customer
                 </button>
 
-                <Link href="/" className="login-back-link pt-2">
-                  ← Back to dashboard preview
+                <Link href="/dashboard" className="login-back-link pt-2">
+                  ← Back to dashboard
                 </Link>
               </div>
             </div>
@@ -466,8 +466,11 @@ export default function RegisterPage() {
                 </Link>
               </div>
 
-              <Link href="/" className="login-back-link">
-                ← Back to dashboard preview
+              <Link href="/dashboard" className="login-back-link">
+                ← Back to dashboard
+              </Link>
+              <Link href="/" className="login-back-link text-slate-400 mt-2 hover:text-slate-600 transition">
+                Go to main homepage
               </Link>
             </>
           )}

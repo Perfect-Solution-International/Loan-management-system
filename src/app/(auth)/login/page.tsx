@@ -108,7 +108,7 @@ export default function LoginPage() {
             Enter your details below to access your workspace.
           </p>
 
-          <form action="/" className="login-form">
+          <form action="/dashboard" className="login-form">
             <label htmlFor="login-email">Email address</label>
 
             <div className="login-input-wrap">
@@ -197,8 +197,11 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <Link href="/" className="login-back-link">
-            ← Back to dashboard preview
+          <Link href="/dashboard" className="login-back-link">
+            ← Back to dashboard
+          </Link>
+          <Link href="/" className="login-back-link text-slate-400 mt-2 hover:text-slate-600 transition">
+            Go to main homepage
           </Link>
         </div>
 
