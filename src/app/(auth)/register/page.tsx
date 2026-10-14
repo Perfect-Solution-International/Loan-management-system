@@ -17,6 +17,7 @@ import {
   UserCheck,
   UserPlus,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { useData } from "@/providers/data-provider";
 import type { Customer } from "@/types";
 
@@ -160,16 +161,9 @@ export default function RegisterPage() {
         <div className="login-visual-glow login-glow-one" />
         <div className="login-visual-glow login-glow-two" />
 
-        <Link href="/" className="login-brand">
-          <span className="login-brand-icon">
-            <Landmark size={24} />
-          </span>
-
-          <span>
-            PSI <b>ONE</b>
-            <small>LOAN MANAGEMENT</small>
-          </span>
-        </Link>
+        <div className="login-brand mb-4">
+          <BrandLogo href="/" size="lg" theme="dark" />
+        </div>
 
         <div className="login-visual-content">
           <span className="login-kicker">
@@ -223,13 +217,8 @@ export default function RegisterPage() {
       {/* Right side - Registration Form */}
       <section className="login-form-side">
         <div className="login-form-wrap">
-          <div className="login-mobile-brand">
-            <span className="login-brand-icon">
-              <Landmark size={22} />
-            </span>
-            <span>
-              PSI <b>ONE</b>
-            </span>
+          <div className="login-mobile-brand mb-6">
+            <BrandLogo href="/" size="md" theme="light" />
           </div>
 
           {isSuccess ? (

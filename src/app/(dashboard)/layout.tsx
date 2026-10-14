@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, LogOut, CheckCircle2 } from "lucide-react";
 import { DataProvider } from "@/providers/data-provider";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface NavItem {
   name: string;
@@ -31,18 +32,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* ── Desktop & Tablet Sidebar ───────────────────────────────────────── */}
       <aside className="w-64 bg-slate-950 text-slate-200 hidden md:flex md:flex-col shrink-0 shadow-2xl border-r border-slate-850">
         {/* Brand Header */}
-        <div className="p-5 text-xl font-bold text-white border-b border-slate-800 flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-600/30">
-            PSI
-          </div>
-          <div className="flex flex-col">
-            <span className="text-base font-black tracking-tight leading-tight text-white">
-              PSI One LMS
-            </span>
-            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-              Loan Management System
-            </span>
-          </div>
+        <div className="p-5 border-b border-slate-800">
+          <BrandLogo href="/dashboard" size="md" theme="dark" />
         </div>
 
         {/* Navigation Links */}
@@ -101,15 +92,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             {/* Mobile Brand + Close */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-sm">
-                  PSI
-                </div>
-                <div>
-                  <p className="text-sm font-black text-white">PSI One LMS</p>
-                  <p className="text-[10px] text-slate-400">Loan Management</p>
-                </div>
-              </div>
+              <BrandLogo href="/dashboard" size="sm" theme="dark" />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
