@@ -21,33 +21,37 @@ body {
   box-sizing: border-box;
 }
 
-button,
+button {
+  font: inherit;
+  color: inherit;
+}
+
 input,
 select,
 textarea,
 option,
 optgroup {
   font: inherit;
-  color: #0f172a !important;
+  color: #0f172a;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #475569 !important;
-  opacity: 1 !important;
+  color: #64748b;
+  opacity: 1;
 }
 
 input,
 select,
 textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: #ffffff;
+  color: #0f172a;
   border-color: #cbd5e1;
 }
 
 select option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 /* PSI ONE Login Page Styles */

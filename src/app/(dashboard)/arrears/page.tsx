@@ -418,20 +418,38 @@ export default function ArrearsPage() {
             onClick={() => setAgingFilter(agingFilter === "1_30" ? "ALL" : "1_30")}
             className={`p-3 rounded-xl border cursor-pointer transition ${
               agingFilter === "1_30"
-                ? "bg-amber-50 border-amber-300 ring-2 ring-amber-400"
-                : "bg-slate-50 border-slate-200 hover:bg-slate-100/80"
+                ? "bg-amber-600 text-white border-amber-700 shadow-xs ring-2 ring-amber-400"
+                : "bg-slate-50 border-slate-200 hover:bg-slate-100/90 text-slate-900"
             }`}
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-amber-800">
-              <span>1 – 30 Days</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 rounded-full">
+            <div className="flex items-center justify-between text-[11px] font-bold">
+              <span className={agingFilter === "1_30" ? "text-white" : "text-amber-800"}>
+                1 – 30 Days
+              </span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                  agingFilter === "1_30"
+                    ? "bg-white/25 text-white"
+                    : "bg-amber-100 text-amber-800"
+                }`}
+              >
                 {agingStats.count1_30}
               </span>
             </div>
-            <div className="text-base font-black text-slate-900 mt-1">
+            <div
+              className={`text-base font-black mt-1 ${
+                agingFilter === "1_30" ? "text-white" : "text-slate-900"
+              }`}
+            >
               {MONEY(agingStats.b1_30)}
             </div>
-            <span className="text-[10px] text-slate-400">Early Arrears</span>
+            <span
+              className={`text-[10px] font-medium ${
+                agingFilter === "1_30" ? "text-amber-100" : "text-slate-500"
+              }`}
+            >
+              Early Arrears
+            </span>
           </div>
 
           {/* 31 - 60 Days */}
@@ -439,20 +457,38 @@ export default function ArrearsPage() {
             onClick={() => setAgingFilter(agingFilter === "31_60" ? "ALL" : "31_60")}
             className={`p-3 rounded-xl border cursor-pointer transition ${
               agingFilter === "31_60"
-                ? "bg-orange-50 border-orange-300 ring-2 ring-orange-400"
-                : "bg-slate-50 border-slate-200 hover:bg-slate-100/80"
+                ? "bg-orange-600 text-white border-orange-700 shadow-xs ring-2 ring-orange-400"
+                : "bg-slate-50 border-slate-200 hover:bg-slate-100/90 text-slate-900"
             }`}
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-orange-800">
-              <span>31 – 60 Days</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-orange-100 rounded-full">
+            <div className="flex items-center justify-between text-[11px] font-bold">
+              <span className={agingFilter === "31_60" ? "text-white" : "text-orange-800"}>
+                31 – 60 Days
+              </span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                  agingFilter === "31_60"
+                    ? "bg-white/25 text-white"
+                    : "bg-orange-100 text-orange-800"
+                }`}
+              >
                 {agingStats.count31_60}
               </span>
             </div>
-            <div className="text-base font-black text-slate-900 mt-1">
+            <div
+              className={`text-base font-black mt-1 ${
+                agingFilter === "31_60" ? "text-white" : "text-slate-900"
+              }`}
+            >
               {MONEY(agingStats.b31_60)}
             </div>
-            <span className="text-[10px] text-slate-400">Moderate Default</span>
+            <span
+              className={`text-[10px] font-medium ${
+                agingFilter === "31_60" ? "text-orange-100" : "text-slate-500"
+              }`}
+            >
+              Moderate Default
+            </span>
           </div>
 
           {/* 61 - 90 Days */}
@@ -460,20 +496,38 @@ export default function ArrearsPage() {
             onClick={() => setAgingFilter(agingFilter === "61_90" ? "ALL" : "61_90")}
             className={`p-3 rounded-xl border cursor-pointer transition ${
               agingFilter === "61_90"
-                ? "bg-rose-50 border-rose-300 ring-2 ring-rose-400"
-                : "bg-slate-50 border-slate-200 hover:bg-slate-100/80"
+                ? "bg-rose-700 text-white border-rose-800 shadow-xs ring-2 ring-rose-400"
+                : "bg-slate-50 border-slate-200 hover:bg-slate-100/90 text-slate-900"
             }`}
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-rose-800">
-              <span>61 – 90 Days</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-rose-100 rounded-full">
+            <div className="flex items-center justify-between text-[11px] font-bold">
+              <span className={agingFilter === "61_90" ? "text-white" : "text-rose-800"}>
+                61 – 90 Days
+              </span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                  agingFilter === "61_90"
+                    ? "bg-white/25 text-white"
+                    : "bg-rose-100 text-rose-800"
+                }`}
+              >
                 {agingStats.count61_90}
               </span>
             </div>
-            <div className="text-base font-black text-rose-700 mt-1">
+            <div
+              className={`text-base font-black mt-1 ${
+                agingFilter === "61_90" ? "text-white" : "text-rose-700"
+              }`}
+            >
               {MONEY(agingStats.b61_90)}
             </div>
-            <span className="text-[10px] text-slate-400">Substandard Risk</span>
+            <span
+              className={`text-[10px] font-medium ${
+                agingFilter === "61_90" ? "text-rose-100" : "text-slate-500"
+              }`}
+            >
+              Substandard Risk
+            </span>
           </div>
 
           {/* 90+ Days */}
@@ -481,20 +535,38 @@ export default function ArrearsPage() {
             onClick={() => setAgingFilter(agingFilter === "90_PLUS" ? "ALL" : "90_PLUS")}
             className={`p-3 rounded-xl border cursor-pointer transition ${
               agingFilter === "90_PLUS"
-                ? "bg-red-50 border-red-400 ring-2 ring-red-500"
-                : "bg-slate-50 border-slate-200 hover:bg-slate-100/80"
+                ? "bg-red-800 text-white border-red-900 shadow-xs ring-2 ring-red-500"
+                : "bg-slate-50 border-slate-200 hover:bg-slate-100/90 text-slate-900"
             }`}
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-red-900">
-              <span>90+ Days</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-red-100 rounded-full">
+            <div className="flex items-center justify-between text-[11px] font-bold">
+              <span className={agingFilter === "90_PLUS" ? "text-white" : "text-red-900"}>
+                90+ Days
+              </span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                  agingFilter === "90_PLUS"
+                    ? "bg-white/25 text-white"
+                    : "bg-red-100 text-red-900"
+                }`}
+              >
                 {agingStats.count90Plus}
               </span>
             </div>
-            <div className="text-base font-black text-red-700 mt-1">
+            <div
+              className={`text-base font-black mt-1 ${
+                agingFilter === "90_PLUS" ? "text-white" : "text-red-700"
+              }`}
+            >
               {MONEY(agingStats.b90Plus)}
             </div>
-            <span className="text-[10px] text-slate-400">Non-Performing (NPL)</span>
+            <span
+              className={`text-[10px] font-medium ${
+                agingFilter === "90_PLUS" ? "text-red-100" : "text-slate-500"
+              }`}
+            >
+              Non-Performing (NPL)
+            </span>
           </div>
         </div>
       </div>

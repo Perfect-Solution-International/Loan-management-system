@@ -323,18 +323,20 @@ export default function LoansListPage() {
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
                 statusFilter === tab.id
                   ? "bg-red-600 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
               }`}
             >
-              <span>{tab.label}</span>
+              <span className={statusFilter === tab.id ? "text-white" : "text-slate-800"}>
+                {tab.label}
+              </span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
                   statusFilter === tab.id
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-200/80 text-slate-600"
+                    ? "bg-white/25 text-white"
+                    : "bg-slate-200 text-slate-700"
                 }`}
               >
                 {tab.count}

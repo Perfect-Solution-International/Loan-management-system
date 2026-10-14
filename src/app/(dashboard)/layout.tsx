@@ -19,7 +19,8 @@ const navItems: NavItem[] = [
   { name: "Customer Directory", href: "/customers", icon: "👥" },
   { name: "Loans List", href: "/loans", icon: "💳" },
   { name: "Issue New Loan", href: "/loans/new", icon: "💰" },
-  { name: "Daily Collections", href: "/repayments", icon: "📊" },
+  { name: "Open Today's Collection", href: "/collections", icon: "📅" },
+  { name: "Arrears", href: "/arrears", icon: "⚠️" },
   { name: "Reports & Analytics", href: "/reports", icon: "📈" },
   { name: "System Settings", href: "/settings", icon: "⚙️" },
 ];

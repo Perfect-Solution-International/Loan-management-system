@@ -346,56 +346,80 @@ export default function CollectionsPage() {
         <div className="flex items-center gap-2 flex-wrap border-b border-slate-100 pb-3">
           <button
             onClick={() => setStatusFilter("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               statusFilter === "ALL"
-                ? "bg-slate-900 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
             }`}
           >
-            All Collections
-            <span className="text-[10px] px-1.5 py-0.2 bg-black/20 rounded-full">
+            <span>All Collections</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
+                statusFilter === "ALL"
+                  ? "bg-white/20 text-white"
+                  : "bg-slate-200 text-slate-700"
+              }`}
+            >
               {items.length}
             </span>
           </button>
 
           <button
             onClick={() => setStatusFilter("PENDING")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               statusFilter === "PENDING"
-                ? "bg-amber-600 text-white"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "bg-amber-50 text-amber-800 hover:bg-amber-100"
             }`}
           >
-            Pending Collection
-            <span className="text-[10px] px-1.5 py-0.2 bg-amber-700/20 rounded-full">
+            <span>Pending Collection</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
+                statusFilter === "PENDING"
+                  ? "bg-white/25 text-white"
+                  : "bg-amber-200/80 text-amber-900"
+              }`}
+            >
               {summary.pendingCount}
             </span>
           </button>
 
           <button
             onClick={() => setStatusFilter("COLLECTED")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               statusFilter === "COLLECTED"
-                ? "bg-emerald-600 text-white"
-                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
             }`}
           >
-            Collected Today
-            <span className="text-[10px] px-1.5 py-0.2 bg-emerald-700/20 rounded-full">
+            <span>Collected Today</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
+                statusFilter === "COLLECTED"
+                  ? "bg-white/25 text-white"
+                  : "bg-emerald-200/80 text-emerald-900"
+              }`}
+            >
               {summary.collectedCount}
             </span>
           </button>
 
           <button
             onClick={() => setStatusFilter("OVERDUE")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               statusFilter === "OVERDUE"
-                ? "bg-rose-700 text-white"
-                : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                ? "bg-rose-700 text-white shadow-xs"
+                : "bg-rose-50 text-rose-800 hover:bg-rose-100"
             }`}
           >
-            Delinquent / Arrears
-            <span className="text-[10px] px-1.5 py-0.2 bg-rose-700/20 rounded-full">
+            <span>Delinquent / Arrears</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
+                statusFilter === "OVERDUE"
+                  ? "bg-white/25 text-white"
+                  : "bg-rose-200/80 text-rose-900"
+              }`}
+            >
               {summary.overdueCount}
             </span>
           </button>
