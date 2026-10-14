@@ -80,7 +80,7 @@ export function DashboardPage() {
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             OVERVIEW / DASHBOARD
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -92,7 +92,7 @@ export function DashboardPage() {
         </div>
         <Link
           href="/loans/new"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/20 transition cursor-pointer"
         >
           <Plus size={16} /> Create Loan
         </Link>
@@ -110,7 +110,7 @@ export function DashboardPage() {
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {s.label}
                 </span>
-                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                <div className="p-2.5 bg-red-50 text-red-600 rounded-xl">
                   <Icon size={18} />
                 </div>
               </div>
@@ -132,7 +132,7 @@ export function DashboardPage() {
             </div>
             <Link
               href="/loans"
-              className="text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+              className="text-xs font-semibold text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1"
             >
               View all <ArrowRight size={12} />
             </Link>
@@ -159,7 +159,7 @@ export function DashboardPage() {
                     <tr key={l.id} className="hover:bg-slate-50">
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 font-bold text-[10px] flex items-center justify-center shrink-0">
                             {initials}
                           </div>
                           <div>
@@ -217,7 +217,7 @@ export function DashboardPage() {
               {[42, 65, 48, 80, 57, 92, 68, 75, 51, 86, 61, 96].map((h, i) => (
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end" key={i}>
                   <div
-                    className="w-full bg-blue-600 rounded-t-sm transition-all"
+                    className="w-full bg-gradient-to-t from-red-700 to-rose-500 rounded-t-sm transition-all"
                     style={{ height: `${h}%`, opacity: i === 11 ? 1 : 0.65 }}
                   />
                   <span className="text-[9px] text-slate-400 font-bold">
@@ -240,7 +240,7 @@ export function DashboardPage() {
                     className="w-2 h-2 rounded-full mt-1.5 shrink-0"
                     style={{
                       background:
-                        i === 1 ? "#e8a34b" : i === 2 ? "#20a17b" : "#3b82f6",
+                        i === 1 ? "#e8a34b" : i === 2 ? "#20a17b" : "#dc2626",
                     }}
                   />
                   <div>
@@ -259,13 +259,13 @@ export function DashboardPage() {
         <h2 className="text-base font-bold text-slate-900">Quick Actions</h2>
         <div className="flex gap-3 flex-wrap">
           <Link
-            className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition"
+            className="px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200/60 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition"
             href="/customers/new"
           >
             <Plus size={14} /> Register Customer
           </Link>
           <Link
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-md shadow-red-600/20 cursor-pointer"
             href="/loans/new"
           >
             <Plus size={14} /> Create Loan

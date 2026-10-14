@@ -80,14 +80,6 @@ export default function NewCustomerPage() {
   }, [customers]);
 
   const [customerId, setCustomerId] = useState(() => generateCustomerId());
-
-  // Keep customerId in sync if customers load asynchronously or change
-  React.useEffect(() => {
-    setCustomerId((prev) => {
-      if (!prev) return generateCustomerId();
-      return prev;
-    });
-  }, [generateCustomerId]);
   
   // 1. Core Profile Details (Clean defaults with NO unwanted auto-fill or dummy data)
   const [form, setForm] = useState({
@@ -487,7 +479,7 @@ export default function NewCustomerPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             PORTFOLIO / REGISTRATION
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -525,7 +517,7 @@ export default function NewCustomerPage() {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                 <Camera size={18} />
               </div>
               <div>
@@ -543,7 +535,7 @@ export default function NewCustomerPage() {
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -560,7 +552,7 @@ export default function NewCustomerPage() {
                   <img
                     src={form.photoUrl}
                     alt="Customer Preview"
-                    className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-red-500 shadow-md bg-slate-100"
                   />
                   <button
                     type="button"
@@ -618,12 +610,12 @@ export default function NewCustomerPage() {
                       autoComplete="off"
                       value={customerId}
                       onChange={(e) => setCustomerId(e.target.value)}
-                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                     <button
                       type="button"
                       onClick={handleRegenerateId}
-                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition"
+                      className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-xl transition"
                       title="Regenerate Customer ID"
                     >
                       <RefreshCw size={14} />
@@ -663,7 +655,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.fullName}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -678,7 +670,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.nic}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold uppercase"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
               />
             </div>
 
@@ -688,7 +680,7 @@ export default function NewCustomerPage() {
                 name="gender"
                 value={form.gender}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
@@ -705,7 +697,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.dob}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
           </div>
@@ -714,7 +706,7 @@ export default function NewCustomerPage() {
         {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <MapPin size={18} />
             </div>
             <div>
@@ -738,7 +730,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.address}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -752,7 +744,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.village}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -764,7 +756,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.town}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -774,7 +766,7 @@ export default function NewCustomerPage() {
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
                 <option value="">Select District</option>
                 {SRI_LANKA_DISTRICTS.map((d) => (
@@ -790,7 +782,7 @@ export default function NewCustomerPage() {
         {/* SECTION 4: CONTACT INFORMATION */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <Phone size={18} />
             </div>
             <div>
@@ -815,7 +807,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -829,7 +821,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.alternatePhone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -841,7 +833,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -853,7 +845,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.emergencyContactName}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -865,7 +857,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.emergencyContactPhone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -875,7 +867,7 @@ export default function NewCustomerPage() {
                 name="emergencyContactRelationship"
                 value={form.emergencyContactRelationship}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
                 <option value="">Select Relationship</option>
                 <option value="Spouse">Spouse</option>
@@ -891,7 +883,7 @@ export default function NewCustomerPage() {
         {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <CreditCard size={18} />
             </div>
             <div>
@@ -909,7 +901,7 @@ export default function NewCustomerPage() {
             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  <span className="w-2 h-2 rounded-full bg-red-600" />
                   NIC Front Image
                 </span>
                 {nicFrontUrl && (
@@ -947,7 +939,7 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
                   <Upload size={22} className="text-slate-400 mb-2" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
                   <span className="text-[10px] text-slate-500 mt-1">
@@ -967,7 +959,7 @@ export default function NewCustomerPage() {
             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  <span className="w-2 h-2 rounded-full bg-red-600" />
                   NIC Back Image
                 </span>
                 {nicBackUrl && (
@@ -1005,7 +997,7 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
                   <Upload size={22} className="text-slate-400 mb-2" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
                   <span className="text-[10px] text-slate-500 mt-1">
@@ -1050,7 +1042,7 @@ export default function NewCustomerPage() {
                   className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
                       <FileText size={16} />
                     </div>
                     <div className="truncate">
@@ -1093,7 +1085,7 @@ export default function NewCustomerPage() {
                   autoComplete="off"
                   value={newDocTitle}
                   onChange={(e) => setNewDocTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
 
@@ -1104,7 +1096,7 @@ export default function NewCustomerPage() {
                 <select
                   value={newDocType}
                   onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="other">Other Supporting Document</option>
                   <option value="utility_bill">Utility Bill / Address Proof</option>
@@ -1132,7 +1124,7 @@ export default function NewCustomerPage() {
                   <button
                     type="button"
                     onClick={handleAddDocumentToForm}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                    className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                   >
                     Attach
                   </button>
@@ -1166,7 +1158,7 @@ export default function NewCustomerPage() {
                 name="hasExistingLoan"
                 checked={form.hasExistingLoan}
                 onChange={handleChange}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
               />
               <span>Has Existing / Prior Loan Record</span>
             </label>
@@ -1184,7 +1176,7 @@ export default function NewCustomerPage() {
                     autoComplete="off"
                     value={form.existingLoanNo}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold"
                   />
                 </div>
 
@@ -1197,7 +1189,7 @@ export default function NewCustomerPage() {
                     step="5000"
                     value={form.existingLoanPrincipal}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
 
@@ -1210,7 +1202,7 @@ export default function NewCustomerPage() {
                     autoComplete="off"
                     value={form.existingInterestRate}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
 
@@ -1223,7 +1215,7 @@ export default function NewCustomerPage() {
                     min="1"
                     value={form.existingDuration}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
               </div>
@@ -1231,7 +1223,7 @@ export default function NewCustomerPage() {
               {/* Outstanding Balance & Previous Repayments */}
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                 <div className="flex items-center gap-2">
-                  <History size={16} className="text-blue-600" />
+                  <History size={16} className="text-red-600" />
                   <h3 className="text-xs font-bold text-slate-900">
                     Repayment History Ledger & Current Outstanding Balance Due
                   </h3>
@@ -1249,7 +1241,7 @@ export default function NewCustomerPage() {
                       step="1000"
                       value={form.previousAmountPaid}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     />
                     <p className="text-[10px] text-slate-600">Sum of prior installments settled.</p>
                   </div>
@@ -1264,7 +1256,7 @@ export default function NewCustomerPage() {
                       autoComplete="off"
                       value={form.previousInstallmentsPaid}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     />
                   </div>
 
@@ -1276,7 +1268,7 @@ export default function NewCustomerPage() {
                       name="previousPaymentMethod"
                       value={form.previousPaymentMethod}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     >
                       <option value="Cash">Cash</option>
                       <option value="Bank Transfer">Bank Transfer</option>
@@ -1297,17 +1289,17 @@ export default function NewCustomerPage() {
                       rows={2}
                       value={form.previousRepaymentNotes}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold resize-none"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold resize-none"
                     />
                   </div>
 
                   {/* Calculated Balance Callout */}
-                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl flex flex-col justify-between">
+                  <div className="p-3.5 bg-red-50/80 border border-red-200 rounded-xl flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                      <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
                         Current Outstanding Balance Due
                       </p>
-                      <p className="text-xl font-black font-mono text-blue-900 mt-0.5">
+                      <p className="text-xl font-black font-mono text-red-900 mt-0.5">
                         {MONEY(computedLoanCalculations?.outstanding || 0)}
                       </p>
                     </div>
@@ -1338,7 +1330,7 @@ export default function NewCustomerPage() {
           </Link>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
           >
             <UserPlus size={16} /> Register & Save Customer Record
           </button>

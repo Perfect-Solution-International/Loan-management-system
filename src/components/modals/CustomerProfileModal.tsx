@@ -37,7 +37,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
             <img 
               src={customer.photoUrl || 'https://via.placeholder.com/150'} 
               alt={customer.fullName || customer.name || 'Customer photo'} 
-              className="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md" 
+              className="w-28 h-28 rounded-full object-cover border-4 border-red-500 shadow-md" 
             />
             <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
               {customer.status}
@@ -75,7 +75,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
           </button>
           <button 
             onClick={() => onConfirm(customer)}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md transition">
+            className="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-500 shadow-md shadow-red-600/20 transition">
             Confirm & Proceed to Deductions
           </button>
         </div>

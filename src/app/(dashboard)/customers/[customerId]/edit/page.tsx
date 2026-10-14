@@ -17,7 +17,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
-import type { Customer, CustomerStatus } from "@/types";
+import type { Customer } from "@/types";
 
 const SRI_LANKA_DISTRICTS = [
   "Colombo",
@@ -148,7 +148,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             PORTFOLIO / EDIT CUSTOMER
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -178,7 +178,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                 <Camera size={18} />
               </div>
               <div>
@@ -209,7 +209,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                   <img
                     src={form.photoUrl}
                     alt="Customer Preview"
-                    className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-red-500 shadow-md bg-slate-100"
                   />
                   <button
                     type="button"
@@ -238,7 +238,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold cursor-pointer transition">
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold cursor-pointer transition">
                   <Upload size={14} /> Upload Photograph
                   <input
                     type="file"
@@ -264,7 +264,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         {/* Dedicated NIC Front & Back Images */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <FileText size={18} />
             </div>
             <div>
@@ -310,8 +310,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-blue-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
-                  <Upload size={22} className="text-blue-500" />
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-400 bg-white hover:bg-red-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
+                  <Upload size={22} className="text-red-500" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
                   <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
                   <input
@@ -356,8 +356,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-blue-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
-                  <Upload size={22} className="text-blue-500" />
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-400 bg-white hover:bg-red-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
+                  <Upload size={22} className="text-red-500" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
                   <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
                   <input
@@ -390,7 +390,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 value={form.fullName}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -402,7 +402,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 value={form.nic}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold uppercase"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
               />
             </div>
 
@@ -412,7 +412,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="gender"
                 value={form.gender}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -425,7 +425,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         {/* Residential Location */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <MapPin size={18} />
             </div>
             <h2 className="text-sm font-bold text-slate-900">Residential Address, Village & Town</h2>
@@ -439,7 +439,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="address"
                 value={form.address}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -450,7 +450,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="village"
                 value={form.village}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -461,7 +461,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="town"
                 value={form.town}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -471,7 +471,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
                 {SRI_LANKA_DISTRICTS.map((d) => (
                   <option key={d} value={d}>
@@ -486,7 +486,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         {/* Contact & Communication Details */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <Phone size={18} />
             </div>
             <h2 className="text-sm font-bold text-slate-900">Contact & Communication Details</h2>
@@ -501,7 +501,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 value={form.phone}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -512,7 +512,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="alternatePhone"
                 value={form.alternatePhone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -523,7 +523,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
           </div>
@@ -539,7 +539,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
           </Link>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
           >
             <Save size={16} /> Save Changes
           </button>
@@ -566,7 +566,7 @@ function EditCustomerContent() {
           </p>
           <Link
             href="/customers"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold"
           >
             <ArrowLeft size={14} /> Back to Customers
           </Link>

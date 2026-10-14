@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -286,7 +286,7 @@ function SettingsContent() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             ADMINISTRATION & CONFIGURATION
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -320,7 +320,7 @@ function SettingsContent() {
           onClick={() => setActiveTab("rules")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeTab === "rules"
-              ? "bg-blue-600 text-white shadow-xs"
+              ? "bg-red-600 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
@@ -330,7 +330,7 @@ function SettingsContent() {
           onClick={() => setActiveTab("staff")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeTab === "staff"
-              ? "bg-blue-600 text-white shadow-xs"
+              ? "bg-red-600 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
@@ -340,7 +340,7 @@ function SettingsContent() {
           onClick={() => setActiveTab("security")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeTab === "security"
-              ? "bg-blue-600 text-white shadow-xs"
+              ? "bg-red-600 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
@@ -355,7 +355,7 @@ function SettingsContent() {
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center gap-2 text-xs text-slate-500">
-                <AlertCircle size={15} className="text-blue-600" />
+                <AlertCircle size={15} className="text-red-600" />
                 <span>
                   Adjusting these parameters sets the default baseline for new loan approvals across all branches.
                 </span>
@@ -370,7 +370,7 @@ function SettingsContent() {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-xs transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl shadow-xs transition cursor-pointer"
                 >
                   <Save size={14} /> Save Configuration
                 </button>
@@ -383,7 +383,7 @@ function SettingsContent() {
                 {/* Panel 1: Interest Rate Parameters */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-lg">
                       <Percent size={18} />
                     </div>
                     <div>
@@ -414,7 +414,7 @@ function SettingsContent() {
                               defaultMonthlyRate: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                           required
                         />
                         <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">
@@ -441,7 +441,7 @@ function SettingsContent() {
                               defaultWeeklyRate: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                           required
                         />
                         <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">
@@ -468,7 +468,7 @@ function SettingsContent() {
                               defaultDailyRate: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                           required
                         />
                         <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">
@@ -514,7 +514,7 @@ function SettingsContent() {
                               defaultCapitalDeductionRate: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                           required
                         />
                         <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">
@@ -540,7 +540,7 @@ function SettingsContent() {
                               | "COLLECTED_VIA_INSTALLMENTS",
                           })
                         }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
                       >
                         <option value="UPFRONT">Upfront Deduction (Deduct at disbursement)</option>
                         <option value="COLLECTED_VIA_INSTALLMENTS">
@@ -567,7 +567,7 @@ function SettingsContent() {
                             defaultProcessingFee: parseFloat(e.target.value) || 0,
                           })
                         }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
                       <p className="text-[10px] text-slate-400">
@@ -590,7 +590,7 @@ function SettingsContent() {
                             defaultAdminFee: parseFloat(e.target.value) || 0,
                           })
                         }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
                       <p className="text-[10px] text-slate-400">
@@ -634,7 +634,7 @@ function SettingsContent() {
                               lateFeePercentage: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                           required
                         />
                         <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">
@@ -661,7 +661,7 @@ function SettingsContent() {
                             gracePeriodDays: parseInt(e.target.value, 10) || 0,
                           })
                         }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
                       <p className="text-[10px] text-slate-400">
@@ -674,7 +674,7 @@ function SettingsContent() {
                 {/* Panel 4: System Identity */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-lg">
                       <Building size={18} />
                     </div>
                     <div>
@@ -698,7 +698,7 @@ function SettingsContent() {
                         onChange={(e) =>
                           setFormSettings({ ...formSettings, systemName: e.target.value })
                         }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
                     </div>
@@ -712,7 +712,7 @@ function SettingsContent() {
                         onChange={(e) =>
                           setFormSettings({ ...formSettings, currency: e.target.value })
                         }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
                       >
                         <option value="LKR">LKR (Sri Lankan Rupee - Rs.)</option>
                         <option value="USD">USD (United States Dollar - $)</option>
@@ -724,15 +724,15 @@ function SettingsContent() {
 
               {/* Right Column: Live Calculation Simulator */}
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 p-6 rounded-2xl text-white shadow-lg space-y-5 sticky top-6">
+                <div className="bg-gradient-to-br from-black via-[#200308] to-[#3a0610] border border-red-950 p-6 rounded-2xl text-white shadow-lg space-y-5 sticky top-6">
                   <div className="flex items-center justify-between border-b border-slate-700/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <Calculator size={18} className="text-blue-400" />
+                      <Calculator size={18} className="text-rose-400" />
                       <h3 className="text-sm font-bold tracking-tight">
                         Live Policy Simulation
                       </h3>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold border border-blue-400/30">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-rose-300 font-semibold border border-red-500/30">
                       Real-time
                     </span>
                   </div>
@@ -751,7 +751,7 @@ function SettingsContent() {
                         step="10000"
                         value={simPrincipal}
                         onChange={(e) => setSimPrincipal(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-red-400"
                       />
                     </div>
                     <div>
@@ -764,7 +764,7 @@ function SettingsContent() {
                         max="36"
                         value={simDuration}
                         onChange={(e) => setSimDuration(parseInt(e.target.value, 10) || 1)}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-red-400"
                       />
                     </div>
                   </div>
@@ -810,11 +810,11 @@ function SettingsContent() {
                       </p>
                     </div>
 
-                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                      <p className="text-[10px] text-blue-400 uppercase font-bold tracking-wider">
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <p className="text-[10px] text-rose-400 uppercase font-bold tracking-wider">
                         Total Repayment Due
                       </p>
-                      <p className="text-xl font-black font-mono text-blue-300">
+                      <p className="text-xl font-black font-mono text-rose-300">
                         {MONEY(simCalculations.totalRepayment)}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-1">
@@ -825,7 +825,7 @@ function SettingsContent() {
 
                   <button
                     type="submit"
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                   >
                     <Save size={14} /> Commit Settings
                   </button>
@@ -847,7 +847,7 @@ function SettingsContent() {
                 <p className="text-2xl font-black text-slate-900 mt-1">{staffUsers.length}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Across all branches</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
                 <Users size={20} />
               </div>
             </div>
@@ -902,14 +902,14 @@ function SettingsContent() {
                   placeholder="Search staff by name, email, or branch..."
                   value={staffSearch}
                   onChange={(e) => setStaffSearch(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
 
               <select
                 value={staffRoleFilter}
                 onChange={(e) => setStaffRoleFilter(e.target.value)}
-                className="px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white text-slate-700"
+                className="px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white text-slate-700"
               >
                 <option value="ALL">All Roles ({staffUsers.length})</option>
                 <option value="ADMINISTRATOR">Administrator</option>
@@ -921,7 +921,7 @@ function SettingsContent() {
 
             <button
               onClick={handleOpenAddStaff}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <UserPlus size={15} /> Add Staff Member
             </button>
@@ -955,7 +955,7 @@ function SettingsContent() {
                         ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                         : user.role === "Collection Agent"
                         ? "bg-amber-100 text-amber-700 border-amber-200"
-                        : "bg-indigo-100 text-indigo-700 border-indigo-200";
+                        : "bg-red-100 text-red-700 border-red-200";
 
                     return (
                       <tr key={user.id} className="hover:bg-slate-50/80 transition">
@@ -1012,7 +1012,7 @@ function SettingsContent() {
                         <td className="py-3.5 px-6">
                           <div className="flex flex-wrap gap-1 max-w-xs">
                             {user.permissions.approveLoans && (
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-semibold border border-blue-200">
+                              <span className="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[10px] font-semibold border border-red-200">
                                 Approve Loans
                               </span>
                             )}
@@ -1043,7 +1043,7 @@ function SettingsContent() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleOpenEditStaff(user)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition cursor-pointer"
                             >
                               <Edit3 size={12} /> Edit
                             </button>
@@ -1094,7 +1094,7 @@ function SettingsContent() {
             {/* Security Policies */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <div className="p-2 bg-red-50 text-red-600 rounded-lg">
                   <ShieldCheck size={18} />
                 </div>
                 <div>
@@ -1174,7 +1174,7 @@ function SettingsContent() {
                     <p className="font-bold text-slate-800">System Build Specification</p>
                     <p className="text-[11px] text-slate-500">Next.js App Router • Production Edition</p>
                   </div>
-                  <span className="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                  <span className="font-mono font-bold text-red-700 bg-red-50 px-2 py-1 rounded border border-red-200">
                     v2.4.0
                   </span>
                 </div>
@@ -1226,7 +1226,7 @@ function SettingsContent() {
                         status: e.target.value as "Active" | "Inactive",
                       })
                     }
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -1241,7 +1241,7 @@ function SettingsContent() {
                   autoComplete="off"
                   value={staffForm.name}
                   onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                   required
                 />
               </div>
@@ -1253,7 +1253,7 @@ function SettingsContent() {
                   autoComplete="off"
                   value={staffForm.email}
                   onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                   required
                 />
               </div>
@@ -1264,7 +1264,7 @@ function SettingsContent() {
                   <select
                     value={staffForm.role}
                     onChange={(e) => handleRoleChange(e.target.value as StaffUser["role"])}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
                   >
                     <option value="Administrator">Administrator</option>
                     <option value="Loan Officer">Loan Officer</option>
@@ -1278,7 +1278,7 @@ function SettingsContent() {
                   <select
                     value={staffForm.branch}
                     onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
                   >
                     {BRANCH_OPTIONS.map((b) => (
                       <option key={b} value={b}>
@@ -1314,7 +1314,7 @@ function SettingsContent() {
                           },
                         })
                       }
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                     />
                     <div>
                       <span className="font-semibold block leading-tight">Approve & Disburse Loans</span>
@@ -1335,7 +1335,7 @@ function SettingsContent() {
                           },
                         })
                       }
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                     />
                     <div>
                       <span className="font-semibold block leading-tight">Record Repayment Collections</span>
@@ -1356,7 +1356,7 @@ function SettingsContent() {
                           },
                         })
                       }
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                     />
                     <div>
                       <span className="font-semibold block leading-tight">Export Financial Reports</span>
@@ -1377,7 +1377,7 @@ function SettingsContent() {
                           },
                         })
                       }
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                     />
                     <div>
                       <span className="font-semibold block leading-tight">Register & Edit Customers</span>
@@ -1398,7 +1398,7 @@ function SettingsContent() {
                           },
                         })
                       }
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                     />
                     <div>
                       <span className="font-semibold block leading-tight">Modify System Settings & Rates</span>
@@ -1418,7 +1418,7 @@ function SettingsContent() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition shadow-xs cursor-pointer"
+                  className="px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl transition shadow-xs cursor-pointer"
                 >
                   {editingStaffId ? "Update Staff User" : "Save Staff Member"}
                 </button>

@@ -13,26 +13,18 @@ import {
   Trash2,
   Building,
   CheckCircle2,
-  AlertCircle,
   FileText,
-  User,
-  Phone,
-  MapPin,
-  ArrowRight,
   ArrowLeft,
   Wallet,
   Receipt,
   X,
-  Check,
   ShieldCheck,
   Building2,
-  ExternalLink,
-  ChevronDown,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { BrandLogo } from "@/components/brand-logo";
-import type { Customer, Loan, Payment } from "@/types";
+import type { Payment } from "@/types";
 
 interface BankAccount {
   id: string;
@@ -218,7 +210,7 @@ export default function CustomerDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/90 text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-100/90 text-slate-800 font-sans selection:bg-red-600 selection:text-white">
       {/* ── 1. Top Customer Portal Header ───────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -254,7 +246,7 @@ export default function CustomerDashboardPage() {
 
             {/* Customer Avatar & ID */}
             <div className="flex items-center gap-3 pl-2 sm:border-l sm:border-slate-200">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-600/20 overflow-hidden shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-red-600/20 overflow-hidden shrink-0">
                 {currentCustomer.photoUrl ? (
                   <img
                     src={currentCustomer.photoUrl}
@@ -287,25 +279,25 @@ export default function CustomerDashboardPage() {
       </header>
 
       {/* ── 2. Welcome Banner & Profile Summary ─────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white border-b border-slate-800">
+      <div className="bg-gradient-to-r from-[#09090b] via-[#200308] to-[#3a0610] text-white border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-rose-300 border border-red-500/30">
                   NIC: {currentCustomer.nic}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   {currentCustomer.status || "Active"} Account
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-900 text-zinc-300 border border-zinc-700">
                   {currentCustomer.district} District
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white">
                 Welcome back, {currentCustomer.name}
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
                 Review your active loan balances, download settlement receipts, view repayment milestones, and manage your disbursement bank accounts.
               </p>
             </div>
@@ -315,7 +307,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsStatementOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-semibold rounded-xl transition shadow-sm"
               >
                 <Printer size={15} />
                 Statement of Account
@@ -324,7 +316,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsPayModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/30 transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/30 transition cursor-pointer"
               >
                 <Wallet size={15} />
                 Make a Payment
@@ -354,7 +346,7 @@ export default function CustomerDashboardPage() {
             <div className="mt-3">
               <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-red-600 to-rose-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${percentSettled}%` }}
                 />
               </div>
@@ -371,14 +363,14 @@ export default function CustomerDashboardPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Next Installment
               </span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
                 <Calendar size={18} />
               </div>
             </div>
             <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">
               {MONEY(nextInstallmentAmount)}
             </p>
-            <p className="text-xs font-semibold text-blue-600 mt-2 flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-red-600 mt-2 flex items-center gap-1.5">
               <Clock size={14} />
               Due on {nextDueDate}
             </p>
@@ -408,7 +400,7 @@ export default function CustomerDashboardPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Bank Accounts
               </span>
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
                 <Building size={18} />
               </div>
             </div>
@@ -418,7 +410,7 @@ export default function CustomerDashboardPage() {
             <button
               type="button"
               onClick={() => setIsAddBankOpen(true)}
-              className="text-xs font-bold text-purple-600 hover:text-purple-700 mt-2 flex items-center gap-1 transition"
+              className="text-xs font-bold text-red-600 hover:text-red-700 mt-2 flex items-center gap-1 transition cursor-pointer"
             >
               <Plus size={14} /> Add new bank account
             </button>
@@ -430,7 +422,7 @@ export default function CustomerDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-100 gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200 font-mono">
                   {currentLoan?.loanNo || "LN-ACTIVE"}
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -567,7 +559,7 @@ export default function CustomerDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setReceiptToPrint(p)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold text-xs transition"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs transition"
                           >
                             <Download size={13} />
                             Receipt
@@ -599,7 +591,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsAddBankOpen(true)}
-                className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition"
+                className="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition cursor-pointer"
                 title="Add Bank Account"
               >
                 <Plus size={18} />
@@ -613,13 +605,13 @@ export default function CustomerDashboardPage() {
                   key={account.id}
                   className={`p-4 rounded-xl border transition ${
                     account.isPrimary
-                      ? "border-blue-300 bg-blue-50/40"
+                      ? "border-red-300 bg-red-50/40"
                       : "border-slate-200 bg-slate-50/50"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-blue-600 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-red-600 flex items-center justify-center shrink-0">
                         <Building2 size={16} />
                       </div>
                       <div>
@@ -631,14 +623,14 @@ export default function CustomerDashboardPage() {
                     </div>
 
                     {account.isPrimary ? (
-                      <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded-full">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded-full">
                         Primary
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleSetPrimaryBank(account.id)}
-                        className="text-[10px] font-semibold text-slate-400 hover:text-blue-600 transition"
+                        className="text-[10px] font-semibold text-slate-400 hover:text-red-600 transition cursor-pointer"
                       >
                         Set Primary
                       </button>
@@ -696,7 +688,7 @@ export default function CustomerDashboardPage() {
           <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
                   <Building2 size={18} />
                 </div>
                 <h3 className="text-base font-bold text-slate-900">Add Bank Account</h3>
@@ -718,7 +710,7 @@ export default function CustomerDashboardPage() {
                 <select
                   value={newBank.bankName}
                   onChange={(e) => setNewBank({ ...newBank, bankName: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
                 >
                   {SRI_LANKA_BANKS.map((b) => (
                     <option key={b} value={b}>
@@ -737,7 +729,7 @@ export default function CustomerDashboardPage() {
                   placeholder="e.g. Maharagama Branch"
                   value={newBank.branchName}
                   onChange={(e) => setNewBank({ ...newBank, branchName: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
                   required
                 />
               </div>
@@ -750,7 +742,7 @@ export default function CustomerDashboardPage() {
                   type="text"
                   value={newBank.accountHolder}
                   onChange={(e) => setNewBank({ ...newBank, accountHolder: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
                   required
                 />
               </div>
@@ -765,7 +757,7 @@ export default function CustomerDashboardPage() {
                     placeholder="e.g. 800291827"
                     value={newBank.accountNumber}
                     onChange={(e) => setNewBank({ ...newBank, accountNumber: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 focus:outline-none focus:border-red-600"
                     required
                   />
                 </div>
@@ -776,8 +768,8 @@ export default function CustomerDashboardPage() {
                   </label>
                   <select
                     value={newBank.accountType}
-                    onChange={(e) => setNewBank({ ...newBank, accountType: e.target.value as any })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-blue-600"
+                    onChange={(e) => setNewBank({ ...newBank, accountType: e.target.value as "Savings" | "Current" })}
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
                   >
                     <option value="Savings">Savings Account</option>
                     <option value="Current">Current Account</option>
@@ -790,7 +782,7 @@ export default function CustomerDashboardPage() {
                   type="checkbox"
                   checked={newBank.isPrimary}
                   onChange={(e) => setNewBank({ ...newBank, isPrimary: e.target.checked })}
-                  className="w-4 h-4 rounded text-blue-600 accent-blue-600"
+                  className="w-4 h-4 rounded text-red-600 accent-red-600"
                 />
                 <span className="font-semibold text-slate-700">Set as primary settlement account</span>
               </label>
@@ -799,13 +791,13 @@ export default function CustomerDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddBankOpen(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition"
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-md shadow-blue-600/30"
+                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-md shadow-red-600/30 cursor-pointer"
                 >
                   Save Bank Account
                 </button>
@@ -839,7 +831,7 @@ export default function CustomerDashboardPage() {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-slate-400 font-medium">Installment Amount Due</span>
-                  <span className="font-mono text-base font-bold text-blue-600">
+                  <span className="font-mono text-base font-bold text-red-600">
                     {MONEY(nextInstallmentAmount)}
                   </span>
                 </div>
@@ -855,10 +847,10 @@ export default function CustomerDashboardPage() {
                 </h4>
                 <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1.5 font-mono text-[11px]">
                   <p><strong>Bank:</strong> Commercial Bank of Ceylon</p>
-                  <p><strong>Account Name:</strong> PSI ONE LMS Operations Ltd</p>
+                  <p><strong>Account Name:</strong> PSI One Loan Management Operations Ltd</p>
                   <p><strong>Account Number:</strong> 1000 4892 0184</p>
                   <p><strong>Branch:</strong> Head Office Branch (Code: 001)</p>
-                  <p className="text-blue-600 font-bold pt-1">
+                  <p className="text-red-600 font-bold pt-1">
                     <strong>Reference:</strong> {currentCustomer.id} - {currentLoan?.loanNo || "LN"}
                   </p>
                 </div>
@@ -872,7 +864,7 @@ export default function CustomerDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsPayModalOpen(false)}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition"
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition cursor-pointer shadow-md shadow-red-600/25"
                 >
                   Understood & Done
                 </button>
@@ -929,7 +921,7 @@ export default function CustomerDashboardPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Loan Facility</span>
-                <span className="font-mono font-bold text-blue-600">{currentLoan?.loanNo || "LN"}</span>
+                <span className="font-mono font-bold text-red-600">{currentLoan?.loanNo || "LN"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Payment Method</span>
@@ -945,7 +937,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-blue-600/25"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-red-600/25 cursor-pointer"
               >
                 <Printer size={15} />
                 Print / Save Receipt
@@ -970,7 +962,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsStatementOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -1027,7 +1019,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-red-600/30 cursor-pointer"
               >
                 <Printer size={15} /> Print Statement
               </button>
@@ -1054,3 +1046,4 @@ export default function CustomerDashboardPage() {
     </div>
   );
 }
+

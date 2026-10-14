@@ -47,7 +47,7 @@ export default function LoansListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             PORTFOLIO / LOANS REGISTER
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -59,7 +59,7 @@ export default function LoansListPage() {
         </div>
         <Link
           href="/loans/new"
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/25 transition cursor-pointer"
         >
           <Plus size={16} /> Issue New Loan
         </Link>
@@ -77,7 +77,7 @@ export default function LoansListPage() {
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">{loans.length} loans issued</p>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+          <div className="p-3 bg-red-50 text-red-600 rounded-xl">
             <CreditCard size={22} />
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function LoansListPage() {
             placeholder="Search by Loan ID, loan number, customer..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         </div>
 
@@ -151,7 +151,7 @@ export default function LoansListPage() {
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 statusFilter === s
-                  ? "bg-blue-600 text-white shadow-xs"
+                  ? "bg-red-600 text-white shadow-xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -222,7 +222,7 @@ export default function LoansListPage() {
                     <td className="py-3.5 px-6 text-right">
                       <Link
                         href={`/loans/${l.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
                       >
                         <Eye size={13} /> View
                       </Link>

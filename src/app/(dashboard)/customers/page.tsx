@@ -83,7 +83,7 @@ export default function CustomersPage() {
       <div className="bg-white border-b border-slate-200 px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+            <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
               PSI ONE · LOAN MANAGEMENT
             </p>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
@@ -105,7 +105,7 @@ export default function CustomersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, NIC, ID, town…"
-                className="pl-8 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl w-64 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                className="pl-8 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl w-64 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
               />
             </div>
 
@@ -113,7 +113,7 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={() => router.push("/customers/new")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/25 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/25 transition cursor-pointer"
             >
               <UserPlus size={14} />
               Add Customer
@@ -126,8 +126,8 @@ export default function CustomersPage() {
         {/* ═══ Summary Cards ═══════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-              <Users size={18} className="text-blue-600" />
+            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+              <Users size={18} className="text-red-600" />
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -217,7 +217,7 @@ export default function CustomersPage() {
                               className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
                             />
                           ) : (
-                            <span className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 text-[11px] font-extrabold flex items-center justify-center shrink-0">
+                            <span className="w-9 h-9 rounded-xl bg-red-100 text-red-700 text-[11px] font-extrabold flex items-center justify-center shrink-0">
                               {initials}
                             </span>
                           )}
@@ -270,13 +270,13 @@ export default function CustomersPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedCustomerId(customer.id)}
-                            className="px-3 py-1.5 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer"
+                            className="px-3 py-1.5 text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/50 rounded-lg transition cursor-pointer"
                           >
                             View Details
                           </button>
                           <Link
                             href={`/customers/${customer.id}`}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition"
                             title="Open full profile page"
                           >
                             <ExternalLink size={13} />
@@ -329,7 +329,7 @@ export default function CustomersPage() {
             {/* Modal Header */}
             <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-3xl z-10">
               <div>
-                <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+                <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
                   CUSTOMER PROFILE OVERVIEW
                 </p>
                 <h2
@@ -359,10 +359,10 @@ export default function CustomersPage() {
                   <img
                     src={selectedCustomer.photoUrl}
                     alt={selectedCustomer.name}
-                    className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-200 shadow-md shrink-0"
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-red-200 shadow-md shrink-0"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-2xl bg-blue-100 text-blue-700 font-black text-2xl flex items-center justify-center shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-red-100 text-red-700 font-black text-2xl flex items-center justify-center shrink-0">
                     {(selectedCustomer.name || "C").charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -388,9 +388,9 @@ export default function CustomersPage() {
               </div>
 
               {/* ── Outstanding Balance Banner ────────────────────────────── */}
-              <div className="bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-2xl p-5 flex items-center justify-between">
+              <div className="bg-gradient-to-r from-black via-[#2a040b] to-[#4a0512] text-white rounded-2xl p-5 flex items-center justify-between border border-red-950 shadow-md">
                 <div>
-                  <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">
+                  <p className="text-[10px] font-bold text-rose-300 uppercase tracking-widest">
                     Current Outstanding Balance
                   </p>
                   <p className="text-2xl font-black font-mono mt-1">
@@ -458,7 +458,7 @@ export default function CustomersPage() {
                           href={doc.fileUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 font-bold rounded-lg transition"
+                          className="px-3 py-1.5 text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/50 font-bold rounded-lg transition"
                         >
                           View
                         </a>
@@ -531,7 +531,7 @@ export default function CustomersPage() {
               <section>
                 <ProfileSectionTitle icon={<History size={14} />} label={`Repayment History (${selectedPayments.length} records)`} />
                 {selectedCustomer.priorRepaymentHistory && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-900">
                     <strong>Prior track record:</strong> {selectedCustomer.priorRepaymentHistory}
                   </div>
                 )}
@@ -552,7 +552,7 @@ export default function CustomersPage() {
                           {selectedPayments.map((p: Payment) => (
                             <tr key={p.id} className="hover:bg-slate-50/60">
                               <td className="px-4 py-2.5 font-mono text-slate-700">{p.date}</td>
-                              <td className="px-4 py-2.5 font-mono font-bold text-blue-700">
+                              <td className="px-4 py-2.5 font-mono font-bold text-red-700">
                                 {p.receiptNo || p.id}
                               </td>
                               <td className="px-4 py-2.5 text-slate-700">{p.type}</td>
@@ -580,7 +580,7 @@ export default function CustomersPage() {
             <div className="sticky bottom-0 bg-white border-t border-slate-100 px-7 py-4 flex items-center justify-between rounded-b-3xl">
               <Link
                 href={`/customers/${selectedCustomer.id}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/20 transition"
               >
                 Open Full Profile <ExternalLink size={13} />
               </Link>
@@ -612,7 +612,7 @@ function ProfileSectionTitle({
 }) {
   return (
     <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-      <span className="text-blue-600">{icon}</span>
+      <span className="text-red-600">{icon}</span>
       <h4 className="text-[10px] font-extrabold text-slate-700 uppercase tracking-widest">
         {label}
       </h4>

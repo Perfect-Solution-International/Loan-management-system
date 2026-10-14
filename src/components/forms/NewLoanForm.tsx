@@ -5,7 +5,6 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   User,
-  Phone,
   MapPin,
   FileText,
   DollarSign,
@@ -38,7 +37,6 @@ export function NewLoanForm({
   initialCustomerId = "",
   onSuccess,
   onCancel,
-  isModal = false,
 }: NewLoanFormProps) {
   const router = useRouter();
   const { customers, loans, payments, documents, addLoan } = useData();
@@ -303,7 +301,7 @@ export function NewLoanForm({
         <div>
           <h3 className="text-xl font-black text-slate-900">Loan Contract Issued!</h3>
           <p className="text-xs text-slate-500 mt-1">
-            Contract <span className="font-mono font-bold text-blue-600">{submittedLoanId}</span> has been successfully issued to{" "}
+            Contract <span className="font-mono font-bold text-red-600">{submittedLoanId}</span> has been successfully issued to{" "}
             <strong>{selectedCustomer?.fullName || selectedCustomer?.name}</strong>.
           </p>
         </div>
@@ -318,7 +316,7 @@ export function NewLoanForm({
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">Installment:</span>
-            <span className="font-bold text-blue-600">{MONEY(calculations.installmentAmount)} / {frequency}</span>
+            <span className="font-bold text-red-600">{MONEY(calculations.installmentAmount)} / {frequency}</span>
           </div>
         </div>
       </div>
@@ -336,7 +334,7 @@ export function NewLoanForm({
             onClick={() => setStep("select")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
               step === "select"
-                ? "bg-blue-600 text-white shadow-xs"
+                ? "bg-red-600 text-white shadow-xs"
                 : selectedCustomer
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -361,9 +359,9 @@ export function NewLoanForm({
             onClick={() => selectedCustomer && setStep("review")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
               step === "review"
-                ? "bg-blue-600 text-white shadow-xs"
+                ? "bg-red-600 text-white shadow-xs"
                 : selectedCustomer
-                ? "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 cursor-pointer"
                 : "bg-slate-100/60 text-slate-400 cursor-not-allowed"
             }`}
           >
@@ -382,9 +380,9 @@ export function NewLoanForm({
             onClick={() => selectedCustomer && setStep("form")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
               step === "form"
-                ? "bg-blue-600 text-white shadow-xs"
+                ? "bg-red-600 text-white shadow-xs"
                 : selectedCustomer
-                ? "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 cursor-pointer"
                 : "bg-slate-100/60 text-slate-400 cursor-not-allowed"
             }`}
           >
@@ -401,7 +399,7 @@ export function NewLoanForm({
             <span className="font-bold text-slate-900 truncate max-w-[180px]">
               {selectedCustomer.fullName || selectedCustomer.name}
             </span>
-            <span className="font-mono text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
+            <span className="font-mono text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[10px]">
               {selectedCustomer.id}
             </span>
           </div>
@@ -440,7 +438,7 @@ export function NewLoanForm({
                 value={customerSearch}
                 onChange={(e) => setCustomerSearch(e.target.value)}
                 placeholder="Search by customer name, NIC number, phone, town, or ID..."
-                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-2xs"
+                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 transition shadow-2xs"
               />
             </div>
 
@@ -463,8 +461,8 @@ export function NewLoanForm({
                     onClick={() => handleSelectCustomer(c.id)}
                     className={`p-4 rounded-2xl border transition text-left cursor-pointer space-y-2.5 ${
                       isSelected
-                        ? "bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/30 shadow-xs"
-                        : "bg-white border-slate-200/90 hover:border-blue-300 hover:shadow-xs"
+                        ? "bg-red-50/70 border-red-500 ring-2 ring-red-500/30 shadow-xs"
+                        : "bg-white border-slate-200/90 hover:border-red-300 hover:shadow-xs"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -475,13 +473,13 @@ export function NewLoanForm({
                           className="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 font-bold text-sm flex items-center justify-center shrink-0">
+                        <div className="w-11 h-11 rounded-xl bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center shrink-0">
                           {(c.fullName || c.name || "C").charAt(0).toUpperCase()}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                          <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
                             {c.id}
                           </span>
                           <span
@@ -511,7 +509,7 @@ export function NewLoanForm({
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                           isSelected
-                            ? "bg-blue-600 text-white"
+                            ? "bg-red-600 text-white"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
@@ -549,7 +547,7 @@ export function NewLoanForm({
               type="button"
               disabled={!selectedCustomerId}
               onClick={handleGoToReview}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
             >
               <span>Next: Review Profile</span>
               <ChevronRight size={15} />
@@ -570,14 +568,14 @@ export function NewLoanForm({
                 Verify customer identity, residency, and liability history before configuring loan details.
               </p>
             </div>
-            <span className="text-xs font-bold text-blue-600 font-mono bg-blue-50 px-2.5 py-1 rounded-lg">
+            <span className="text-xs font-bold text-red-600 font-mono bg-red-50 px-2.5 py-1 rounded-lg">
               Customer ID: {selectedCustomer.id}
             </span>
           </div>
 
           <div className="px-6 space-y-6">
             {/* Profile Banner */}
-            <div className="p-6 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center gap-5 shadow-sm">
+            <div className="p-6 bg-gradient-to-r from-black via-[#2a040b] to-[#4a0512] border border-red-950 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center gap-5 shadow-sm">
               {selectedCustomer.photoUrl ? (
                 <img
                   src={selectedCustomer.photoUrl}
@@ -591,7 +589,7 @@ export function NewLoanForm({
               )}
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest bg-blue-900/40 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-rose-200 uppercase tracking-widest bg-red-950/60 border border-red-900/40 px-2.5 py-0.5 rounded-full">
                     Borrower Dossier
                   </span>
                   <span
@@ -607,7 +605,7 @@ export function NewLoanForm({
                 <h3 className="text-xl font-black">
                   {selectedCustomer.fullName || selectedCustomer.name}
                 </h3>
-                <p className="text-xs text-blue-100 font-mono">
+                <p className="text-xs text-zinc-300 font-mono">
                   NIC: <strong>{selectedCustomer.nic}</strong> · Mobile: {selectedCustomer.phone}
                 </p>
               </div>
@@ -647,7 +645,7 @@ export function NewLoanForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                  <User size={14} className="text-blue-600" /> Identity &amp; Contact Details
+                  <User size={14} className="text-red-600" /> Identity &amp; Contact Details
                 </h4>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
@@ -671,7 +669,7 @@ export function NewLoanForm({
 
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                  <MapPin size={14} className="text-indigo-600" /> Residential Address
+                  <MapPin size={14} className="text-red-600" /> Residential Address
                 </h4>
                 <div className="space-y-1.5">
                   <div>
@@ -704,12 +702,12 @@ export function NewLoanForm({
                 </h4>
                 <div className="flex flex-wrap gap-2 text-xs">
                   {selectedCustomer.nicFrontUrl && (
-                    <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 font-bold rounded-lg flex items-center gap-1.5">
+                    <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-bold rounded-lg flex items-center gap-1.5">
                       <Check size={12} /> NIC Front Uploaded
                     </span>
                   )}
                   {selectedCustomer.nicBackUrl && (
-                    <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 font-bold rounded-lg flex items-center gap-1.5">
+                    <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-bold rounded-lg flex items-center gap-1.5">
                       <Check size={12} /> NIC Back Uploaded
                     </span>
                   )}
@@ -738,7 +736,7 @@ export function NewLoanForm({
             <button
               type="button"
               onClick={handleGoToForm}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
             >
               <span>Next: Configure Loan Details</span>
               <ArrowRight size={15} />
@@ -760,7 +758,7 @@ export function NewLoanForm({
                   className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 font-bold text-base flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-red-100 text-red-700 font-bold text-base flex items-center justify-center shrink-0">
                   {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
                 </div>
               )}
@@ -777,7 +775,7 @@ export function NewLoanForm({
               <button
                 type="button"
                 onClick={() => setStep("review")}
-                className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
               >
                 View Profile
               </button>
@@ -797,7 +795,7 @@ export function NewLoanForm({
               {/* 1. Loan Terms & Structure */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
                 <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                  <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                     <DollarSign size={18} />
                   </div>
                   <h3 className="text-sm font-black text-slate-900">1. Loan Terms &amp; Structure</h3>
@@ -816,7 +814,7 @@ export function NewLoanForm({
                             key={preset}
                             type="button"
                             onClick={() => setGrossAmount(preset)}
-                            className="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 rounded-md transition cursor-pointer"
+                            className="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-red-50 hover:text-red-600 rounded-md transition cursor-pointer"
                           >
                             {(Number(preset) / 1000).toFixed(0)}k
                           </button>
@@ -831,7 +829,7 @@ export function NewLoanForm({
                       required
                       value={grossAmount}
                       onChange={(e) => setGrossAmount(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
                     />
                   </div>
 
@@ -848,7 +846,7 @@ export function NewLoanForm({
                       required
                       value={interestRate}
                       onChange={(e) => setInterestRate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
                     />
                   </div>
 
@@ -1031,7 +1029,7 @@ export function NewLoanForm({
               {/* 3. Guarantor Information */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
                 <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                     <ShieldCheck size={18} />
                   </div>
                   <div>
@@ -1134,7 +1132,7 @@ export function NewLoanForm({
               <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-5 border border-slate-800">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <Calculator size={18} className="text-blue-400" />
+                    <Calculator size={18} className="text-rose-400" />
                     <h3 className="font-black text-sm tracking-tight">Financial Summary</h3>
                   </div>
                   <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
@@ -1170,7 +1168,7 @@ export function NewLoanForm({
 
                   <div className="flex justify-between items-center py-1 border-b border-slate-800">
                     <span className="text-slate-400">Total Interest ({interestRate || 0}%)</span>
-                    <span className="font-mono font-bold text-blue-300">
+                    <span className="font-mono font-bold text-rose-300">
                       + {MONEY(calculations.totalInterest)}
                     </span>
                   </div>
@@ -1182,16 +1180,16 @@ export function NewLoanForm({
                     </span>
                   </div>
 
-                  <div className="p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl flex justify-between items-center">
+                  <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
                     <div>
-                      <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block">
+                      <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
                         {frequency} Installment
                       </span>
                       <span className="text-[10px] text-slate-400">
                         {calculations.numberOfInstallments} payments
                       </span>
                     </div>
-                    <span className="font-mono text-lg font-black text-blue-400">
+                    <span className="font-mono text-lg font-black text-rose-400">
                       {MONEY(calculations.installmentAmount)}
                     </span>
                   </div>
@@ -1211,7 +1209,7 @@ export function NewLoanForm({
                         <span>
                           #{item.num} · {item.date}
                         </span>
-                        <span className="font-bold text-blue-300">{MONEY(item.amount)}</span>
+                        <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
                       </div>
                     ))}
                   </div>
@@ -1222,7 +1220,7 @@ export function NewLoanForm({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <PlusCircle size={16} />
                     <span>Disburse &amp; Activate Loan</span>

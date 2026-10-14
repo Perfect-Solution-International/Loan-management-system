@@ -8,7 +8,6 @@ import {
   Eye,
   EyeOff,
   Fingerprint,
-  Landmark,
   LockKeyhole,
   Mail,
   ShieldCheck,
@@ -183,7 +182,7 @@ export default function LoginPage() {
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
             <span className="text-slate-500">Need to register a customer?</span>
-            <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-800 transition">
+            <Link href="/register" className="font-semibold text-red-600 hover:text-red-800 transition">
               Customer Registration →
             </Link>
           </div>

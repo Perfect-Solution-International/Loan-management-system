@@ -21,41 +21,37 @@ export function BrandLogo({
 
   const sizeConfig = {
     sm: {
-      badge: "w-8 h-8 rounded-lg p-0.5",
-      title: "text-sm",
-      sub: "text-[9px] tracking-wider",
-      gap: "gap-2.5",
+      badge: "w-7 h-7",
+      title: "text-xs font-black",
+      gap: "gap-2",
     },
     md: {
-      badge: "w-10 h-10 rounded-xl p-1",
-      title: "text-base",
-      sub: "text-[10px] tracking-wider",
-      gap: "gap-3",
+      badge: "w-8 h-8 sm:w-9 sm:h-9",
+      title: "text-xs sm:text-sm font-black",
+      gap: "gap-2.5",
     },
     lg: {
-      badge: "w-12 h-12 rounded-2xl p-1.5",
-      title: "text-lg",
-      sub: "text-[11px] tracking-widest",
-      gap: "gap-3.5",
+      badge: "w-10 h-10 sm:w-11 sm:h-11",
+      title: "text-sm sm:text-base font-black",
+      gap: "gap-3",
     },
     xl: {
-      badge: "w-14 h-14 rounded-2xl p-1.5",
-      title: "text-xl",
-      sub: "text-xs tracking-widest",
-      gap: "gap-4",
+      badge: "w-12 h-12 sm:w-13 sm:h-13",
+      title: "text-base sm:text-lg font-black",
+      gap: "gap-3.5",
     },
   }[size];
 
   const content = (
     <div className={`flex items-center ${sizeConfig.gap} ${className}`}>
-      {/* Official Red 'P' Logo Emblem Asset */}
+      {/* Official Transparent 'P' Logo Emblem */}
       <div
-        className={`${sizeConfig.badge} bg-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/10 border border-slate-200/80 overflow-hidden group-hover:scale-105 transition-transform duration-200`}
+        className={`${sizeConfig.badge} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200`}
       >
         <img
-          src="/logos/psi-logo.jpg"
+          src="/logos/psi-logo.png"
           alt="PSI One Logo"
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(239,68,68,0.22)]"
         />
       </div>
 
@@ -67,14 +63,7 @@ export function BrandLogo({
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
-            PSI One LMS
-          </span>
-          <span
-            className={`${sizeConfig.sub} font-semibold uppercase ${
-              isLight ? "text-slate-500" : "text-slate-400"
-            }`}
-          >
-            Loan Management System
+            PSI One Loan Management System
           </span>
         </div>
       )}

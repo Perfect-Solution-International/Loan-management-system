@@ -21,11 +21,12 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 min-h-screen p-4 flex flex-col justify-between">
+    <aside className="w-64 bg-[#09090b] text-zinc-300 min-h-screen p-4 flex flex-col justify-between border-r border-zinc-800">
       <div>
         <div className="mb-8 px-2">
-          <h1 className="text-xl font-bold text-white tracking-wide">PSI One LMS</h1>
-          <p className="text-xs text-slate-400">Loan Management System</p>
+          <h1 className="text-base font-bold text-white tracking-wide">
+            PSI One Loan Management System
+          </h1>
         </div>
         <nav className="space-y-1">
           {navItems.map((item) => {
@@ -36,8 +37,8 @@ export default function Sidebar() {
                 href={item.href}
                 className={`block px-3 py-2 rounded-md text-sm font-medium transition ${
                   isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'hover:bg-slate-800 text-slate-300'
+                    ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-md shadow-red-600/25'
+                    : 'hover:bg-zinc-900 text-zinc-300'
                 }`}
               >
                 {item.name}

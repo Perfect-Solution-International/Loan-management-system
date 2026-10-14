@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -10,19 +10,15 @@ import {
   Calculator,
   PlusCircle,
   Search,
-  User,
-  Phone,
   MapPin,
   FileText,
   CreditCard,
-  History,
   DollarSign,
   ChevronRight,
   AlertTriangle,
   ShieldCheck,
   Check,
   FileCheck2,
-  ArrowRight,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -294,7 +290,7 @@ function IssueNewLoanContent() {
       <div className="bg-white border-b border-slate-200/80 px-4 sm:px-8 py-5 sticky top-0 z-20 shadow-2xs">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+            <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
               PORTFOLIO OPERATIONS / NEW LOAN WIZARD
             </p>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
@@ -324,7 +320,7 @@ function IssueNewLoanContent() {
                 onClick={() => setStep("select")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                   step === "select"
-                    ? "bg-blue-600 text-white shadow-xs"
+                    ? "bg-red-600 text-white shadow-xs"
                     : selectedCustomer
                     ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -349,9 +345,9 @@ function IssueNewLoanContent() {
                 onClick={() => selectedCustomer && setStep("review")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
                   step === "review"
-                    ? "bg-blue-600 text-white shadow-xs"
+                    ? "bg-red-600 text-white shadow-xs"
                     : selectedCustomer
-                    ? "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                    ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 cursor-pointer"
                     : "bg-slate-100/60 text-slate-400 cursor-not-allowed"
                 }`}
               >
@@ -370,9 +366,9 @@ function IssueNewLoanContent() {
                 onClick={() => selectedCustomer && setStep("form")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
                   step === "form"
-                    ? "bg-blue-600 text-white shadow-xs"
+                    ? "bg-red-600 text-white shadow-xs"
                     : selectedCustomer
-                    ? "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                    ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 cursor-pointer"
                     : "bg-slate-100/60 text-slate-400 cursor-not-allowed"
                 }`}
               >
@@ -389,7 +385,7 @@ function IssueNewLoanContent() {
                 <span className="font-bold text-slate-900 truncate max-w-[180px]">
                   {selectedCustomer.fullName || selectedCustomer.name}
                 </span>
-                <span className="font-mono text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
+                <span className="font-mono text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[10px]">
                   {selectedCustomer.id}
                 </span>
               </div>
@@ -438,7 +434,7 @@ function IssueNewLoanContent() {
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
                   placeholder="Search by customer name, NIC, customer ID, or town..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
                 />
               </div>
             </div>
@@ -463,8 +459,8 @@ function IssueNewLoanContent() {
                       onClick={() => handleSelectCustomer(c.id)}
                       className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-3 ${
                         isSelected
-                          ? "border-blue-500 bg-blue-50/50 shadow-md ring-2 ring-blue-500/20"
-                          : "border-slate-200 hover:border-blue-300 bg-white shadow-2xs hover:shadow-xs"
+                          ? "border-red-500 bg-red-50/50 shadow-md ring-2 ring-red-500/20"
+                          : "border-slate-200 hover:border-red-300 bg-white shadow-2xs hover:shadow-xs"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -475,14 +471,14 @@ function IssueNewLoanContent() {
                             className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 font-extrabold text-base flex items-center justify-center shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-red-100 text-red-700 font-extrabold text-base flex items-center justify-center shrink-0">
                             {(c.fullName || c.name || "C").charAt(0).toUpperCase()}
                           </div>
                         )}
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
-                            <span className="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
                               {c.id}
                             </span>
                             <span
@@ -513,7 +509,7 @@ function IssueNewLoanContent() {
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                             isSelected
-                              ? "bg-blue-600 text-white"
+                              ? "bg-red-600 text-white"
                               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                           }`}
                         >
@@ -551,7 +547,7 @@ function IssueNewLoanContent() {
                 type="button"
                 disabled={!selectedCustomerId}
                 onClick={handleGoToReview}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
                 <span>Next: Review Profile</span>
                 <ChevronRight size={15} />
@@ -572,15 +568,15 @@ function IssueNewLoanContent() {
                   Verify customer identity, residency, and liability history before configuring loan details.
                 </p>
               </div>
-              <span className="text-xs font-bold text-blue-600 font-mono bg-blue-50 px-2.5 py-1 rounded-lg">
+              <span className="text-xs font-bold text-red-600 font-mono bg-red-50 px-2.5 py-1 rounded-lg">
                 Customer ID: {selectedCustomer.id}
               </span>
             </div>
 
             {/* Profile Overview Card */}
             <div className="px-6 space-y-6">
-              {/* Profile Banner */}
-              <div className="p-6 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center gap-5 shadow-sm">
+              {/* Profile Banner: Deep Obsidian Black + Luxurious Maroon */}
+              <div className="p-6 bg-gradient-to-r from-[#09090b] via-[#2a040b] to-[#6b0f1a] text-white rounded-2xl flex flex-col sm:flex-row sm:items-center gap-5 shadow-sm border border-red-950">
                 {selectedCustomer.photoUrl ? (
                   <img
                     src={selectedCustomer.photoUrl}
@@ -594,7 +590,7 @@ function IssueNewLoanContent() {
                 )}
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest bg-blue-900/40 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-rose-200 uppercase tracking-widest bg-black/40 px-2.5 py-0.5 rounded-full border border-rose-900/40">
                       Borrower Dossier
                     </span>
                     <span
@@ -608,7 +604,7 @@ function IssueNewLoanContent() {
                     </span>
                   </div>
                   <h3 className="text-xl sm:text-2xl font-black">{selectedCustomer.fullName || selectedCustomer.name}</h3>
-                  <p className="text-xs text-blue-100 font-mono">
+                  <p className="text-xs text-rose-100 font-mono">
                     NIC: <strong className="text-white">{selectedCustomer.nic}</strong> · Contact: {selectedCustomer.phone}
                   </p>
                 </div>
@@ -638,7 +634,7 @@ function IssueNewLoanContent() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     Active Contracts
                   </span>
-                  <span className="text-xl font-mono font-black text-blue-600 mt-1 block">
+                  <span className="text-xl font-mono font-black text-red-600 mt-1 block">
                     {customerFinancialSnapshot.activeLoansCount}
                   </span>
                 </div>
@@ -657,7 +653,7 @@ function IssueNewLoanContent() {
                 {/* Identity info */}
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                    <CreditCard size={14} className="text-blue-600" /> Identity Information
+                    <CreditCard size={14} className="text-red-600" /> Identity Information
                   </h4>
                   <div className="space-y-1.5">
                     <div className="flex justify-between">
@@ -688,7 +684,7 @@ function IssueNewLoanContent() {
                 {/* Residential Location */}
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                    <MapPin size={14} className="text-indigo-600" /> Residential Address
+                    <MapPin size={14} className="text-rose-700" /> Residential Address
                   </h4>
                   <div className="space-y-1.5">
                     <div>
@@ -717,23 +713,23 @@ function IssueNewLoanContent() {
               {(selectedCustomer.nicFrontUrl || selectedCustomer.nicBackUrl || customerFinancialSnapshot.customerDocs.length > 0) && (
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
                   <h4 className="font-bold text-slate-800 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-                    <FileText size={14} className="text-purple-600" /> Attached Identity Documents
+                    <FileText size={14} className="text-rose-600" /> Attached Identity Documents
                   </h4>
                   <div className="flex flex-wrap gap-2 text-xs">
                     {selectedCustomer.nicFrontUrl && (
-                      <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 font-bold rounded-lg flex items-center gap-1.5">
+                      <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-bold rounded-lg flex items-center gap-1.5">
                         <Check size={12} /> NIC Front Uploaded
                       </span>
                     )}
                     {selectedCustomer.nicBackUrl && (
-                      <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 font-bold rounded-lg flex items-center gap-1.5">
+                      <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-bold rounded-lg flex items-center gap-1.5">
                         <Check size={12} /> NIC Back Uploaded
                       </span>
                     )}
                     {customerFinancialSnapshot.customerDocs.map((doc) => (
                       <span
                         key={doc.id}
-                        className="px-3 py-1 bg-purple-50 border border-purple-200 text-purple-700 font-bold rounded-lg flex items-center gap-1.5"
+                        className="px-3 py-1 bg-rose-50 border border-rose-200 text-rose-800 font-bold rounded-lg flex items-center gap-1.5"
                       >
                         <FileCheck2 size={12} /> {doc.title}
                       </span>
@@ -755,7 +751,7 @@ function IssueNewLoanContent() {
               <button
                 type="button"
                 onClick={handleGoToForm}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
                 <span>Next: Configure Loan Details</span>
                 <ChevronRight size={15} />
@@ -764,7 +760,7 @@ function IssueNewLoanContent() {
           </div>
         )}
 
-        {/* ── STEP 3: LOAN DETAILS (COMPLETELY BLANK INPUTS ON OPEN!) ────────── */}
+        {/* ── STEP 3: LOAN DETAILS ───────────────────────────────────────────── */}
         {step === "form" && selectedCustomer && (
           <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             {/* Top Borrower Summary Strip */}
@@ -777,7 +773,7 @@ function IssueNewLoanContent() {
                     className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 font-bold text-base flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-red-100 text-red-700 font-bold text-base flex items-center justify-center shrink-0">
                     {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -794,14 +790,14 @@ function IssueNewLoanContent() {
                 <button
                   type="button"
                   onClick={() => setStep("review")}
-                  className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                  className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition cursor-pointer"
                 >
                   View Profile
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep("select")}
-                  className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                  className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
                 >
                   Change Borrower
                 </button>
@@ -814,7 +810,7 @@ function IssueNewLoanContent() {
                 {/* 1. Loan Terms & Structure */}
                 <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
                   <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                       <DollarSign size={18} />
                     </div>
                     <h3 className="text-sm font-black text-slate-900">1. Loan Terms &amp; Structure</h3>
@@ -833,7 +829,7 @@ function IssueNewLoanContent() {
                               key={preset}
                               type="button"
                               onClick={() => setGrossAmount(preset)}
-                              className="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 rounded-md transition cursor-pointer"
+                              className="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-red-50 hover:text-red-600 rounded-md transition cursor-pointer"
                             >
                               {(Number(preset) / 1000).toFixed(0)}k
                             </button>
@@ -848,7 +844,7 @@ function IssueNewLoanContent() {
                         required
                         value={grossAmount}
                         onChange={(e) => setGrossAmount(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                        className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
                       />
                     </div>
 
@@ -865,7 +861,7 @@ function IssueNewLoanContent() {
                         required
                         value={interestRate}
                         onChange={(e) => setInterestRate(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                        className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
                       />
                     </div>
 
@@ -1048,7 +1044,7 @@ function IssueNewLoanContent() {
                 {/* 3. Guarantor Information */}
                 <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
                   <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                       <ShieldCheck size={18} />
                     </div>
                     <div>
@@ -1148,10 +1144,10 @@ function IssueNewLoanContent() {
 
               {/* Right Column: Financial Summary & Submit */}
               <div className="space-y-4 sticky top-24">
-                <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-5 border border-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="bg-[#0e0e11] text-white p-6 rounded-3xl shadow-xl space-y-5 border border-zinc-800">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                     <div className="flex items-center gap-2">
-                      <Calculator size={18} className="text-blue-400" />
+                      <Calculator size={18} className="text-rose-400" />
                       <h3 className="font-black text-sm tracking-tight">Financial Summary</h3>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
@@ -1160,13 +1156,13 @@ function IssueNewLoanContent() {
                   </div>
 
                   <div className="space-y-3 text-xs">
-                    <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                      <span className="text-slate-400">Gross Principal</span>
-                      <span className="font-mono font-bold text-slate-100">{MONEY(calculations.gross)}</span>
+                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
+                      <span className="text-zinc-400">Gross Principal</span>
+                      <span className="font-mono font-bold text-zinc-100">{MONEY(calculations.gross)}</span>
                     </div>
 
-                    <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                      <span className="text-slate-400">Total Deductions</span>
+                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
+                      <span className="text-zinc-400">Total Deductions</span>
                       <span className="font-mono font-bold text-red-400">
                         - {MONEY(calculations.totalDeductions)}
                       </span>
@@ -1178,37 +1174,37 @@ function IssueNewLoanContent() {
                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
                           Net Disbursement
                         </span>
-                        <span className="text-[10px] text-slate-400">Borrower cashout</span>
+                        <span className="text-[10px] text-zinc-400">Borrower cashout</span>
                       </div>
                       <span className="font-mono text-base font-black text-emerald-400">
                         {MONEY(calculations.netDisbursement)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                      <span className="text-slate-400">Total Interest ({interestRate || 0}%)</span>
-                      <span className="font-mono font-bold text-blue-300">
+                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
+                      <span className="text-zinc-400">Total Interest ({interestRate || 0}%)</span>
+                      <span className="font-mono font-bold text-rose-300">
                         + {MONEY(calculations.totalInterest)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                      <span className="text-slate-300 font-bold">Total Repayment</span>
+                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
+                      <span className="text-zinc-300 font-bold">Total Repayment</span>
                       <span className="font-mono font-black text-white text-sm">
                         {MONEY(calculations.totalRepayment)}
                       </span>
                     </div>
 
-                    <div className="p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl flex justify-between items-center">
+                    <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
                       <div>
-                        <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block">
+                        <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
                           {frequency} Installment
                         </span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-zinc-400">
                           {calculations.numberOfInstallments} payments
                         </span>
                       </div>
-                      <span className="font-mono text-lg font-black text-blue-400">
+                      <span className="font-mono text-lg font-black text-rose-400">
                         {MONEY(calculations.installmentAmount)}
                       </span>
                     </div>
@@ -1216,19 +1212,19 @@ function IssueNewLoanContent() {
 
                   {/* Installment breakdown preview */}
                   {schedulePreview.length > 0 && (
-                    <div className="space-y-1.5 pt-1 border-t border-slate-800 text-[11px]">
-                      <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">
+                    <div className="space-y-1.5 pt-1 border-t border-zinc-800 text-[11px]">
+                      <span className="font-bold text-zinc-400 text-[10px] uppercase tracking-wider">
                         Installment Schedule Preview
                       </span>
                       {schedulePreview.map((item) => (
                         <div
                           key={item.num}
-                          className="flex items-center justify-between p-1.5 bg-slate-800/60 rounded-lg text-[10px] font-mono text-slate-300"
+                          className="flex items-center justify-between p-1.5 bg-zinc-900/80 rounded-lg text-[10px] font-mono text-zinc-300"
                         >
                           <span>
                             #{item.num} · {item.date}
                           </span>
-                          <span className="font-bold text-blue-300">{MONEY(item.amount)}</span>
+                          <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
                         </div>
                       ))}
                     </div>
@@ -1239,7 +1235,7 @@ function IssueNewLoanContent() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <PlusCircle size={16} />
                       <span>Disburse &amp; Activate Loan</span>
@@ -1248,7 +1244,7 @@ function IssueNewLoanContent() {
                     <button
                       type="button"
                       onClick={() => setStep("review")}
-                      className="w-full py-2 text-xs font-bold text-slate-400 hover:text-white transition cursor-pointer text-center"
+                      className="w-full py-2 text-xs font-bold text-zinc-400 hover:text-white transition cursor-pointer text-center"
                     >
                       ← Back: Review Profile
                     </button>
@@ -1268,7 +1264,7 @@ function IssueNewLoanContent() {
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Loan Contract Issued!</h2>
               <p className="text-xs text-slate-500">
-                Loan contract <span className="font-mono font-bold text-blue-600">{submittedLoanId}</span> has been
+                Loan contract <span className="font-mono font-bold text-red-600">{submittedLoanId}</span> has been
                 successfully approved, registered, and scheduled.
               </p>
             </div>
@@ -1289,7 +1285,7 @@ function IssueNewLoanContent() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Installment:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-red-600">
                   {MONEY(calculations.installmentAmount)} / {frequency}
                 </span>
               </div>

@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Landmark,
   LockKeyhole,
   Mail,
   ShieldCheck,
@@ -236,7 +235,7 @@ export default function RegisterPage() {
 
               <p className="login-intro" style={{ marginBottom: "20px" }}>
                 Welcome, <strong>{registeredName}</strong>. Your account has been registered with ID:{" "}
-                <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                <span className="font-mono font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
                   {assignedId}
                 </span>
               </p>
@@ -449,7 +448,7 @@ export default function RegisterPage() {
                 <span className="text-slate-500">Already have an account?</span>
                 <Link
                   href="/login"
-                  className="font-semibold text-indigo-600 hover:text-indigo-800 transition"
+                  className="font-semibold text-red-600 hover:text-red-800 transition"
                 >
                   Sign in →
                 </Link>
