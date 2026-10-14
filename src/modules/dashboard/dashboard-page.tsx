@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   Users,
@@ -10,13 +11,17 @@ import {
   TrendingUp,
   Plus,
   ArrowRight,
+  X,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { NewLoanForm } from "@/components/forms/NewLoanForm";
 import type { Customer, Loan } from "@/types";
 
 export function DashboardPage() {
+  const router = useRouter();
   const { customers, loans, payments } = useData();
+  const [isCreateLoanOpen, setIsCreateLoanOpen] = useState(false);
 
   const total = loans.reduce((s, l: Loan) => s + (l.principal || l.amount || 0), 0);
   const outstanding =
@@ -90,12 +95,13 @@ export function DashboardPage() {
             Here&apos;s what&apos;s happening with your loan portfolio today.
           </p>
         </div>
-        <Link
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition"
-          href="/loans/new"
+        <button
+          type="button"
+          onClick={() => setIsCreateLoanOpen(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer"
         >
-          <Plus size={16} /> Create New Loan
-        </Link>
+          <Plus size={16} /> Create Loan
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -264,12 +270,13 @@ export function DashboardPage() {
           >
             <Plus size={14} /> Register Customer
           </Link>
-          <Link
-            className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition"
-            href="/loans/new"
+          <button
+            type="button"
+            onClick={() => setIsCreateLoanOpen(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Plus size={14} /> Create Loan
-          </Link>
+          </button>
           <Link
             className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition"
             href="/repayments"
@@ -284,6 +291,44 @@ export function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Create Loan Modal Dialog */}
+      {isCreateLoanOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-5xl w-full p-5 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto relative animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+                  LOAN APPLICATION WORKFLOW
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+                  Create Loan Application
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Select a customer to auto-populate basic details, then complete the loan parameters and guarantor details.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateLoanOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                title="Close Modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <NewLoanForm
+              isModal
+              onSuccess={(loanId) => {
+                setIsCreateLoanOpen(false);
+                router.push(`/loans/${loanId}`);
+              }}
+              onCancel={() => setIsCreateLoanOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
