@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Check,
   FileCheck2,
+  UserCheck,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -66,7 +67,8 @@ function IssueNewLoanContent() {
   const [adminFee, setAdminFee] = useState<string>("");
   const [otherFees, setOtherFees] = useState<string>("");
 
-  // Guarantor Details (Completely blank on open!)
+  // Guarantor Details (Tick checkbox to enable)
+  const [hasGuarantor, setHasGuarantor] = useState<boolean>(false);
   const [guarantorName, setGuarantorName] = useState<string>("");
   const [guarantorNic, setGuarantorNic] = useState<string>("");
   const [guarantorPhone, setGuarantorPhone] = useState<string>("");
@@ -310,6 +312,11 @@ function IssueNewLoanContent() {
       return;
     }
 
+    if (hasGuarantor && !guarantorName.trim()) {
+      setErrorMsg("Please provide the guarantor's full name, or uncheck 'Guarantor Required'.");
+      return;
+    }
+
     setIsSubmitting(true);
     const year = new Date().getFullYear();
     const highest = loans.reduce((max, l) => {
@@ -343,11 +350,11 @@ function IssueNewLoanContent() {
       totalRepayment: calculations.totalRepayment,
       netDisbursement: calculations.netDisbursement,
       installment: calculations.installmentAmount,
-      guarantorName: guarantorName.trim() || undefined,
-      guarantorNic: guarantorNic.trim().toUpperCase() || undefined,
-      guarantorPhone: guarantorPhone.trim() || undefined,
-      guarantorRelationship: guarantorRelationship || undefined,
-      guarantorAddress: guarantorAddress.trim() || undefined,
+      guarantorName: hasGuarantor ? guarantorName.trim() || undefined : undefined,
+      guarantorNic: hasGuarantor ? guarantorNic.trim().toUpperCase() || undefined : undefined,
+      guarantorPhone: hasGuarantor ? guarantorPhone.trim() || undefined : undefined,
+      guarantorRelationship: hasGuarantor ? guarantorRelationship || undefined : undefined,
+      guarantorAddress: hasGuarantor ? guarantorAddress.trim() || undefined : undefined,
       disbursementMethod: (disbursementMethod || "Cash") as "Cash" | "Bank Transfer" | "Cheque",
       notes: notes.trim() || undefined,
     };
@@ -1267,87 +1274,132 @@ function IssueNewLoanContent() {
 
                 {/* 3. Guarantor Information */}
                 <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
-                  <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                    <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                      <ShieldCheck size={18} />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                        <ShieldCheck size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">3. Necessary Guarantor Details</h3>
+                        <p className="text-[11px] text-slate-600 font-medium">Security guarantor details registered with this loan.</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900">3. Necessary Guarantor Details</h3>
-                      <p className="text-[11px] text-slate-500">Security guarantor details registered with this loan.</p>
-                    </div>
+
+                    {/* Checkbox toggle: Guarantor Required */}
+                    <label className="flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer select-none transition shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={hasGuarantor}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setHasGuarantor(checked);
+                          if (!checked) {
+                            setGuarantorName("");
+                            setGuarantorNic("");
+                            setGuarantorPhone("");
+                            setGuarantorRelationship("");
+                            setGuarantorAddress("");
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 accent-red-600 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-800">
+                        Guarantor Required
+                      </span>
+                    </label>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                    <div className="sm:col-span-2 space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Guarantor Full Legal Name</label>
-                      <input
-                        type="text"
-                        name="loan_guarantor_fullname"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={guarantorName}
-                        onChange={(e) => setGuarantorName(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Relationship to Borrower</label>
-                      <select
-                        name="loan_guarantor_relationship"
-                        value={guarantorRelationship}
-                        onChange={(e) => setGuarantorRelationship(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
+                  {!hasGuarantor ? (
+                    <div className="p-4 bg-slate-50/80 border border-dashed border-slate-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-slate-600">
+                      <div className="flex items-center gap-2.5">
+                        <UserCheck size={16} className="text-slate-400 shrink-0" />
+                        <span>No guarantor is currently required for this loan. Tick <strong>Guarantor Required</strong> above to enter guarantor information.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHasGuarantor(true)}
+                        className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline shrink-0 cursor-pointer"
                       >
-                        <option value="">-- Select Relationship --</option>
-                        <option value="Spouse">Spouse</option>
-                        <option value="Parent">Parent</option>
-                        <option value="Sibling">Sibling</option>
-                        <option value="Business Partner">Business Partner</option>
-                        <option value="Relative">Relative</option>
-                        <option value="Friend / Colleague">Friend / Colleague</option>
-                      </select>
+                        + Add Guarantor
+                      </button>
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1 animate-in fade-in duration-200">
+                      <div className="sm:col-span-2 space-y-1">
+                        <label className="text-xs font-bold text-slate-700">Guarantor Full Legal Name <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          name="loan_guarantor_fullname"
+                          autoComplete="off"
+                          spellCheck={false}
+                          value={guarantorName}
+                          onChange={(e) => setGuarantorName(e.target.value)}
+                          placeholder="e.g. Kamal Perera"
+                          className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
 
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Guarantor NIC Number</label>
-                      <input
-                        type="text"
-                        name="loan_guarantor_nic"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={guarantorNic}
-                        onChange={(e) => setGuarantorNic(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300"
-                      />
-                    </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700">Relationship to Borrower</label>
+                        <select
+                          name="loan_guarantor_relationship"
+                          value={guarantorRelationship}
+                          onChange={(e) => setGuarantorRelationship(e.target.value)}
+                          className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                        >
+                          <option value="">-- Select Relationship --</option>
+                          <option value="Spouse">Spouse</option>
+                          <option value="Parent">Parent</option>
+                          <option value="Sibling">Sibling</option>
+                          <option value="Business Partner">Business Partner</option>
+                          <option value="Relative">Relative</option>
+                          <option value="Friend / Colleague">Friend / Colleague</option>
+                        </select>
+                      </div>
 
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Guarantor Contact Phone</label>
-                      <input
-                        type="tel"
-                        name="loan_guarantor_phone"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={guarantorPhone}
-                        onChange={(e) => setGuarantorPhone(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
-                      />
-                    </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700">Guarantor NIC Number</label>
+                        <input
+                          type="text"
+                          name="loan_guarantor_nic"
+                          autoComplete="off"
+                          spellCheck={false}
+                          value={guarantorNic}
+                          onChange={(e) => setGuarantorNic(e.target.value)}
+                          placeholder="e.g. 198512345678 / 851234567V"
+                          className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
 
-                    <div className="space-y-1 sm:col-span-3">
-                      <label className="text-xs font-bold text-slate-700">Guarantor Residential Address</label>
-                      <input
-                        type="text"
-                        name="loan_guarantor_address"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={guarantorAddress}
-                        onChange={(e) => setGuarantorAddress(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300"
-                      />
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700">Guarantor Contact Phone</label>
+                        <input
+                          type="tel"
+                          name="loan_guarantor_phone"
+                          autoComplete="off"
+                          spellCheck={false}
+                          value={guarantorPhone}
+                          onChange={(e) => setGuarantorPhone(e.target.value)}
+                          placeholder="e.g. 077 123 4567"
+                          className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+
+                      <div className="space-y-1 sm:col-span-3">
+                        <label className="text-xs font-bold text-slate-700">Guarantor Residential Address</label>
+                        <input
+                          type="text"
+                          name="loan_guarantor_address"
+                          autoComplete="off"
+                          spellCheck={false}
+                          value={guarantorAddress}
+                          onChange={(e) => setGuarantorAddress(e.target.value)}
+                          placeholder="e.g. No 45, Kandy Road, Colombo"
+                          className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* 4. Additional Contract Notes */}
