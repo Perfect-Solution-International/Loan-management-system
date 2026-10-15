@@ -743,40 +743,32 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
 
-                {/* 2. System Auto-Generated Customer ID (Non-Editable) */}
-                <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                      <Lock size={14} className="text-slate-600" />
-                      Auto-Generated Customer ID
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                      System Assigned
-                    </span>
-                  </div>
-
-                  <div className="p-4 bg-white rounded-xl border-2 border-slate-300 shadow-2xs space-y-2">
-                    <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
-                      Registration Reference Number
-                    </span>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-black font-mono text-slate-900 tracking-wider">
-                        {customerId}
+                {/* 2. System Auto-Generated Customer ID (Non-Editable & Compact) */}
+                <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3.5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Lock size={13} className="text-slate-500" />
+                      <span>Customer ID (Auto-Generated)</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={customerId}
+                        readOnly
+                        className="px-3 py-2 text-xs rounded-xl border border-slate-300 bg-slate-100 font-mono font-bold text-slate-800 w-36 cursor-not-allowed select-all shadow-2xs"
+                      />
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300">
+                        System Assigned • Locked
                       </span>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
-                        <Lock size={12} className="text-slate-500" />
-                        <span>Locked</span>
-                      </div>
                     </div>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Unique reference number assigned by the system. Non-editable.
+                    </p>
                   </div>
 
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    This official Customer ID is automatically assigned by the portfolio registry and is locked to prevent duplication or manual tampering.
-                  </p>
-
-                  <div className="pt-1 flex items-center justify-between text-xs font-semibold text-slate-700 border-t border-slate-200/80">
+                  <div className="pt-2 flex items-center justify-between text-xs font-semibold text-slate-600 border-t border-slate-200/80">
                     <span>Onboarding Date:</span>
-                    <span className="font-mono font-bold text-slate-900">{new Date().toISOString().slice(0, 10)}</span>
+                    <span className="font-mono font-bold text-slate-800">{new Date().toISOString().slice(0, 10)}</span>
                   </div>
                 </div>
               </div>
@@ -831,7 +823,6 @@ export default function NewCustomerPage() {
                     name="fullName"
                     autoComplete="off"
                     required
-                    placeholder="e.g. Kasun Chamara Perera"
                     value={form.fullName}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
@@ -847,7 +838,6 @@ export default function NewCustomerPage() {
                     name="nic"
                     autoComplete="off"
                     required
-                    placeholder="e.g. 199012345678 or 881234567V"
                     value={form.nic}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
@@ -908,7 +898,6 @@ export default function NewCustomerPage() {
                     type="text"
                     name="address"
                     autoComplete="off"
-                    placeholder="e.g. No. 45/2, Temple Road"
                     value={form.address}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -923,7 +912,6 @@ export default function NewCustomerPage() {
                     type="text"
                     name="village"
                     autoComplete="off"
-                    placeholder="e.g. Mahabage West"
                     value={form.village}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -936,7 +924,6 @@ export default function NewCustomerPage() {
                     type="text"
                     name="town"
                     autoComplete="off"
-                    placeholder="e.g. Wattala"
                     value={form.town}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -988,7 +975,6 @@ export default function NewCustomerPage() {
                     name="phone"
                     autoComplete="off"
                     required
-                    placeholder="e.g. 0771234567"
                     value={form.phone}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
@@ -1003,7 +989,6 @@ export default function NewCustomerPage() {
                     type="tel"
                     name="alternatePhone"
                     autoComplete="off"
-                    placeholder="e.g. 0112345678"
                     value={form.alternatePhone}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -1016,7 +1001,6 @@ export default function NewCustomerPage() {
                     type="email"
                     name="email"
                     autoComplete="off"
-                    placeholder="e.g. customer@example.com"
                     value={form.email}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -1029,7 +1013,6 @@ export default function NewCustomerPage() {
                     type="text"
                     name="emergencyContactName"
                     autoComplete="off"
-                    placeholder="e.g. Nimal Perera"
                     value={form.emergencyContactName}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -1042,7 +1025,6 @@ export default function NewCustomerPage() {
                     type="tel"
                     name="emergencyContactPhone"
                     autoComplete="off"
-                    placeholder="e.g. 0719876543"
                     value={form.emergencyContactPhone}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
