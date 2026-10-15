@@ -238,10 +238,10 @@ export default function RepaymentsCollectionsPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
             <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
                 1. Select Loan & Enter Payment Breakdown
               </h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 font-medium mt-0.5">
                 Choose the contract and record repayment categorized by financial component.
               </p>
             </div>
@@ -249,13 +249,13 @@ export default function RepaymentsCollectionsPage() {
             <form onSubmit={handleRecordRepayment} className="space-y-5">
               {/* Loan Dropdown */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                   Choose Loan Contract *
                 </label>
                 <select
                   value={selectedLoanId}
                   onChange={(e) => setSelectedLoanId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   {loans.map((l) => {
                     const c = customers.find((cust) => cust.id === l.customerId);
@@ -271,7 +271,7 @@ export default function RepaymentsCollectionsPage() {
 
               {/* Payment Type Tabs */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                   Repayment Categorization Type *
                 </label>
                 <div className="grid grid-cols-3 gap-3">
@@ -282,8 +282,8 @@ export default function RepaymentsCollectionsPage() {
                       onClick={() => setPaymentType(t)}
                       className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                         paymentType === t
-                          ? "bg-red-600 text-white shadow-md shadow-red-600/20"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          ? "bg-red-600 text-white shadow-md shadow-red-600/20 border-2 border-red-600"
+                          : "bg-white text-slate-800 border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400"
                       }`}
                     >
                       <span>
@@ -293,7 +293,7 @@ export default function RepaymentsCollectionsPage() {
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 font-medium mt-1.5">
                   {paymentType === "Capital"
                     ? "Deducts directly from principal borrowed."
                     : paymentType === "Interest"
@@ -305,7 +305,7 @@ export default function RepaymentsCollectionsPage() {
               {/* Amount, Method, Date */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                     Amount (LKR) *
                   </label>
                   <input
@@ -315,12 +315,12 @@ export default function RepaymentsCollectionsPage() {
                     autoComplete="off"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                     Payment Method
                   </label>
                   <select
@@ -330,7 +330,7 @@ export default function RepaymentsCollectionsPage() {
                         e.target.value as "Cash" | "Bank Transfer" | "Cheque"
                       )
                     }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="Cash">Cash On Hand</option>
                     <option value="Bank Transfer">Bank Transfer / Deposit</option>
@@ -339,7 +339,7 @@ export default function RepaymentsCollectionsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                     Collection Date
                   </label>
                   <input
@@ -348,7 +348,7 @@ export default function RepaymentsCollectionsPage() {
                     autoComplete="off"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
               </div>
@@ -356,7 +356,7 @@ export default function RepaymentsCollectionsPage() {
               {/* Notes & Staff Collector */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                     Collection Officer
                   </label>
                   <input
@@ -364,12 +364,12 @@ export default function RepaymentsCollectionsPage() {
                     autoComplete="off"
                     value={collectedBy}
                     onChange={(e) => setCollectedBy(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
                     Reference / Cashier Notes
                   </label>
                   <input
@@ -377,7 +377,7 @@ export default function RepaymentsCollectionsPage() {
                     autoComplete="off"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
               </div>
@@ -397,7 +397,11 @@ export default function RepaymentsCollectionsPage() {
                 <button
                   type="submit"
                   disabled={!selectedLoan || numEnteredAmount <= 0}
-                  className="inline-flex items-center gap-2 px-8 py-3 bg-red-600 hover:bg-red-500 disabled:bg-slate-300 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition cursor-pointer"
+                  className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 ${
+                    !selectedLoan || numEnteredAmount <= 0
+                      ? "bg-slate-200 text-slate-500 border-2 border-slate-300 cursor-not-allowed shadow-none"
+                      : "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 cursor-pointer hover:scale-[1.01]"
+                  }`}
                 >
                   <Receipt size={16} /> Record Repayment & Generate Receipt
                 </button>
@@ -408,23 +412,23 @@ export default function RepaymentsCollectionsPage() {
 
         {/* Right Col: Live Loan Financial Ledger & Balance Due Breakdown */}
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-black via-[#1c0307] to-[#36050e] border border-red-950 text-white p-6 rounded-2xl shadow-xl space-y-5">
+          <div className="bg-gradient-to-br from-black via-[#1c0307] to-[#36050e] border-2 border-red-950 text-white p-6 rounded-2xl shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div>
-                <h3 className="font-bold text-sm tracking-wide">
+                <h3 className="font-extrabold text-base tracking-wide text-white">
                   Live Contract Balance
                 </h3>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-xs text-slate-300 font-mono mt-0.5">
                   {selectedLoan?.loanNo || selectedLoan?.id}
                 </p>
               </div>
               <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
                   selectedLoan?.status.toLowerCase() === "completed"
-                    ? "bg-emerald-500/20 text-emerald-400"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                     : selectedLoan?.status.toLowerCase() === "overdue"
-                    ? "bg-red-500/20 text-red-400"
-                    : "bg-red-500/20 text-rose-300"
+                    ? "bg-red-500/20 text-red-300 border border-red-500/40"
+                    : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
                 }`}
               >
                 {selectedLoan?.status}
@@ -432,51 +436,51 @@ export default function RepaymentsCollectionsPage() {
             </div>
 
             {selectedCustomer && (
-              <div className="flex items-center gap-3 p-3 bg-zinc-900/80 border border-zinc-800/80 rounded-xl text-xs">
-                <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm">
+              <div className="flex items-center gap-3 p-3.5 bg-zinc-900/90 border border-zinc-700 rounded-xl text-xs">
+                <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
                   {selectedCustomer.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-bold text-zinc-200">{selectedCustomer.name}</p>
-                  <p className="text-[10px] text-zinc-400">NIC: {selectedCustomer.nic}</p>
+                  <p className="font-bold text-white text-sm">{selectedCustomer.name}</p>
+                  <p className="text-xs text-zinc-300 font-semibold">NIC: {selectedCustomer.nic}</p>
                 </div>
               </div>
             )}
 
             {/* Balances List */}
             <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between py-1 border-b border-zinc-800/60">
-                <span className="text-zinc-400">Loan Amount</span>
-                <span className="font-semibold text-zinc-200">
+              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
+                <span className="text-slate-300 font-bold">Loan Amount</span>
+                <span className="font-bold text-white text-sm">
                   {MONEY(selectedLoan?.principal || selectedLoan?.amount || 0)}
                 </span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-zinc-800/60">
-                <span className="text-zinc-400">Total Repayment Due</span>
-                <span className="font-semibold text-zinc-200">
+              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
+                <span className="text-slate-300 font-bold">Total Repayment Due</span>
+                <span className="font-bold text-white text-sm">
                   {MONEY(selectedLoan?.totalRepayment || 0)}
                 </span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-zinc-800/60">
-                <span className="text-zinc-400">Total Paid So Far</span>
-                <span className="font-bold text-emerald-400">
+              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
+                <span className="text-slate-300 font-bold">Total Paid So Far</span>
+                <span className="font-black text-emerald-300 text-sm">
                   {MONEY(totalPaid)}
                 </span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-zinc-800/60">
-                <span className="text-zinc-400">Current Balance Due</span>
-                <span className="font-black text-amber-400 text-sm">
+              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
+                <span className="text-slate-200 font-bold">Current Balance Due</span>
+                <span className="font-black text-amber-300 text-base">
                   {MONEY(balanceDue)}
                 </span>
               </div>
 
               {numEnteredAmount > 0 && (
-                <div className="flex justify-between py-1.5 px-3 bg-[#24040a] rounded-xl border border-red-500/30 mt-2">
-                  <span className="text-rose-300 font-semibold">After Payment</span>
-                  <span className="font-black text-white">
+                <div className="flex justify-between py-2 px-3.5 bg-red-950/80 rounded-xl border-2 border-red-600/60 mt-3 shadow-md">
+                  <span className="text-rose-200 font-bold">After Payment</span>
+                  <span className="font-black text-white text-base">
                     {MONEY(newBalanceAfter)}
                   </span>
                 </div>
@@ -486,18 +490,18 @@ export default function RepaymentsCollectionsPage() {
             {/* Repayment Progress Bar */}
             {selectedLoan && (
               <div className="space-y-1.5 pt-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-xs text-slate-300 font-bold">
                   <span>Recovery Progress</span>
-                  <span className="font-bold text-slate-200">
+                  <span className="font-black text-white">
                     {selectedLoan.totalRepayment > 0
                       ? Math.min(100, Math.round((totalPaid / selectedLoan.totalRepayment) * 100))
                       : 0}
                     %
                   </span>
                 </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-zinc-700">
                   <div
-                    className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-300 shadow-sm"
                     style={{
                       width: `${
                         selectedLoan.totalRepayment > 0
@@ -514,13 +518,13 @@ export default function RepaymentsCollectionsPage() {
       </div>
 
       {/* COLLECTIONS JOURNAL & LEDGER TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4 p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-black text-slate-900">
               Collections Journal & Receipts History
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600 font-medium mt-0.5">
               Complete historical record of incoming repayments and field collections.
             </p>
           </div>
@@ -528,15 +532,15 @@ export default function RepaymentsCollectionsPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-64">
               <Search
-                size={15}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
               />
               <input
                 type="text"
                 placeholder="Search receipt, loan, borrower..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full pl-9 pr-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -548,8 +552,8 @@ export default function RepaymentsCollectionsPage() {
                   onClick={() => setTypeFilter(t)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     typeFilter === t
-                      ? "bg-red-600 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-red-600 text-white font-black shadow-xs border-2 border-red-600"
+                      : "bg-white text-slate-800 border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400 font-bold"
                   }`}
                 >
                   {t}
@@ -561,7 +565,7 @@ export default function RepaymentsCollectionsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-700 font-black uppercase tracking-wider">
+            <thead className="bg-slate-100 border-b-2 border-slate-300 text-xs text-slate-800 font-black uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">Receipt / Payment ID</th>
                 <th className="py-3 px-4">Date</th>
@@ -573,51 +577,51 @@ export default function RepaymentsCollectionsPage() {
                 <th className="py-3 px-4 text-right">Receipt</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {filteredPayments.map((p) => {
                 const loan = loans.find((l) => l.id === p.loanId);
                 const cust = customers.find((c) => c.id === p.customerId);
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition text-xs">
+                  <tr key={p.id} className="hover:bg-slate-50 transition text-xs">
                     <td className="py-3 px-4 font-mono font-bold text-slate-900">
                       {p.receiptNo || p.id}
                     </td>
-                    <td className="py-3 px-4 text-slate-500">{p.date}</td>
+                    <td className="py-3 px-4 text-slate-700 font-semibold">{p.date}</td>
                     <td className="py-3 px-4">
                       <div>
                         <span className="font-bold text-slate-900 block">
                           {cust?.name || "Customer"}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[11px] text-slate-600 font-mono font-bold">
                           {loan?.loanNo || p.loanId}
                         </span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                           p.type === "Capital"
-                            ? "bg-red-100 text-red-700"
+                            ? "bg-red-100 text-red-800 border border-red-300"
                             : p.type === "Interest"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-purple-100 text-purple-700"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-purple-100 text-purple-800 border border-purple-300"
                         }`}
                       >
                         {p.type}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-600">{p.method || "Cash"}</td>
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3 px-4 text-slate-800 font-semibold">{p.method || "Cash"}</td>
+                    <td className="py-3 px-4 text-slate-800 font-semibold">
                       {p.collectedBy || "Admin Officer"}
                     </td>
-                    <td className="py-3 px-4 text-right font-black text-slate-900">
+                    <td className="py-3 px-4 text-right font-black text-slate-900 text-sm">
                       {MONEY(p.amount)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button
                         type="button"
                         onClick={() => setActiveReceipt(p)}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 rounded-lg text-xs font-semibold transition cursor-pointer"
+                        className="px-3 py-1.5 bg-white hover:bg-red-600 hover:text-white text-slate-800 border-2 border-slate-300 hover:border-red-600 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
                       >
                         Receipt
                       </button>
@@ -629,7 +633,7 @@ export default function RepaymentsCollectionsPage() {
           </table>
 
           {filteredPayments.length === 0 && (
-            <div className="p-8 text-center text-slate-400 text-xs">
+            <div className="p-8 text-center text-slate-600 font-bold text-xs">
               No repayment transactions match the filter criteria.
             </div>
           )}
@@ -649,58 +653,58 @@ export default function RepaymentsCollectionsPage() {
                   <h3 className="font-black text-sm text-slate-900">
                     Official Repayment Receipt
                   </h3>
-                  <p className="text-[10px] text-slate-400">PSI ONE Microfinance</p>
+                  <p className="text-xs text-slate-600 font-bold">PSI ONE Microfinance</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveReceipt(null)}
-                className="p-1 text-slate-400 hover:text-slate-800 rounded-full hover:bg-slate-100"
+                className="p-1 text-slate-500 hover:text-slate-900 rounded-full hover:bg-slate-100"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Printable Receipt Card Body */}
-            <div className="p-4 bg-slate-50 rounded-xl space-y-3 text-xs border border-slate-200/60 font-mono">
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-500">RECEIPT NO</span>
-                <span className="font-bold text-slate-900">
+            <div className="p-4 bg-slate-50 rounded-xl space-y-3 text-xs border-2 border-slate-200 font-mono">
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-700 font-bold">RECEIPT NO</span>
+                <span className="font-black text-slate-900">
                   {activeReceipt.receiptNo || activeReceipt.id}
                 </span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-500">DATE & TIME</span>
-                <span>{activeReceipt.date}</span>
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-700 font-bold">DATE & TIME</span>
+                <span className="font-bold text-slate-900">{activeReceipt.date}</span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-500">BORROWER</span>
-                <span className="font-bold text-slate-900">
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-700 font-bold">BORROWER</span>
+                <span className="font-black text-slate-900">
                   {customers.find((c) => c.id === activeReceipt.customerId)?.name ||
                     "Customer"}
                 </span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-500">LOAN REFERENCE</span>
-                <span>
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-700 font-bold">LOAN REFERENCE</span>
+                <span className="font-bold text-slate-900">
                   {loans.find((l) => l.id === activeReceipt.loanId)?.loanNo ||
                     activeReceipt.loanId}
                 </span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-500">PAYMENT TYPE</span>
-                <span className="font-bold text-red-600">{activeReceipt.type}</span>
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-700 font-bold">PAYMENT TYPE</span>
+                <span className="font-black text-red-600">{activeReceipt.type}</span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-500">PAYMENT METHOD</span>
-                <span>{activeReceipt.method || "Cash"}</span>
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-700 font-bold">PAYMENT METHOD</span>
+                <span className="font-bold text-slate-900">{activeReceipt.method || "Cash"}</span>
               </div>
               <div className="flex justify-between py-1 text-sm font-bold text-slate-900">
-                <span>AMOUNT RECEIVED</span>
-                <span className="text-emerald-600 font-black">
+                <span className="text-slate-800 font-bold">AMOUNT RECEIVED</span>
+                <span className="text-emerald-700 font-black text-base">
                   {MONEY(activeReceipt.amount)}
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400 pt-2 border-t text-center">
+              <div className="text-xs text-slate-600 font-bold pt-2 border-t border-slate-200 text-center">
                 Collected by {activeReceipt.collectedBy || "Authorized Officer"}
               </div>
             </div>
@@ -710,14 +714,14 @@ export default function RepaymentsCollectionsPage() {
               <button
                 type="button"
                 onClick={handlePrintReceipt}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-md"
               >
                 <Printer size={14} /> Print Receipt
               </button>
               <button
                 type="button"
                 onClick={() => setActiveReceipt(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Done
               </button>
