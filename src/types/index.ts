@@ -80,6 +80,8 @@ export interface Loan {
   guarantorRelationship?: string;
   guarantorAddress?: string;
   disbursementMethod?: "Cash" | "Bank Transfer" | "Cheque";
+  approvedBy?: string;
+  approvedAt?: string;
   notes?: string;
 }
 

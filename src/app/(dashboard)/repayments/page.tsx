@@ -163,15 +163,15 @@ export default function RepaymentsCollectionsPage() {
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
               Total Inflows
             </p>
             <h3 className="text-2xl font-black text-slate-900 mt-1">
               {MONEY(totalCollectionsAllTime)}
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-slate-600 font-medium mt-0.5">
               {payments.length} transactions recorded
             </p>
           </div>
@@ -180,53 +180,53 @@ export default function RepaymentsCollectionsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
               Capital Recovered
             </p>
-            <h3 className="text-2xl font-black text-emerald-600 mt-1">
+            <h3 className="text-2xl font-black text-emerald-700 mt-1">
               {MONEY(totalCapitalRepaid)}
             </h3>
-            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+            <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
               Principal reductions
             </p>
           </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
             <CreditCard size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
               Interest Earned
             </p>
-            <h3 className="text-2xl font-black text-purple-600 mt-1">
+            <h3 className="text-2xl font-black text-purple-700 mt-1">
               {MONEY(totalInterestCollected)}
             </h3>
-            <p className="text-[11px] text-purple-600 font-medium mt-0.5">
+            <p className="text-[11px] text-purple-800 font-semibold mt-0.5">
               Gross interest recognized
             </p>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+          <div className="p-3 bg-purple-50 text-purple-700 rounded-xl">
             <Receipt size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
               Settled Loans
             </p>
             <h3 className="text-2xl font-black text-slate-900 mt-1">
               {completedLoansCount}
             </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-600 font-medium mt-0.5">
               100% paid off contracts
             </p>
           </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+          <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
             <CheckCircle2 size={22} />
           </div>
         </div>
@@ -561,7 +561,7 @@ export default function RepaymentsCollectionsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-bold uppercase tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-700 font-black uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">Receipt / Payment ID</th>
                 <th className="py-3 px-4">Date</th>
