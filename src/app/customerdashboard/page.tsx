@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   CreditCard,
@@ -14,17 +14,67 @@ import {
   ArrowLeft,
   Receipt,
   X,
+  LogOut,
+  ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { BrandLogo } from "@/components/brand-logo";
 import type { Payment } from "@/types";
 
+function parseDateString(dateStr?: string): Date | null {
+  if (!dateStr) return null;
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDateToYMD(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function CustomerDashboardPage() {
   const { customers, loans, repayments } = useData();
 
+  // Session customer state & today's date (read in useEffect for clean prerender)
+  const [sessionCustomerId, setSessionCustomerId] = useState<string>("");
+  const [todayStr, setTodayStr] = useState<string>("2026-10-15");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setTodayStr(new Date().toISOString().slice(0, 10));
+      const params = new URLSearchParams(window.location.search);
+      const urlId = params.get("customerId");
+      const stored = sessionStorage.getItem("customerSessionId");
+      if (urlId) {
+        setSessionCustomerId(urlId);
+        sessionStorage.setItem("customerSessionId", urlId);
+      } else if (stored) {
+        setSessionCustomerId(stored);
+      }
+    }
+  }, []);
+
   // Current customer record (authenticated borrower)
   const currentCustomer = useMemo(() => {
+    if (sessionCustomerId) {
+      const found = customers.find(
+        (c) =>
+          c.id.toLowerCase() === sessionCustomerId.toLowerCase() ||
+          c.nic.toLowerCase() === sessionCustomerId.toLowerCase()
+      );
+      if (found) return found;
+    }
     return (
       customers[0] || {
         id: "CUS-001",
@@ -39,7 +89,7 @@ export default function CustomerDashboardPage() {
         status: "Active",
       }
     );
-  }, [customers]);
+  }, [customers, sessionCustomerId]);
 
   // Loans belonging to current customer
   const customerLoans = useMemo(() => {
@@ -85,9 +135,93 @@ export default function CustomerDashboardPage() {
   const nextInstallmentAmount = currentLoan?.installment || Math.ceil(totalPayable / (currentLoan?.duration || 12));
   const nextDueDate = currentLoan?.firstPaymentDate || "2026-10-25";
 
+  // Tab state: 'schedule' (Installment Due Dates) | 'history' (Repayment History)
+  const [activeTab, setActiveTab] = useState<"schedule" | "history">("schedule");
+
   // Receipt & Statement Modal States
   const [receiptToPrint, setReceiptToPrint] = useState<Payment | null>(null);
   const [isStatementOpen, setIsStatementOpen] = useState(false);
+
+  // Installment Schedule with Due Dates
+  const installmentSchedule = useMemo(() => {
+    if (!currentLoan) return [];
+
+    const duration = Math.max(1, currentLoan.duration || 1);
+    const gross = Number(currentLoan.principal || currentLoan.amount || 0);
+    const totalRepay = Number(currentLoan.totalRepayment || gross + (currentLoan.interest || 0));
+    const totalInt = Math.max(0, totalRepay - gross);
+    const frequency = currentLoan.repaymentFrequency || "Monthly";
+    const startDate = parseDateString(currentLoan.firstPaymentDate || currentLoan.issueDate) || parseDateString("2026-10-01")!;
+    let runningBalance = totalRepay;
+    let accumulatedPaid = customerPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
+    const rows = [];
+
+    for (let i = 1; i <= duration; i++) {
+      const dueDate = new Date(startDate.getTime());
+      if (frequency === "Daily") {
+        dueDate.setDate(dueDate.getDate() + (i - 1));
+      } else if (frequency === "Weekly") {
+        dueDate.setDate(dueDate.getDate() + (i - 1) * 7);
+      } else {
+        dueDate.setMonth(dueDate.getMonth() + (i - 1));
+      }
+      const dueDateStr = formatDateToYMD(dueDate);
+
+      const remainingGross = Math.max(0, gross - (currentLoan.capitalDeduction || 0));
+      let installmentAmt = 0;
+      let principalPortion = 0;
+      let interestPortion = 0;
+
+      if (i === duration) {
+        installmentAmt = runningBalance;
+        interestPortion = Math.max(0, totalInt - Math.round(totalInt / duration) * (duration - 1));
+        principalPortion = Math.max(0, installmentAmt - interestPortion);
+      } else {
+        installmentAmt = Math.round(totalRepay / duration);
+        principalPortion = Math.round(remainingGross / duration);
+        interestPortion = Math.max(0, installmentAmt - principalPortion);
+      }
+
+      runningBalance = Math.max(0, runningBalance - installmentAmt);
+
+      let rowStatus: "PAID" | "OVERDUE" | "DUE_TODAY" | "UPCOMING" = "UPCOMING";
+      if (accumulatedPaid >= installmentAmt) {
+        rowStatus = "PAID";
+        accumulatedPaid -= installmentAmt;
+      } else if (accumulatedPaid > 0) {
+        accumulatedPaid = 0;
+        rowStatus = dueDateStr < todayStr ? "OVERDUE" : dueDateStr === todayStr ? "DUE_TODAY" : "UPCOMING";
+      } else {
+        if (dueDateStr < todayStr) {
+          rowStatus = "OVERDUE";
+        } else if (dueDateStr === todayStr) {
+          rowStatus = "DUE_TODAY";
+        } else {
+          rowStatus = "UPCOMING";
+        }
+      }
+
+      rows.push({
+        cycle: i,
+        dueDate: dueDateStr,
+        installmentAmount: installmentAmt,
+        principalPortion,
+        interestPortion,
+        balance: runningBalance,
+        status: rowStatus,
+      });
+    }
+
+    return rows;
+  }, [currentLoan, customerPayments, todayStr]);
+
+  const handleSignOut = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("customerSessionId");
+    }
+    window.location.href = "/login";
+  };
 
   return (
     <div className="min-h-screen bg-slate-100/90 text-slate-800 font-sans selection:bg-red-600 selection:text-white">
@@ -104,7 +238,7 @@ export default function CustomerDashboardPage() {
             </span>
           </div>
 
-          {/* Right Customer Info & Navigation (Dropdown removed as requested) */}
+          {/* Right Customer Info & Secure Sign Out */}
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Customer Avatar & ID */}
             <div className="flex items-center gap-3">
@@ -129,6 +263,17 @@ export default function CustomerDashboardPage() {
               </div>
             </div>
 
+            {/* Secure Sign Out Button */}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition cursor-pointer"
+              title="Secure Sign Out"
+            >
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+
             <Link
               href="/"
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
@@ -150,17 +295,21 @@ export default function CustomerDashboardPage() {
                   NIC: {currentCustomer.nic}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  {currentCustomer.status || "Active"} Account
+                  {currentCustomer.status || "Active"} Borrower
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-900 text-zinc-300 border border-zinc-700">
                   {currentCustomer.district} District
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
+                  <ShieldCheck size={12} />
+                  Verified Session
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white">
                 Welcome back, {currentCustomer.name}
               </h1>
               <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-                Review your active loan balances, check installment due dates, view repayment milestones, and download official settlement receipts.
+                Review your active loan balances, check installment due dates, track payment milestones, and download official settlement receipts.
               </p>
             </div>
 
@@ -330,81 +479,183 @@ export default function CustomerDashboardPage() {
           </div>
         </section>
 
-        {/* ── Repayment History & Download Receipts (Full Width) ─────────────── */}
+        {/* ── Interactive Installment Schedule & Repayment History Tabs ───────── */}
         <section className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Section Header with Tabs */}
+          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Repayment History & Receipts
+                Loan Repayment Schedule & History
               </h3>
-              <p className="text-xs text-slate-500">
-                Official payment entries credited towards this facility.
+              <p className="text-xs text-slate-500 mt-0.5">
+                Check installment due dates, track payment milestones, and download official receipts.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsStatementOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition self-start sm:self-auto cursor-pointer"
-            >
-              <FileText size={14} />
-              Full Ledger Statement
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {/* Tab Selector */}
+              <div className="p-1 bg-slate-100 rounded-xl border border-slate-200 flex items-center gap-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("schedule")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                    activeTab === "schedule"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <Calendar size={14} className={activeTab === "schedule" ? "text-red-600" : "text-slate-400"} />
+                  Installment Due Dates ({installmentSchedule.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("history")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                    activeTab === "history"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <Receipt size={14} className={activeTab === "history" ? "text-emerald-600" : "text-slate-400"} />
+                  Payment Receipts ({customerPayments.length})
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsStatementOpen(true)}
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                <FileText size={14} />
+                Statement
+              </button>
+            </div>
           </div>
 
-          {customerPayments.length > 0 ? (
+          {/* TAB 1: Installment Due Dates & Schedule */}
+          {activeTab === "schedule" && (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-200/70">
                   <tr>
-                    <th className="py-3 px-4">Receipt No</th>
-                    <th className="py-3 px-4">Payment Date</th>
-                    <th className="py-3 px-4">Method</th>
-                    <th className="py-3 px-4">Amount Paid</th>
-                    <th className="py-3 px-4">Collector</th>
-                    <th className="py-3 px-4 text-right">Receipt</th>
+                    <th className="py-3 px-4">Cycle #</th>
+                    <th className="py-3 px-4">Installment Due Date</th>
+                    <th className="py-3 px-4">Installment Due</th>
+                    <th className="py-3 px-4">Principal Component</th>
+                    <th className="py-3 px-4">Interest Component</th>
+                    <th className="py-3 px-4">Remaining Balance</th>
+                    <th className="py-3 px-4 text-right">Payment Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {customerPayments.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50/50 transition">
+                  {installmentSchedule.map((row) => (
+                    <tr key={row.cycle} className="hover:bg-slate-50/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                        Installment #{row.cycle}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-900">
+                        {row.dueDate}
+                      </td>
                       <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                        {p.receiptNo || p.id}
+                        {MONEY(row.installmentAmount)}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600">{p.date}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px]">
-                          {p.method || "Cash"}
-                        </span>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        {MONEY(row.principalPortion)}
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
-                        {MONEY(p.amount)}
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        {MONEY(row.interestPortion)}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {p.collectedBy || "Authorized Field Officer"}
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        {MONEY(row.balance)}
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setReceiptToPrint(p)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs transition cursor-pointer"
-                        >
-                          <Download size={13} />
-                          Receipt
-                        </button>
+                        {row.status === "PAID" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 size={12} /> Paid
+                          </span>
+                        )}
+                        {row.status === "DUE_TODAY" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock size={12} /> Due Today
+                          </span>
+                        )}
+                        {row.status === "OVERDUE" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <AlertCircle size={12} /> Overdue
+                          </span>
+                        )}
+                        {row.status === "UPCOMING" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            Upcoming Due
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <div className="p-10 text-center text-slate-400">
-              <Receipt size={36} className="mx-auto text-slate-300 mb-2" />
-              <p className="text-sm font-semibold text-slate-600">No payment receipts yet</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Your payments will appear here once credited by our cashiers or recorded by field officers.
-              </p>
+          )}
+
+          {/* TAB 2: Repayment History & Receipts */}
+          {activeTab === "history" && (
+            <div>
+              {customerPayments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-200/70">
+                      <tr>
+                        <th className="py-3 px-4">Receipt No</th>
+                        <th className="py-3 px-4">Payment Date</th>
+                        <th className="py-3 px-4">Method</th>
+                        <th className="py-3 px-4">Amount Paid</th>
+                        <th className="py-3 px-4">Collector</th>
+                        <th className="py-3 px-4 text-right">Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {customerPayments.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50/50 transition">
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                            {p.receiptNo || p.id}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">{p.date}</td>
+                          <td className="py-3.5 px-4">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                              {p.method || "Cash"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
+                            {MONEY(p.amount)}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-500">
+                            {p.collectedBy || "Authorized Field Officer"}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setReceiptToPrint(p)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs transition cursor-pointer"
+                            >
+                              <Download size={13} />
+                              Receipt
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-10 text-center text-slate-400">
+                  <Receipt size={36} className="mx-auto text-slate-300 mb-2" />
+                  <p className="text-sm font-semibold text-slate-600">No payment receipts recorded yet</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Your payments will appear here once credited by our cashiers or recorded by field officers.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -492,7 +743,7 @@ export default function CustomerDashboardPage() {
                 <BrandLogo size="sm" theme="light" />
                 <div>
                   <h3 className="text-base font-bold text-slate-900 leading-tight">Borrower Statement of Account</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">Issued: {new Date().toLocaleDateString()}</p>
+                  <p className="text-[11px] text-slate-400 font-mono">Issued: {todayStr}</p>
                 </div>
               </div>
               <button
