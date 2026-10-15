@@ -289,12 +289,12 @@ export default function ArrearsPage() {
             <span className="text-[11px] font-bold text-rose-700 uppercase tracking-widest bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-md">
               Credit Control & Risk
             </span>
-            <span className="text-xs text-slate-400 font-medium">Delinquency Register</span>
+            <span className="text-xs text-slate-600 font-semibold">Delinquency Register</span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
             Arrears & Delinquent Facilities
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-600 font-medium mt-0.5">
             Comprehensive register of overdue credit accounts, aging delinquency buckets, and field recovery actions.
           </p>
         </div>
@@ -302,7 +302,7 @@ export default function ArrearsPage() {
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={handlePrint}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-xs"
+            className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Printer size={14} /> Print Arrears Sheet
           </button>
@@ -331,7 +331,7 @@ export default function ArrearsPage() {
             <div className="text-2xl font-black text-rose-700">
               {MONEY(totalArrearsAmount)}
             </div>
-            <p className="text-[11px] text-rose-600/80 mt-1">
+            <p className="text-[11px] text-rose-700/90 font-medium mt-1">
               Accumulated overdue default sum
             </p>
           </div>
@@ -340,7 +340,7 @@ export default function ArrearsPage() {
         {/* Delinquent Facilities Count */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
               Delinquent Accounts
             </span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
@@ -350,11 +350,11 @@ export default function ArrearsPage() {
           <div className="mt-3">
             <div className="text-2xl font-black text-slate-900">
               {delinquentList.length}{" "}
-              <span className="text-xs font-medium text-slate-400">
+              <span className="text-xs font-semibold text-slate-600">
                 of {loans.length} facilities
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-600 font-medium mt-1">
               Non-performing loan facilities
             </p>
           </div>
@@ -374,7 +374,7 @@ export default function ArrearsPage() {
             <div className="text-2xl font-black text-slate-900">
               {parRate}%
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-600 font-medium mt-1">
               Exposure: {MONEY(totalDelinquentPrincipal)}
             </p>
           </div>
@@ -394,7 +394,7 @@ export default function ArrearsPage() {
             <div className="text-2xl font-black text-amber-700">
               {MONEY(agingStats.b31_60 + agingStats.b61_90 + agingStats.b90Plus)}
             </div>
-            <p className="text-[11px] text-amber-600/80 mt-1">
+            <p className="text-[11px] text-amber-800 font-medium mt-1">
               {agingStats.count31_60 + agingStats.count61_90 + agingStats.count90Plus} severely delinquent facilities
             </p>
           </div>
@@ -407,7 +407,7 @@ export default function ArrearsPage() {
           <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
             Delinquency Aging Buckets (Days Past Due)
           </span>
-          <span className="text-[11px] text-slate-400 font-medium">
+          <span className="text-[11px] text-slate-600 font-semibold">
             Central Bank / Microfinance Classification Standards
           </span>
         </div>
@@ -628,7 +628,7 @@ export default function ArrearsPage() {
             <h2 className="text-sm font-bold text-slate-900">
               Delinquent Accounts Register ({filteredList.length})
             </h2>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-600 font-medium">
               Accounts requiring active recovery collection and credit intervention
             </p>
           </div>
@@ -644,7 +644,7 @@ export default function ArrearsPage() {
 
         <div className="overflow-x-auto min-w-full">
           <table className="w-full text-left text-xs min-w-[900px]">
-            <thead className="bg-slate-50 text-[10px] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200/80">
+            <thead className="bg-slate-100 text-[11px] text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Borrower Dossier</th>
                 <th className="py-3 px-3">Facility Details</th>
@@ -678,11 +678,11 @@ export default function ArrearsPage() {
                           <div className="font-bold text-slate-900 text-xs">
                             {bName}
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                          <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium mt-0.5">
                             <span>NIC: {item.customer?.nic || "—"}</span>
                             <span>•</span>
-                            <span className="inline-flex items-center gap-1 font-semibold text-slate-600">
-                              <Building size={11} className="text-slate-400" />
+                            <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
+                              <Building size={11} className="text-slate-500" />
                               {item.routeArea}
                             </span>
                           </div>
@@ -690,15 +690,15 @@ export default function ArrearsPage() {
                             <div className="mt-0.5">
                               <a
                                 href={`tel:${item.customer.phone}`}
-                                className="text-[11px] text-red-600 hover:underline inline-flex items-center gap-1 font-medium"
+                                className="text-[11px] text-red-600 hover:underline inline-flex items-center gap-1 font-semibold"
                               >
                                 <Phone size={10} /> {item.customer.phone}
                               </a>
                             </div>
                           )}
                           {(item.customer?.guarantorName || item.loan.guarantorName) && (
-                            <div className="text-[10px] text-slate-400 mt-0.5 inline-flex items-center gap-1">
-                              <UserCheck size={10} className="text-slate-400" />
+                            <div className="text-[11px] text-slate-600 font-medium mt-0.5 inline-flex items-center gap-1">
+                              <UserCheck size={10} className="text-slate-500" />
                               Guarantor: {item.customer?.guarantorName || item.loan.guarantorName}
                             </div>
                           )}
@@ -716,23 +716,23 @@ export default function ArrearsPage() {
                           {item.loan.loanNo || item.loan.id}
                         </Link>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        <span className="font-semibold text-slate-700">
+                      <div className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                        <span className="font-bold text-slate-800">
                           {item.loan.repaymentFrequency || "Monthly"}
                         </span>{" "}
                         facility
                       </div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-[11px] text-slate-600 font-medium">
                         Total {MONEY(item.loan.totalRepayment)}
                       </div>
                     </td>
 
                     {/* Installment Amount */}
                     <td className="py-3.5 px-3 text-right">
-                      <div className="font-bold text-slate-800 text-xs">
+                      <div className="font-black text-slate-900 text-xs">
                         {MONEY(item.loan.installment)}
                       </div>
-                      <div className="text-[10px] text-slate-400">Regular per cycle</div>
+                      <div className="text-[11px] text-slate-500 font-medium">Regular per cycle</div>
                     </td>
 
                     {/* Missed Cycles */}

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
-import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
+import type { Customer, Loan, Payment, CustomerDocument, RepaymentType } from "@/types";
 
 type WizardStep = "select" | "review" | "form" | "done";
 
@@ -39,7 +39,7 @@ export function NewLoanForm({
   onCancel,
 }: NewLoanFormProps) {
   const router = useRouter();
-  const { customers, loans, payments, documents, addLoan } = useData();
+  const { customers, loans, payments, documents, addLoan, settings } = useData();
 
   // ── Step State ────────────────────────────────────────────────────────────
   const [step, setStep] = useState<WizardStep>(initialCustomerId ? "review" : "select");
@@ -48,23 +48,24 @@ export function NewLoanForm({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId);
   const [customerSearch, setCustomerSearch] = useState("");
 
-  // ── Loan Terms State (Completely blank initial values) ─────────────────────
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // ── Loan Terms State (Defaults: 30 days tenure, 10% rate, Capital + Interest) ──
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const defaultFirstPaymentStr = useMemo(() => {
     const d = new Date();
-    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() + 1); // Tomorrow for daily schedule
     return d.toISOString().slice(0, 10);
   }, []);
 
   const [grossAmount, setGrossAmount] = useState<string>("");
-  const [interestRate, setInterestRate] = useState<string>("");
-  const [ratePeriod, setRatePeriod] = useState<"Monthly" | "Weekly" | "Daily" | "">("");
-  const [frequency, setFrequency] = useState<"Monthly" | "Weekly" | "Daily" | "">("");
-  const [duration, setDuration] = useState<string>("");
+  const [interestRate, setInterestRate] = useState<string>("10");
+  const [ratePeriod, setRatePeriod] = useState<"Monthly" | "Weekly" | "Daily" | "Flat">("Monthly");
+  const [frequency, setFrequency] = useState<"Monthly" | "Weekly" | "Daily">("Daily");
+  const [repaymentType, setRepaymentType] = useState<RepaymentType>("Capital + Interest");
+  const [duration, setDuration] = useState<string>("30");
   const [purpose, setPurpose] = useState<string>("");
-  const [issueDate, setIssueDate] = useState<string>("");
-  const [firstPaymentDate, setFirstPaymentDate] = useState<string>("");
-  const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque" | "">("");
+  const [issueDate, setIssueDate] = useState<string>(todayStr);
+  const [firstPaymentDate, setFirstPaymentDate] = useState<string>(defaultFirstPaymentStr);
+  const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
 
   // ── Upfront Deductions & Fees (Completely blank initial values) ────────────
   const [capitalDeduction, setCapitalDeduction] = useState<string>("");
@@ -148,11 +149,69 @@ export function NewLoanForm({
     const aFee = Number(adminFee) || 0;
     const oFees = Number(otherFees) || 0;
 
+    // 1. Total Upfront Deductions
     const totalDeductions = capDed + intDed + pFee + aFee + oFees;
+
+    // 2. Net Cash Disbursed to Borrower
     const netDisbursement = Math.max(0, gross - totalDeductions);
-    const totalInterest = (gross * rate) / 100;
-    const totalRepayment = gross + totalInterest;
-    const installmentAmount = totalRepayment / dur;
+
+    // 3. Duration in rate periods:
+    const effRatePeriod = ratePeriod || "Monthly";
+    const effFrequency = frequency || "Monthly";
+    let periods = dur;
+
+    if (effRatePeriod === "Monthly") {
+      if (effFrequency === "Monthly") {
+        periods = dur;
+      } else if (effFrequency === "Weekly") {
+        periods = dur / 4; // 4 weeks = 1 month
+      } else if (effFrequency === "Daily") {
+        periods = dur / 30; // 30 days = 1 month
+      }
+    } else if (effRatePeriod === "Weekly") {
+      if (effFrequency === "Weekly") {
+        periods = dur;
+      } else if (effFrequency === "Monthly") {
+        periods = dur * 4;
+      } else if (effFrequency === "Daily") {
+        periods = dur / 7;
+      }
+    } else if (effRatePeriod === "Daily") {
+      if (effFrequency === "Daily") {
+        periods = dur;
+      } else if (effFrequency === "Weekly") {
+        periods = dur * 7;
+      } else if (effFrequency === "Monthly") {
+        periods = dur * 30;
+      }
+    } else {
+      periods = 1; // Flat rate for entire loan term
+    }
+
+    // 4. Total Interest over the loan term
+    const totalInterest = Math.round(gross * (rate / 100) * periods);
+
+    // 5. Total Repayment (subtract upfront interest deduction if already deducted at disbursement)
+    const remainingInterest = Math.max(0, totalInterest - intDed);
+    const totalRepayment = gross + remainingInterest;
+
+    // 6. Installments breakdown based on Repayment Scheme
+    let installmentAmount = 0;
+    let periodicInterest = 0;
+    let finalInstallmentAmount = 0;
+
+    if (repaymentType === "Interest Only") {
+      // Under Interest Only, regular installments only cover periodic interest.
+      // Entire principal is paid back in the final installment at maturity.
+      periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
+      installmentAmount = periodicInterest;
+      finalInstallmentAmount = gross + periodicInterest;
+    } else {
+      // Capital + Interest: equal periodic installments of principal and interest
+      installmentAmount = dur > 0 ? Math.round((totalRepayment / dur) * 100) / 100 : 0;
+      periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
+      finalInstallmentAmount = installmentAmount;
+    }
 
     return {
       gross,
@@ -162,10 +221,17 @@ export function NewLoanForm({
       totalRepayment,
       installmentAmount,
       numberOfInstallments: dur,
+      repaymentType,
+      periodicInterest,
+      capitalAtMaturity: gross,
+      finalInstallmentAmount,
     };
   }, [
     grossAmount,
     interestRate,
+    ratePeriod,
+    frequency,
+    repaymentType,
     duration,
     capitalDeduction,
     interestDeduction,
@@ -190,14 +256,24 @@ export function NewLoanForm({
       } else {
         d.setMonth(d.getMonth() + (i - 1));
       }
+      const isFinal = i === calculations.numberOfInstallments;
+      const amt = (repaymentType === "Interest Only" && isFinal)
+        ? calculations.finalInstallmentAmount
+        : calculations.installmentAmount;
+      const typeLabel = repaymentType === "Interest Only"
+        ? (isFinal ? "Capital + Interest" : "Interest Only")
+        : "Principal + Interest";
+
       list.push({
         num: i,
-        date: d.toISOString().slice(0, 10),
-        amount: calculations.installmentAmount,
+        date: isNaN(d.getTime()) ? todayStr : d.toISOString().slice(0, 10),
+        amount: amt,
+        typeLabel,
+        isFinal,
       });
     }
     return list;
-  }, [calculations, firstPaymentDate, frequency, todayStr, grossAmount]);
+  }, [calculations, firstPaymentDate, frequency, todayStr, grossAmount, repaymentType]);
 
   // ── Step Navigation Handlers ──────────────────────────────────────────────
   const handleSelectCustomer = (id: string) => {
@@ -258,9 +334,10 @@ export function NewLoanForm({
       otherFees:
         Number(otherFees || 0) + Number(processingFee || 0) + Number(adminFee || 0),
       interestRate: Number(interestRate) || 0,
-      ratePeriod: (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily",
-      repaymentFrequency: (frequency || "Monthly") as "Monthly" | "Weekly" | "Daily",
-      duration: Number(duration) || 12,
+      ratePeriod: (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily" | "Flat",
+      repaymentFrequency: (frequency || "Daily") as "Monthly" | "Weekly" | "Daily",
+      repaymentType: repaymentType,
+      duration: Number(duration) || 30,
       issueDate: issueDate || todayStr,
       firstPaymentDate: firstPaymentDate || defaultFirstPaymentStr,
       purpose: purpose.trim() || undefined,
@@ -337,20 +414,28 @@ export function NewLoanForm({
                 ? "bg-red-600 text-white shadow-xs"
                 : selectedCustomer
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                : "bg-slate-100 text-slate-800 hover:bg-slate-200"
             }`}
           >
             {selectedCustomer && step !== "select" ? (
-              <Check size={14} className="text-emerald-600 stroke-[3]" />
+              <Check size={14} className="text-emerald-700 stroke-[3]" />
             ) : (
-              <span className="w-4 h-4 rounded-full bg-white/20 text-center text-[10px] leading-4">
+              <span
+                className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                  step === "select"
+                    ? "bg-white/25 text-white"
+                    : "bg-slate-200 text-slate-800"
+                }`}
+              >
                 1
               </span>
             )}
-            <span>1. Select Borrower</span>
+            <span className={step === "select" ? "text-white font-bold" : selectedCustomer ? "text-emerald-900 font-bold" : "text-slate-800 font-bold"}>
+              1. Select Borrower
+            </span>
           </button>
 
-          <ChevronRight size={14} className="text-slate-300 shrink-0" />
+          <ChevronRight size={14} className="text-slate-400 shrink-0" />
 
           {/* Tab 2: Review Profile */}
           <button
@@ -361,17 +446,25 @@ export function NewLoanForm({
               step === "review"
                 ? "bg-red-600 text-white shadow-xs"
                 : selectedCustomer
-                ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 cursor-pointer"
-                : "bg-slate-100/60 text-slate-400 cursor-not-allowed"
+                ? "bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
+                : "bg-slate-100/60 text-slate-400 border border-slate-200/50 cursor-not-allowed"
             }`}
           >
-            <span className="w-4 h-4 rounded-full bg-slate-300 text-slate-700 text-center text-[10px] leading-4">
+            <span
+              className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                step === "review"
+                  ? "bg-white/25 text-white"
+                  : "bg-slate-300 text-slate-800"
+              }`}
+            >
               2
             </span>
-            <span>2. Review Profile</span>
+            <span className={step === "review" ? "text-white font-bold" : selectedCustomer ? "text-slate-800 font-bold" : "text-slate-400 font-bold"}>
+              2. Review Profile
+            </span>
           </button>
 
-          <ChevronRight size={14} className="text-slate-300 shrink-0" />
+          <ChevronRight size={14} className="text-slate-400 shrink-0" />
 
           {/* Tab 3: Loan Details */}
           <button
@@ -382,14 +475,22 @@ export function NewLoanForm({
               step === "form"
                 ? "bg-red-600 text-white shadow-xs"
                 : selectedCustomer
-                ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 cursor-pointer"
-                : "bg-slate-100/60 text-slate-400 cursor-not-allowed"
+                ? "bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
+                : "bg-slate-100/60 text-slate-400 border border-slate-200/50 cursor-not-allowed"
             }`}
           >
-            <span className="w-4 h-4 rounded-full bg-slate-300 text-slate-700 text-center text-[10px] leading-4">
+            <span
+              className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                step === "form"
+                  ? "bg-white/25 text-white"
+                  : "bg-slate-300 text-slate-800"
+              }`}
+            >
               3
             </span>
-            <span>3. Loan Details</span>
+            <span className={step === "form" ? "text-white font-bold" : selectedCustomer ? "text-slate-800 font-bold" : "text-slate-400 font-bold"}>
+              3. Loan Details
+            </span>
           </button>
         </div>
 
@@ -775,14 +876,14 @@ export function NewLoanForm({
               <button
                 type="button"
                 onClick={() => setStep("review")}
-                className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                className="px-3.5 py-1.5 text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-xl transition cursor-pointer shadow-2xs"
               >
                 View Profile
               </button>
               <button
                 type="button"
                 onClick={() => setStep("select")}
-                className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                className="px-3.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer shadow-2xs"
               >
                 Change Borrower
               </button>
@@ -809,16 +910,25 @@ export function NewLoanForm({
                         Gross Loan Amount (LKR) <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center gap-1.5">
-                        {["50000", "100000", "200000", "500000"].map((preset) => (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() => setGrossAmount(preset)}
-                            className="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-red-50 hover:text-red-600 rounded-md transition cursor-pointer"
-                          >
-                            {(Number(preset) / 1000).toFixed(0)}k
-                          </button>
-                        ))}
+                        {["50000", "100000", "200000", "500000"].map((preset) => {
+                          const isSelected = grossAmount === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setGrossAmount(preset)}
+                              className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
+                                isSelected
+                                  ? "bg-red-600 text-white border-red-600 shadow-xs"
+                                  : "bg-white text-slate-900 border-slate-300 hover:bg-slate-100 hover:text-black"
+                              }`}
+                            >
+                              <span className={isSelected ? "text-white font-bold" : "text-slate-900 font-bold"}>
+                                {(Number(preset) / 1000).toFixed(0)}k
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                     <input
@@ -831,6 +941,85 @@ export function NewLoanForm({
                       onChange={(e) => setGrossAmount(e.target.value)}
                       className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
                     />
+                  </div>
+
+                  {/* Repayment Scheme */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700">
+                        Repayment Scheme <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[11px] font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                        {repaymentType}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setRepaymentType("Capital + Interest")}
+                        className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+                          repaymentType === "Capital + Interest"
+                            ? "bg-red-50/80 border-red-500 ring-2 ring-red-500/20 text-slate-900 shadow-2xs"
+                            : "bg-white border-slate-300 hover:bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                            <span
+                              className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                                repaymentType === "Capital + Interest"
+                                  ? "border-red-600 bg-red-600"
+                                  : "border-slate-400 bg-white"
+                              }`}
+                            >
+                              {repaymentType === "Capital + Interest" && (
+                                <span className="w-1 h-1 bg-white rounded-full" />
+                              )}
+                            </span>
+                            Capital + Interest (Standard)
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-1 pl-5">
+                            Equal periodic installments covering both principal and interest.
+                          </p>
+                        </div>
+                        {repaymentType === "Capital + Interest" && (
+                          <Check size={16} className="text-red-600 shrink-0 ml-2" />
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setRepaymentType("Interest Only")}
+                        className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+                          repaymentType === "Interest Only"
+                            ? "bg-red-50/80 border-red-500 ring-2 ring-red-500/20 text-slate-900 shadow-2xs"
+                            : "bg-white border-slate-300 hover:bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                            <span
+                              className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                                repaymentType === "Interest Only"
+                                  ? "border-red-600 bg-red-600"
+                                  : "border-slate-400 bg-white"
+                              }`}
+                            >
+                              {repaymentType === "Interest Only" && (
+                                <span className="w-1 h-1 bg-white rounded-full" />
+                              )}
+                            </span>
+                            Interest Only
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-1 pl-5">
+                            Regular installments cover only interest; capital repaid at maturity.
+                          </p>
+                        </div>
+                        {repaymentType === "Interest Only" && (
+                          <Check size={16} className="text-red-600 shrink-0 ml-2" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Interest Rate */}
@@ -855,13 +1044,14 @@ export function NewLoanForm({
                     <label className="text-xs font-bold text-slate-700">Rate Period</label>
                     <select
                       value={ratePeriod}
-                      onChange={(e) => setRatePeriod(e.target.value as "Monthly" | "Weekly" | "Daily")}
+                      onChange={(e) => setRatePeriod(e.target.value as "Monthly" | "Weekly" | "Daily" | "Flat")}
                       className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                     >
                       <option value="">-- Select Rate Period --</option>
-                      <option value="Monthly">Per Month</option>
+                      <option value="Monthly">Per Month (Standard)</option>
                       <option value="Weekly">Per Week</option>
                       <option value="Daily">Per Day</option>
+                      <option value="Flat">Flat (Entire Term)</option>
                     </select>
                   </div>
 
@@ -937,16 +1127,50 @@ export function NewLoanForm({
 
               {/* 2. Upfront Deductions & Fees */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
                       <Calculator size={18} />
                     </div>
                     <h3 className="text-sm font-black text-slate-900">2. Upfront Deductions &amp; Fees</h3>
                   </div>
-                  <span className="font-mono text-xs font-bold text-red-600">
-                    - {MONEY(calculations.totalDeductions)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const gross = Number(grossAmount) || 0;
+                        if (!interestRate) {
+                          if (frequency === "Daily") {
+                            setInterestRate(String(settings.defaultDailyRate ?? 0.15));
+                            setRatePeriod("Daily");
+                          } else if (frequency === "Weekly") {
+                            setInterestRate(String(settings.defaultWeeklyRate ?? 0.8));
+                            setRatePeriod("Weekly");
+                          } else {
+                            setInterestRate(String(settings.defaultMonthlyRate ?? 3.0));
+                            setRatePeriod("Monthly");
+                          }
+                        }
+                        if (gross > 0 && !capitalDeduction) {
+                          const capRate = settings.defaultCapitalDeductionRate ?? 1.5;
+                          setCapitalDeduction(String(Math.round((gross * capRate) / 100)));
+                        }
+                        if (!processingFee) {
+                          setProcessingFee(String(settings.defaultProcessingFee ?? 1500));
+                        }
+                        if (!adminFee) {
+                          setAdminFee(String(settings.defaultAdminFee ?? 500));
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                      title="Auto-fill standard fee baseline from system settings"
+                    >
+                      ⚡ Standard System Baseline
+                    </button>
+                    <span className="font-mono text-xs font-bold text-red-600">
+                      - {MONEY(calculations.totalDeductions)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -1180,36 +1404,81 @@ export function NewLoanForm({
                     </span>
                   </div>
 
-                  <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
-                        {frequency} Installment
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {calculations.numberOfInstallments} payments
+                  {repaymentType === "Interest Only" ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
+                        <div>
+                          <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                            Periodic Interest Payment
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            {calculations.numberOfInstallments} cycles ({frequency})
+                          </span>
+                        </div>
+                        <span className="font-mono text-base font-black text-rose-400">
+                          {MONEY(calculations.installmentAmount)}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 bg-zinc-900/90 border border-zinc-700/60 rounded-xl flex justify-between items-center text-xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider block">
+                            Capital at Maturity
+                          </span>
+                          <span className="text-[10px] text-zinc-400">Final balloon payment</span>
+                        </div>
+                        <span className="font-mono font-bold text-white">
+                          {MONEY(calculations.capitalAtMaturity || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
+                      <div>
+                        <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                          {frequency} Installment
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {calculations.numberOfInstallments} equal payments
+                        </span>
+                      </div>
+                      <span className="font-mono text-lg font-black text-rose-400">
+                        {MONEY(calculations.installmentAmount)}
                       </span>
                     </div>
-                    <span className="font-mono text-lg font-black text-rose-400">
-                      {MONEY(calculations.installmentAmount)}
-                    </span>
-                  </div>
+                  )}
                 </div>
 
                 {/* Installment breakdown preview */}
                 {schedulePreview.length > 0 && (
                   <div className="space-y-1.5 pt-1 border-t border-slate-800 text-[11px]">
-                    <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">
-                      Installment Schedule Preview
-                    </span>
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                      <span>Installment Schedule Preview</span>
+                      <span>{repaymentType}</span>
+                    </div>
                     {schedulePreview.map((item) => (
                       <div
                         key={item.num}
                         className="flex items-center justify-between p-1.5 bg-slate-800/60 rounded-lg text-[10px] font-mono text-slate-300"
                       >
-                        <span>
-                          #{item.num} · {item.date}
-                        </span>
-                        <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span>
+                            #{item.num} · {item.date}
+                          </span>
+                          {item.isFinal && (
+                            <span className="text-[9px] font-sans font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              Maturity
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
+                          {repaymentType === "Interest Only" && (
+                            <span className="block text-[8px] text-slate-400 font-sans">
+                              {item.typeLabel}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1229,7 +1498,7 @@ export function NewLoanForm({
                   <button
                     type="button"
                     onClick={() => setStep("review")}
-                    className="w-full py-2 text-xs font-bold text-slate-400 hover:text-white transition cursor-pointer text-center"
+                    className="w-full py-2.5 text-xs font-bold text-slate-200 bg-zinc-850 hover:bg-zinc-800 hover:text-white border border-zinc-700/80 rounded-xl transition cursor-pointer text-center block"
                   >
                     ← Back: Review Profile
                   </button>
@@ -1238,7 +1507,7 @@ export function NewLoanForm({
                     <button
                       type="button"
                       onClick={onCancel}
-                      className="w-full py-2 text-xs font-bold text-slate-400 hover:text-red-400 transition cursor-pointer text-center"
+                      className="w-full py-2 text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer text-center"
                     >
                       Cancel
                     </button>

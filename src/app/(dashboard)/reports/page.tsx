@@ -184,54 +184,54 @@ export default function FinancialReportsPage() {
       {/* Aggregate Financial Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
             Total Disbursed
           </span>
           <div className="mt-2">
             <h3 className="text-xl font-black text-slate-900">{MONEY(totalDisbursed)}</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">{loans.length} loan records</p>
+            <p className="text-[11px] text-slate-600 font-medium mt-0.5">{loans.length} loan records</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
             Period Collections ({timePeriod})
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-emerald-600">{MONEY(totalPeriodCollections)}</h3>
-            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+            <h3 className="text-xl font-black text-emerald-700">{MONEY(totalPeriodCollections)}</h3>
+            <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
               {filteredPayments.length} receipts logged
             </p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
             Outstanding Due
           </span>
           <div className="mt-2">
             <h3 className="text-xl font-black text-slate-900">{MONEY(outstandingReceivable)}</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">Receivable capital & interest</p>
+            <p className="text-[11px] text-slate-600 font-medium mt-0.5">Receivable capital & interest</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
             Overdue In-Arrears
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-red-600">{MONEY(overduePortfolio)}</h3>
-            <p className="text-[11px] text-red-600 font-medium mt-0.5">Requires immediate action</p>
+            <h3 className="text-xl font-black text-red-700">{MONEY(overduePortfolio)}</h3>
+            <p className="text-[11px] text-red-700 font-medium mt-0.5">Requires immediate action</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
             Recovery Efficiency
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-red-600">{collectionEfficiency}%</h3>
-            <p className="text-[11px] text-red-600 font-medium mt-0.5">Overall collection rate</p>
+            <h3 className="text-xl font-black text-red-700">{collectionEfficiency}%</h3>
+            <p className="text-[11px] text-red-700 font-medium mt-0.5">Overall collection rate</p>
           </div>
         </div>
       </div>
@@ -327,11 +327,13 @@ export default function FinancialReportsPage() {
                   onClick={() => setTimePeriod(p)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer ${
                     timePeriod === p
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
                   }`}
                 >
-                  {p === "daily" ? "Daily (Today)" : p === "weekly" ? "Weekly (7d)" : p === "monthly" ? "Monthly" : "All Time"}
+                  <span className={timePeriod === p ? "text-white" : "text-slate-700"}>
+                    {p === "daily" ? "Daily (Today)" : p === "weekly" ? "Weekly (7d)" : p === "monthly" ? "Monthly" : "All Time"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -347,11 +349,13 @@ export default function FinancialReportsPage() {
                   onClick={() => setStatusFilter(s)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     statusFilter === s
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
                   }`}
                 >
-                  {s}
+                  <span className={statusFilter === s ? "text-white" : "text-slate-700"}>
+                    {s}
+                  </span>
                 </button>
               ))}
             </div>
@@ -362,7 +366,7 @@ export default function FinancialReportsPage() {
         {reportTab === "collections" && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-bold uppercase tracking-wider">
+              <thead className="bg-slate-100 border-b border-slate-200 text-xs text-slate-700 font-black uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Receipt / ID</th>
                   <th className="py-3 px-4">Date</th>
@@ -383,11 +387,11 @@ export default function FinancialReportsPage() {
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
                         {p.receiptNo || p.id}
                       </td>
-                      <td className="py-3 px-4 text-slate-500">{p.date}</td>
+                      <td className="py-3 px-4 text-slate-600 font-medium">{p.date}</td>
                       <td className="py-3 px-4 font-semibold text-slate-900">
                         {cust?.name || "Customer"}
                       </td>
-                      <td className="py-3 px-4 text-slate-500 font-mono">
+                      <td className="py-3 px-4 text-slate-600 font-mono font-medium">
                         {loan?.loanNo || p.loanId}
                       </td>
                       <td className="py-3 px-4">
@@ -403,8 +407,8 @@ export default function FinancialReportsPage() {
                           {p.type}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-600">{p.method || "Cash"}</td>
-                      <td className="py-3 px-4 text-slate-600">{p.collectedBy || "Admin"}</td>
+                      <td className="py-3 px-4 text-slate-700 font-medium">{p.method || "Cash"}</td>
+                      <td className="py-3 px-4 text-slate-700 font-medium">{p.collectedBy || "Admin"}</td>
                       <td className="py-3 px-4 text-right font-black text-slate-900">
                         {MONEY(p.amount)}
                       </td>
@@ -415,7 +419,7 @@ export default function FinancialReportsPage() {
             </table>
 
             {filteredPayments.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs">
+              <div className="p-8 text-center text-slate-500 font-medium text-xs">
                 No collections found for the {timePeriod} timeframe.
               </div>
             )}
@@ -426,7 +430,7 @@ export default function FinancialReportsPage() {
         {reportTab === "portfolio" && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-bold uppercase tracking-wider">
+              <thead className="bg-slate-100 border-b border-slate-200 text-xs text-slate-700 font-black uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Loan ID</th>
                   <th className="py-3 px-4">Borrower</th>

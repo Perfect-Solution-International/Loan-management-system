@@ -63,7 +63,14 @@ export function BrandLogo({
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
-            PSI One Loan Management System
+            PSI One
+          </span>
+          <span
+            className={`text-[10px] font-bold tracking-wider uppercase leading-tight mt-0.5 ${
+              isLight ? "text-slate-500" : "text-slate-400"
+            }`}
+          >
+            Loan Management System
           </span>
         </div>
       )}

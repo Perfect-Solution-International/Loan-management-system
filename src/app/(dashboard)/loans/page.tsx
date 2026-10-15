@@ -206,7 +206,7 @@ export default function LoansListPage() {
         {/* Card 1: Total Portfolio */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider">
               Total Disbursed
             </span>
             <div className="p-2 sm:p-2.5 bg-red-50 text-red-600 rounded-xl shrink-0">
@@ -217,7 +217,7 @@ export default function LoansListPage() {
             <h3 className="text-lg sm:text-2xl font-black font-mono text-slate-900">
               {MONEY(totalPortfolio)}
             </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-600 font-medium mt-0.5">
               {loans.length} facilities across portfolio
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function LoansListPage() {
         {/* Card 2: Active Contracts */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider">
               Active Contracts
             </span>
             <div className="p-2 sm:p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
@@ -237,7 +237,7 @@ export default function LoansListPage() {
             <h3 className="text-lg sm:text-2xl font-black font-mono text-emerald-600">
               {activeLoansCount}
             </h3>
-            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+            <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">
               Performing under schedule
             </p>
           </div>
@@ -246,7 +246,7 @@ export default function LoansListPage() {
         {/* Card 3: Recoveries Collected */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider">
               Total Recovered
             </span>
             <div className="p-2 sm:p-2.5 bg-slate-100 text-slate-700 rounded-xl shrink-0">

@@ -26,6 +26,163 @@ button {
   color: inherit;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   HIGH-CONTRAST LEGIBILITY ENFORCEMENT
+   Guarantees that active, hover, and dark/colored buttons always maintain 
+   crisp, legible text and badge contrast.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.text-white,
+[class~="text-white"],
+button.text-white,
+a.text-white,
+span.text-white,
+p.text-white,
+div.text-white {
+  color: #ffffff !important;
+}
+
+/* Ensure all dark/colored buttons, links, and active tabs render pure white text */
+button[class*="bg-red-600"],
+button[class*="bg-red-700"],
+button[class*="bg-red-800"],
+button[class*="bg-rose-600"],
+button[class*="bg-rose-700"],
+button[class*="bg-rose-800"],
+button[class*="bg-slate-900"],
+button[class*="bg-slate-850"],
+button[class*="bg-slate-800"],
+button[class*="bg-zinc-900"],
+button[class*="bg-zinc-850"],
+button[class*="bg-black"],
+button[class*="bg-emerald-600"],
+button[class*="bg-emerald-700"],
+button[class*="bg-amber-600"],
+button[class*="bg-orange-600"],
+a[class*="bg-red-600"],
+a[class*="bg-red-700"],
+a[class*="bg-rose-600"],
+a[class*="bg-rose-700"],
+a[class*="bg-slate-900"],
+a[class*="bg-zinc-900"],
+a[class*="bg-gradient-to-r"] {
+  color: #ffffff !important;
+}
+
+/* Icons inside dark/colored buttons must always be crisp white */
+button[class*="bg-red-600"] svg,
+button[class*="bg-red-700"] svg,
+button[class*="bg-rose-600"] svg,
+button[class*="bg-rose-700"] svg,
+button[class*="bg-slate-900"] svg,
+button[class*="bg-zinc-900"] svg,
+button[class*="bg-black"] svg,
+a[class*="bg-red-600"] svg,
+a[class*="bg-red-700"] svg,
+a[class*="bg-rose-600"] svg,
+a[class*="bg-rose-700"] svg,
+a[class*="bg-slate-900"] svg,
+a[class*="bg-zinc-900"] svg,
+a[class*="bg-gradient-to-r"] svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Spans inside dark/colored buttons inherit pure white */
+button[class*="bg-slate-900"] span:not([class*="bg-white"]),
+button[class*="bg-red-600"] span:not([class*="bg-white"]),
+button[class*="bg-red-700"] span:not([class*="bg-white"]),
+button[class*="bg-rose-600"] span:not([class*="bg-white"]),
+button[class*="bg-rose-700"] span:not([class*="bg-white"]),
+button[class*="bg-amber-600"] span:not([class*="bg-white"]),
+button[class*="bg-emerald-600"] span:not([class*="bg-white"]),
+button[class*="bg-orange-600"] span:not([class*="bg-white"]),
+a[class*="bg-gradient-to-r"] span {
+  color: #ffffff !important;
+}
+
+/* Light buttons & button links must always maintain dark, readable text */
+button[class~="bg-slate-100"],
+button[class~="bg-slate-50"],
+button[class~="bg-white"],
+button[class~="bg-emerald-50"],
+button[class~="bg-amber-50"],
+a[class~="bg-slate-100"],
+a[class~="bg-slate-50"],
+a[class~="bg-white"],
+a[class~="bg-emerald-50"],
+a[class~="bg-amber-50"] {
+  color: #0f172a;
+}
+
+/* Light red tinted badges/buttons */
+button[class~="bg-red-50"]:not([class*="text-white"]),
+button[class~="bg-red-100"]:not([class*="text-white"]),
+a[class~="bg-red-50"]:not([class*="text-white"]),
+a[class~="bg-red-100"]:not([class*="text-white"]) {
+  color: #991b1b !important;
+}
+
+/* Spans inside light buttons maintain crisp, dark text */
+button[class~="bg-slate-100"] span:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-emerald-"]),
+button[class~="bg-slate-50"] span:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-emerald-"]),
+button[class~="bg-white"] span:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-emerald-"]) {
+  color: #0f172a;
+}
+button[class~="bg-red-50"] span:not([class*="text-white"]),
+button[class~="bg-red-100"] span:not([class*="text-white"]) {
+  color: #991b1b !important;
+}
+
+/* Active counter badges on dark/colored buttons */
+button[class*="bg-slate-900"] span[class*="bg-white"],
+button[class*="bg-red-600"] span[class*="bg-white"],
+button[class*="bg-red-700"] span[class*="bg-white"],
+button[class*="bg-rose-600"] span[class*="bg-white"],
+button[class*="bg-amber-600"] span[class*="bg-white"],
+button[class*="bg-emerald-600"] span[class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* Common and legacy .btn classes */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn.secondary,
+.btn-secondary {
+  background-color: #ffffff;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1;
+}
+.btn.secondary:hover,
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  color: #020617 !important;
+  border-color: #94a3b8;
+}
+.btn.primary,
+.btn-primary {
+  background-color: #dc2626;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c;
+}
+.btn.primary:hover,
+.btn-primary:hover {
+  background-color: #b91c1c;
+  color: #ffffff !important;
+}
+
 input,
 select,
 textarea,

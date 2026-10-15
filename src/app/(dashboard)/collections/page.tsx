@@ -196,14 +196,14 @@ export default function CollectionsPage() {
             <span className="text-[11px] font-bold text-red-600 uppercase tracking-widest bg-red-50 border border-red-200/60 px-2.5 py-0.5 rounded-md">
               Field Operations
             </span>
-            <span className="text-xs text-slate-400 font-medium">Daily Recovery Sheet</span>
+            <span className="text-xs text-slate-600 font-semibold">Daily Recovery Sheet</span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
             Today&apos;s Collection List
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-600 font-medium mt-0.5">
             Scheduled loan installments, borrower dues, and field collections for{" "}
-            <span className="font-semibold text-slate-700">
+            <span className="font-bold text-slate-800">
               {formatFriendlyDate(selectedDate)}
             </span>
           </p>
@@ -236,10 +236,10 @@ export default function CollectionsPage() {
 
           <button
             onClick={handleResetToToday}
-            className={`px-3 py-2 text-xs font-bold rounded-xl border transition ${
+            className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
               selectedDate === "2026-10-14"
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                ? "bg-red-600 text-white border-red-600 shadow-sm"
+                : "bg-white text-slate-900 border-slate-300 hover:bg-slate-100 hover:text-black"
             }`}
           >
             Today
@@ -247,7 +247,7 @@ export default function CollectionsPage() {
 
           <button
             onClick={handlePrintSheet}
-            className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-xs"
+            className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Printer size={14} /> Print Field Sheet
           </button>
@@ -259,7 +259,7 @@ export default function CollectionsPage() {
         {/* Total Target */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
               Total Target Today
             </span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
@@ -270,7 +270,7 @@ export default function CollectionsPage() {
             <div className="text-2xl font-black text-slate-900">
               {MONEY(summary.targetAmount)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-600 font-medium mt-1">
               Across {summary.totalCount} scheduled facility {summary.totalCount === 1 ? "due" : "dues"}
             </p>
           </div>
@@ -348,15 +348,17 @@ export default function CollectionsPage() {
             onClick={() => setStatusFilter("ALL")}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               statusFilter === "ALL"
-                ? "bg-slate-900 text-white shadow-xs"
+                ? "bg-red-600 text-white border border-red-600 shadow-xs"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
             }`}
           >
-            <span>All Collections</span>
+            <span className={statusFilter === "ALL" ? "text-white font-bold" : "text-slate-800 font-bold"}>
+              All Collections
+            </span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
                 statusFilter === "ALL"
-                  ? "bg-white/20 text-white"
+                  ? "bg-white/25 text-white"
                   : "bg-slate-200 text-slate-700"
               }`}
             >
@@ -372,7 +374,9 @@ export default function CollectionsPage() {
                 : "bg-amber-50 text-amber-800 hover:bg-amber-100"
             }`}
           >
-            <span>Pending Collection</span>
+            <span className={statusFilter === "PENDING" ? "text-white font-bold" : "text-amber-900 font-bold"}>
+              Pending Collection
+            </span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
                 statusFilter === "PENDING"
@@ -392,7 +396,9 @@ export default function CollectionsPage() {
                 : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
             }`}
           >
-            <span>Collected Today</span>
+            <span className={statusFilter === "COLLECTED" ? "text-white font-bold" : "text-emerald-900 font-bold"}>
+              Collected Today
+            </span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
                 statusFilter === "COLLECTED"
@@ -412,7 +418,9 @@ export default function CollectionsPage() {
                 : "bg-rose-50 text-rose-800 hover:bg-rose-100"
             }`}
           >
-            <span>Delinquent / Arrears</span>
+            <span className={statusFilter === "OVERDUE" ? "text-white font-bold" : "text-rose-900 font-bold"}>
+              Delinquent / Arrears
+            </span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
                 statusFilter === "OVERDUE"
@@ -481,12 +489,12 @@ export default function CollectionsPage() {
             <h2 className="text-sm font-bold text-slate-900">
               Scheduled Collection Items ({filteredItems.length})
             </h2>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-600 font-medium">
               Showing active borrower collection obligations for {selectedDate}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-500 font-medium">
+            <span className="text-[11px] text-slate-600 font-semibold">
               Sort by: Route / Priority
             </span>
           </div>
@@ -494,7 +502,7 @@ export default function CollectionsPage() {
 
         <div className="overflow-x-auto min-w-full">
           <table className="w-full text-left text-xs min-w-[880px]">
-            <thead className="bg-slate-50 text-[10px] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200/80">
+            <thead className="bg-slate-100 text-[11px] text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Borrower Dossier</th>
                 <th className="py-3 px-3">Facility Details</th>
@@ -533,18 +541,18 @@ export default function CollectionsPage() {
                           <div className="font-bold text-slate-900 text-xs">
                             {bName}
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                          <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium mt-0.5">
                             <span>NIC: {item.customer?.nic || "—"}</span>
                             <span>•</span>
-                            <span className="inline-flex items-center gap-1 font-semibold text-slate-600">
-                              <Building size={11} className="text-slate-400" />
+                            <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
+                              <Building size={11} className="text-slate-500" />
                               {item.routeArea}
                             </span>
                           </div>
                           {item.customer?.phone && (
                             <a
                               href={`tel:${item.customer.phone}`}
-                              className="text-[11px] text-red-600 hover:underline inline-flex items-center gap-1 font-medium mt-0.5"
+                              className="text-[11px] text-red-600 hover:underline inline-flex items-center gap-1 font-semibold mt-0.5"
                             >
                               <Phone size={10} /> {item.customer.phone}
                             </a>
@@ -654,7 +662,8 @@ export default function CollectionsPage() {
                           onClick={() => openCollectModal(item)}
                           className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-xs shadow-red-600/20 transition cursor-pointer inline-flex items-center gap-1.5"
                         >
-                          <CreditCard size={13} /> Collect
+                          <CreditCard size={13} className="text-white" />
+                          <span className="text-white font-bold">Collect</span>
                         </button>
                       )}
                     </td>
