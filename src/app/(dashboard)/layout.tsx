@@ -23,6 +23,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith("/loans/")) return "Loan Record";
     if (pathname === "/loans") return "Loans Directory";
     if (pathname.startsWith("/collections")) return "Today's Collections";
+    if (pathname.startsWith("/overdue")) return "Overdue Payments & Recovery";
     if (pathname.startsWith("/arrears")) return "Delinquency & Arrears";
     if (pathname.startsWith("/reports")) return "Portfolio Analytics";
     if (pathname.startsWith("/audit-logs")) return "Activity & Audit Trail";

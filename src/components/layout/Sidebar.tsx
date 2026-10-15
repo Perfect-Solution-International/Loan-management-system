@@ -16,6 +16,7 @@ import {
   Activity,
   X,
   Receipt,
+  AlertOctagon,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 
@@ -78,6 +79,13 @@ const navSections = [
         badge: 'Risk',
         badgeVariant: 'red' as const,
       },
+      {
+        name: 'Overdue Payments',
+        href: '/overdue',
+        icon: AlertOctagon,
+        badge: 'Overdue',
+        badgeVariant: 'red' as const,
+      },
     ],
   },
   {
@@ -123,6 +131,9 @@ function isPathActive(pathname: string, href: string): boolean {
   }
   if (href === '/arrears') {
     return pathname.startsWith('/arrears');
+  }
+  if (href === '/overdue') {
+    return pathname.startsWith('/overdue');
   }
   if (href === '/reports') {
     return pathname.startsWith('/reports');

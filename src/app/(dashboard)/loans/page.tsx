@@ -396,7 +396,7 @@ export default function LoansListPage() {
                         >
                           {l.loanNo || l.id}
                         </Link>
-                        <span className="text-[10px] text-slate-400 mt-0.5">
+                        <span className="text-[10px] text-slate-600 font-medium mt-0.5">
                           Issued {l.issueDate || "—"}
                         </span>
                       </div>
@@ -415,7 +415,7 @@ export default function LoansListPage() {
                           >
                             {borrowerName}
                           </Link>
-                          <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          <span className="text-[10px] text-slate-600 font-mono font-medium mt-0.5">
                             {cust?.nic ? `NIC: ${cust.nic}` : cust?.phone || l.purpose || "Borrower"}
                             {cust?.town ? ` · ${cust.town}` : ""}
                           </span>
@@ -428,7 +428,7 @@ export default function LoansListPage() {
                       <div>
                         {MONEY(l.principal || l.amount || 0)}
                         {l.netDisbursement && l.netDisbursement !== (l.principal || l.amount) && (
-                          <span className="block text-[10px] font-normal text-slate-400">
+                          <span className="block text-[10px] font-medium text-slate-600">
                             Net: {MONEY(l.netDisbursement)}
                           </span>
                         )}
@@ -441,7 +441,7 @@ export default function LoansListPage() {
                         <span className="font-semibold text-xs text-slate-900">
                           {l.interestRate}% ({l.ratePeriod || l.repaymentFrequency || "Monthly"})
                         </span>
-                        <span className="text-[10px] text-slate-400 font-medium">
+                        <span className="text-[10px] text-slate-600 font-medium">
                           {l.duration} {l.repaymentFrequency === "Daily" ? "Days" : l.repaymentFrequency === "Weekly" ? "Weeks" : "Months"} term
                         </span>
                       </div>
@@ -453,7 +453,7 @@ export default function LoansListPage() {
                         <span className="font-mono font-bold text-xs text-slate-900">
                           {MONEY(l.installment || 0)}
                         </span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-slate-600 font-semibold">
                           per {l.repaymentFrequency?.toLowerCase() || "cycle"}
                         </span>
                       </div>

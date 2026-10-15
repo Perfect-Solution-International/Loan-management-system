@@ -632,8 +632,8 @@ function ProfileRow({
   fullWidth?: boolean;
 }) {
   return (
-    <div className={`${fullWidth ? "sm:col-span-2" : ""} bg-slate-50 rounded-xl p-3 border border-slate-100`}>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+    <div className={`${fullWidth ? "sm:col-span-2" : ""} bg-slate-50 rounded-xl p-3 border border-slate-200/80`}>
+      <p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">{label}</p>
       <p className={`text-sm font-bold text-slate-900 mt-0.5 ${mono ? "font-mono" : ""}`}>
         {value || "—"}
       </p>

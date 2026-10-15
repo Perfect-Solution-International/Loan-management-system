@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -14,12 +15,12 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  AlertOctagon,
   CreditCard,
   X,
   Check,
   ShieldCheck,
   UserCheck,
-  ExternalLink,
   Receipt,
   Activity,
   Settings,
@@ -33,6 +34,7 @@ import {
   type ScheduledCollectionItem,
 } from "@/lib/collection-schedule";
 import type { Customer, Loan, Payment } from "@/types";
+import ReceiptModal from "@/components/modals/ReceiptModal";
 
 interface DashboardPageProps {
   initialRole?: "admin" | "staff";
@@ -41,11 +43,21 @@ interface DashboardPageProps {
 export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
   const { customers, loans, payments, addPayment } = useData();
 
-  // Active role state: "admin" | "staff"
+  // Active role state: "admin" | "staff" (synced with initialRole)
   const [role, setRole] = useState<"admin" | "staff">(initialRole);
 
-  // Today's date reference
-  const todayDateStr = "2026-10-14";
+  useEffect(() => {
+    setRole(initialRole);
+  }, [initialRole]);
+
+  // Today's date reference (dynamic state initialized safely for SSR)
+  const [todayDateStr, setTodayDateStr] = useState<string>("2026-10-15");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setTodayDateStr(new Date().toISOString().slice(0, 10));
+    }
+  }, []);
 
   // Quick collect modal state on dashboard
   const [collectingItem, setCollectingItem] = useState<ScheduledCollectionItem | null>(null);
@@ -53,22 +65,48 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
   const [notification, setNotification] = useState<string>("");
 
+  // Official Printable Receipt Modal state
+  const [activeReceiptPayment, setActiveReceiptPayment] = useState<Payment | null>(null);
+
   // Portfolio level aggregations
-  const total = loans.reduce((s, l: Loan) => s + (l.principal || l.amount || 0), 0);
-  const outstanding =
-    loans
+  const total = useMemo(
+    () => loans.reduce((s, l: Loan) => s + (l.principal || l.amount || 0), 0),
+    [loans]
+  );
+
+  // Mathematically exact active outstanding balance (repayment minus payments per loan)
+  const outstanding = useMemo(() => {
+    return loans
       .filter((l: Loan) => (l.status || "").toLowerCase() !== "completed")
-      .reduce((s, l: Loan) => s + (l.totalRepayment || 0), 0) -
-    payments.reduce((s, p) => s + (p.amount || 0), 0);
+      .reduce((sum, l: Loan) => {
+        const totalRepay =
+          l.totalRepayment || (l.principal || l.amount || 0) + (l.interest || 0);
+        const loanPaid = payments
+          .filter((p) => p.loanId === l.id)
+          .reduce((pSum, p) => pSum + (p.amount || 0), 0);
+        return sum + Math.max(0, totalRepay - loanPaid);
+      }, 0);
+  }, [loans, payments]);
 
   // Compute today's collection items and metrics
-  const collectionData = getDailyCollections(loans, customers, payments, todayDateStr);
+  const collectionData = useMemo(() => {
+    return getDailyCollections(loans, customers, payments, todayDateStr);
+  }, [loans, customers, payments, todayDateStr]);
+
   const todaysCollections = collectionData.items;
   const collectionSummary = collectionData.summary;
 
   // Pending approval loans count for Admin committee review
-  const pendingLoans = loans.filter((l: Loan) => (l.status || "").toLowerCase() === "pending");
-  const overdueLoans = loans.filter((l: Loan) => (l.status || "").toLowerCase() === "overdue");
+  const pendingLoans = useMemo(
+    () => loans.filter((l: Loan) => (l.status || "").toLowerCase() === "pending"),
+    [loans]
+  );
+
+  // Overdue loans count
+  const overdueLoans = useMemo(
+    () => loans.filter((l: Loan) => (l.status || "").toLowerCase() === "overdue"),
+    [loans]
+  );
 
   // Admin stats: Executive Portfolio Perspective
   const adminStats = [
@@ -142,26 +180,51 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
 
   const currentStats = role === "admin" ? adminStats : staffStats;
 
-  const activity = [
-    {
-      title: "Daily collection received",
-      detail: "LN-2004 · LKR 1,545 recorded via Cash",
-      time: "Today · 9:30 AM",
-      badge: "Repayment",
-    },
-    {
-      title: "Loan application approved",
-      detail: "LN-2006 · Priyantha Jayasuriya",
-      time: "Yesterday · 4:15 PM",
-      badge: "Credit Approval",
-    },
-    {
-      title: "Repayment recorded",
-      detail: "LN-2001 · LKR 29,500 via Bank",
-      time: "Oct 1 · 11:20 AM",
-      badge: "Ledger",
-    },
-  ];
+  // Dynamic live system activity feed
+  const dynamicActivity = useMemo(() => {
+    const list: Array<{
+      title: string;
+      detail: string;
+      time: string;
+      badge: string;
+      type: "repayment" | "loan" | "customer";
+    }> = [];
+
+    // Latest recorded payments
+    const sortedPayments = [...payments].sort((a, b) =>
+      (b.date || "").localeCompare(a.date || "")
+    );
+    sortedPayments.slice(0, 3).forEach((p) => {
+      const loan = loans.find((l) => l.id === p.loanId);
+      list.push({
+        title: "Repayment credited",
+        detail: `${loan?.loanNo || p.loanId} · ${MONEY(p.amount)} via ${p.method || "Cash"}`,
+        time: p.date === todayDateStr ? "Today" : p.date || "Recent",
+        badge: "Ledger",
+        type: "repayment",
+      });
+    });
+
+    // Latest loan applications
+    const sortedLoans = [...loans].sort((a, b) =>
+      (b.issueDate || "").localeCompare(a.issueDate || "")
+    );
+    sortedLoans.slice(0, 2).forEach((l) => {
+      const c = customers.find((cust) => cust.id === l.customerId);
+      list.push({
+        title:
+          (l.status || "").toLowerCase() === "pending"
+            ? "Loan application pending review"
+            : "Loan facility disbursed",
+        detail: `${l.loanNo || l.id} · ${c?.name || l.customerName} (${MONEY(l.principal || l.amount || 0)})`,
+        time: l.issueDate === todayDateStr ? "Today" : l.issueDate || "Recent",
+        badge: (l.status || "").toLowerCase() === "pending" ? "Underwriting" : "Active",
+        type: "loan",
+      });
+    });
+
+    return list.slice(0, 4);
+  }, [payments, loans, customers, todayDateStr]);
 
   const handleOpenCollect = (item: ScheduledCollectionItem) => {
     setCollectingItem(item);
@@ -190,22 +253,22 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     };
 
     addPayment(newPayment);
+    setActiveReceiptPayment(newPayment);
     setNotification(
-      `Receipt ${receiptNo} recorded: LKR ${numAmount.toLocaleString()} collected from ${
+      `Receipt ${receiptNo} recorded: ${MONEY(numAmount)} collected from ${
         collectingItem.customer?.name || collectingItem.loan.customerName
-      }.`
+      }. Official receipt generated.`
     );
     setCollectingItem(null);
     setCollectAmount("");
 
     setTimeout(() => {
       setNotification("");
-    }, 5000);
+    }, 6000);
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
       {/* Toast Notification */}
       {notification && (
         <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs">
@@ -230,7 +293,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
               className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${
                 role === "admin"
                   ? "bg-purple-100 text-purple-900 border-purple-200"
-                  : "bg-red-100 text-red-900 border-red-200"
+                  : "bg-blue-100 text-blue-900 border-blue-200"
               }`}
             >
               {role === "admin" ? "🛡️ Administrator Workstation" : "📋 Loan Officer / Staff Operations"}
@@ -241,12 +304,12 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
           </div>
 
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1.5">
-            {role === "admin" ? "Good morning, Administrator 👋" : "Good morning, Field Officer 👋"}
+            {role === "admin" ? "Executive Portfolio Dashboard" : "Operational Staff Dashboard"}
           </h1>
 
           <p className="text-xs font-medium text-slate-600 mt-0.5 max-w-2xl">
             {role === "admin"
-              ? "Executive oversight of total capital, credit approvals, regulatory compliance, and islandwide field collections."
+              ? "Comprehensive overview of disbursed capital, regulatory health, Committee approvals, and islandwide field collections."
               : "Daily field collection sheet, assigned borrower schedules, repayment receipts, and new loan origination."}
           </p>
         </div>
@@ -254,6 +317,12 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         <div className="flex items-center gap-2.5 flex-wrap">
           {role === "admin" ? (
             <>
+              <Link
+                href="/overdue"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold rounded-xl border border-rose-200 transition"
+              >
+                <AlertOctagon size={14} className="text-rose-600" /> Overdue UI
+              </Link>
               <Link
                 href="/audit-logs"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 transition"
@@ -274,6 +343,12 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 transition"
               >
                 <Calendar size={14} className="text-red-600" /> Daily Sheet
+              </Link>
+              <Link
+                href="/repayments"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition"
+              >
+                <Receipt size={14} className="text-emerald-700" /> Record Payment
               </Link>
               <Link
                 href="/customers/new"
@@ -298,7 +373,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 {pendingLoans.length} Loan Application{pendingLoans.length > 1 ? "s" : ""} Awaiting Administrator Approval
               </p>
               <p className="text-amber-900 font-medium text-[11px] mt-0.5">
-                Underwriting documents and guarantor checks completed. Requires Credit Committee / Branch Manager sign-off before capital release.
+                Underwriting documents and guarantor checks completed. Requires Credit Committee sign-off before capital disbursement.
               </p>
             </div>
           </div>
@@ -320,7 +395,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             </div>
             <div>
               <h2 className="text-sm font-black text-white">
-                Officer Field Workflow · Route #01 (Central & Coastal)
+                Officer Field Route #01 · Daily Target Operations
               </h2>
               <p className="text-[11px] text-slate-300 font-medium mt-0.5">
                 Target: {MONEY(collectionSummary.targetAmount)} · {todaysCollections.length} total borrower installments scheduled for today.
@@ -331,13 +406,19 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/collections"
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs"
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs"
             >
               Open Route Sheet
             </Link>
             <Link
+              href="/overdue"
+              className="px-3.5 py-1.5 bg-rose-900/60 hover:bg-rose-900 text-rose-200 rounded-xl text-xs font-bold border border-rose-700/60 transition"
+            >
+              Overdue Recoveries
+            </Link>
+            <Link
               href="/repayments"
-              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 transition"
+              className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 transition"
             >
               Record Payment
             </Link>
@@ -693,19 +774,23 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             </div>
           </section>
 
+          {/* Dynamic Live Activity Feed */}
           <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-            <div className="border-b border-slate-100 pb-2">
-              <h2 className="text-base font-bold text-slate-900">Recent Activity</h2>
-              <p className="text-xs text-slate-600 font-medium">Latest updates across the system</p>
+            <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Recent Activity</h2>
+                <p className="text-xs text-slate-600 font-medium">Live transactions & credit workflow</p>
+              </div>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <div className="space-y-3">
-              {activity.map((a, i) => (
-                <div className="flex items-start gap-3 text-xs" key={a.title}>
+              {dynamicActivity.map((a) => (
+                <div className="flex items-start gap-3 text-xs" key={a.detail}>
                   <div
                     className="w-2 h-2 rounded-full mt-1.5 shrink-0"
                     style={{
                       background:
-                        i === 1 ? "#d97706" : i === 2 ? "#059669" : "#dc2626",
+                        a.type === "repayment" ? "#059669" : a.badge.includes("Pending") ? "#d97706" : "#dc2626",
                     }}
                   />
                   <div>
@@ -753,10 +838,16 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 <Plus size={14} /> Issue New Loan
               </Link>
               <Link
+                className="px-4 py-2.5 bg-rose-50 text-rose-900 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
+                href="/overdue"
+              >
+                <AlertOctagon size={14} className="text-rose-600" /> Overdue UI
+              </Link>
+              <Link
                 className="px-4 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
                 href="/arrears"
               >
-                <AlertTriangle size={14} className="text-rose-600" /> Arrears & Risk
+                <AlertTriangle size={14} className="text-amber-600" /> Arrears & Risk
               </Link>
               <Link
                 className="px-4 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
@@ -786,10 +877,16 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 <Calendar size={14} /> Open Today&apos;s Collections Sheet
               </Link>
               <Link
-                className="px-4 py-2.5 bg-red-50 text-red-900 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
+                className="px-4 py-2.5 bg-rose-50 text-rose-900 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
+                href="/overdue"
+              >
+                <AlertOctagon size={14} className="text-rose-600" /> Overdue Recoveries
+              </Link>
+              <Link
+                className="px-4 py-2.5 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
                 href="/repayments"
               >
-                <Receipt size={14} className="text-red-700" /> Record Repayment Receipt
+                <Receipt size={14} className="text-emerald-700" /> Record Repayment Receipt
               </Link>
               <Link
                 className="px-4 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
@@ -901,12 +998,20 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   type="submit"
                   className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-xs inline-flex items-center gap-1 cursor-pointer"
                 >
-                  <Check size={13} /> Confirm
+                  <Check size={13} /> Confirm & Issue Receipt
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* ── Official Printable Receipt Modal ── */}
+      {activeReceiptPayment && (
+        <ReceiptModal
+          payment={activeReceiptPayment}
+          onClose={() => setActiveReceiptPayment(null)}
+        />
       )}
     </div>
   );

@@ -642,10 +642,11 @@ function LoanDetailsContent() {
                       <button
                         type="button"
                         onClick={() => setSelectedReceiptPayment(p)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-600 hover:text-white text-slate-800 border-2 border-slate-300 hover:border-red-600 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shadow-xs"
+                        title="View & Print Official Receipt"
                       >
-                        <Receipt size={13} />
-                        <span>Receipt</span>
+                        <Receipt size={13} className="text-white shrink-0" />
+                        <span className="text-white font-bold">Receipt</span>
                       </button>
                     </td>
                   </tr>

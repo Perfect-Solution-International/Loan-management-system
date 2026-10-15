@@ -405,7 +405,7 @@ export default function CustomerDashboardPage() {
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200 font-mono">
                   {currentLoan?.loanNo || "LN-ACTIVE"}
                 </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                   Active Facility
                 </span>
               </div>
@@ -417,7 +417,7 @@ export default function CustomerDashboardPage() {
             {/* Loan Selector if customer has multiple facilities */}
             {customerLoans.length > 1 && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-400 font-medium">Facility:</span>
+                <span className="text-slate-700 font-bold">Facility:</span>
                 <select
                   value={currentLoan?.id}
                   onChange={(e) => setActiveLoanId(e.target.value)}
@@ -435,42 +435,42 @@ export default function CustomerDashboardPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-6 text-xs">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 font-medium block">Principal Amount</span>
+              <span className="text-slate-600 font-bold block">Principal Amount</span>
               <span className="text-base font-bold text-slate-900 font-mono mt-1 block">
                 {MONEY(totalPrincipal)}
               </span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 font-medium block">Interest Rate</span>
+              <span className="text-slate-600 font-bold block">Interest Rate</span>
               <span className="text-base font-bold text-slate-900 font-mono mt-1 block">
                 {currentLoan?.interestRate || 3.0}% / mo
               </span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 font-medium block">Duration</span>
+              <span className="text-slate-600 font-bold block">Duration</span>
               <span className="text-base font-bold text-slate-900 mt-1 block">
                 {currentLoan?.duration || 6} Months
               </span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 font-medium block">Frequency</span>
+              <span className="text-slate-600 font-bold block">Frequency</span>
               <span className="text-base font-bold text-slate-900 mt-1 block">
                 {currentLoan?.repaymentFrequency || "Monthly"}
               </span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 font-medium block">Issue Date</span>
+              <span className="text-slate-600 font-bold block">Issue Date</span>
               <span className="text-base font-bold text-slate-900 mt-1 block">
                 {currentLoan?.issueDate || "2026-09-20"}
               </span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 font-medium block">Facility Status</span>
+              <span className="text-slate-600 font-bold block">Facility Status</span>
               <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 {currentLoan?.status || "Active"}
@@ -537,7 +537,7 @@ export default function CustomerDashboardPage() {
           {activeTab === "schedule" && (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-200/70">
+                <thead className="bg-slate-100 text-slate-800 uppercase tracking-wider font-black border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">Cycle #</th>
                     <th className="py-3 px-4">Installment Due Date</th>
@@ -604,7 +604,7 @@ export default function CustomerDashboardPage() {
               {customerPayments.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-200/70">
+                    <thead className="bg-slate-100 text-slate-800 uppercase tracking-wider font-black border-b border-slate-200">
                       <tr>
                         <th className="py-3 px-4">Receipt No</th>
                         <th className="py-3 px-4">Payment Date</th>
@@ -636,10 +636,11 @@ export default function CustomerDashboardPage() {
                             <button
                               type="button"
                               onClick={() => setReceiptToPrint(p)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs transition cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer shadow-xs"
+                              title="Download & Print Official Settlement Receipt"
                             >
-                              <Download size={13} />
-                              Receipt
+                              <Receipt size={13} className="text-white shrink-0" />
+                              <span className="text-white font-bold">Receipt</span>
                             </button>
                           </td>
                         </tr>
@@ -766,18 +767,18 @@ export default function CustomerDashboardPage() {
                 <span className="text-sm font-bold text-emerald-600 font-mono">{MONEY(totalPaid)}</span>
               </div>
               <div className="p-3 rounded-xl bg-slate-50">
-                <span className="text-slate-400 block font-medium">Remaining</span>
+                <span className="text-slate-600 block font-bold">Remaining</span>
                 <span className="text-sm font-bold text-rose-600 font-mono">{MONEY(outstandingBalance)}</span>
               </div>
             </div>
 
             {/* Statement Transactions */}
             <div className="flex-1 overflow-y-auto py-4">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
                 Transaction History
               </h4>
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-400 uppercase font-semibold">
+                <thead className="bg-slate-100 text-slate-700 uppercase font-bold border-b border-slate-200">
                   <tr>
                     <th className="p-2.5">Date</th>
                     <th className="p-2.5">Receipt #</th>
@@ -788,9 +789,9 @@ export default function CustomerDashboardPage() {
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {customerPayments.map((p) => (
                     <tr key={p.id}>
-                      <td className="p-2.5 text-slate-600">{p.date}</td>
-                      <td className="p-2.5 font-mono text-slate-800">{p.receiptNo || p.id}</td>
-                      <td className="p-2.5 text-slate-500">{p.method || "Cash"}</td>
+                      <td className="p-2.5 text-slate-700 font-medium">{p.date}</td>
+                      <td className="p-2.5 font-mono font-bold text-slate-900">{p.receiptNo || p.id}</td>
+                      <td className="p-2.5 text-slate-700 font-semibold">{p.method || "Cash"}</td>
                       <td className="p-2.5 text-right font-mono font-bold text-slate-900">{MONEY(p.amount)}</td>
                     </tr>
                   ))}
