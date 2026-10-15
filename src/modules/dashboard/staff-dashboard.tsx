@@ -87,7 +87,11 @@ export function StaffDashboard() {
   );
 
   // Today's collections metrics
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const [todayStr, setTodayStr] = useState<string>("2026-10-15");
+  React.useEffect(() => {
+    setTodayStr(new Date().toISOString().slice(0, 10));
+  }, []);
+
   const collectionData = useMemo(
     () => getDailyCollections(loans, customers, payments, todayStr),
     [loans, customers, payments, todayStr]
@@ -618,7 +622,7 @@ export function StaffDashboard() {
                 <h2 className="text-base font-black text-slate-900">
                   Today&apos;s Field Collection Schedule
                 </h2>
-                <p className="text-xs text-slate-600 font-medium">
+                <p suppressHydrationWarning className="text-xs text-slate-600 font-medium">
                   {formatFriendlyDate(todayStr)} · {collectionSchedule.length} borrowers scheduled for collection
                 </p>
               </div>

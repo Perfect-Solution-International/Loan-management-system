@@ -242,22 +242,25 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Customer Avatar & ID */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-red-600/20 overflow-hidden shrink-0">
+              <div
+                suppressHydrationWarning
+                className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-red-600/20 overflow-hidden shrink-0"
+              >
                 {currentCustomer.photoUrl ? (
                   <img
                     src={currentCustomer.photoUrl}
-                    alt={currentCustomer.name}
+                    alt={currentCustomer.name || "Customer"}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  currentCustomer.name.charAt(0)
+                  (currentCustomer.fullName || currentCustomer.name || "B").charAt(0)
                 )}
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold text-slate-900 leading-tight">
+                <p suppressHydrationWarning className="text-xs font-bold text-slate-900 leading-tight">
                   {currentCustomer.fullName || currentCustomer.name}
                 </p>
-                <p className="text-[11px] font-mono text-slate-500 mt-0.5">
+                <p suppressHydrationWarning className="text-[11px] font-mono text-slate-500 mt-0.5">
                   ID: {currentCustomer.id}
                 </p>
               </div>

@@ -185,7 +185,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <div className="flex items-center gap-2.5">
+            <div suppressHydrationWarning className="flex items-center gap-2.5">
               <div className="text-right hidden sm:block">
                 <div className="flex items-center justify-end gap-1.5">
                   {isStaffView ? (
