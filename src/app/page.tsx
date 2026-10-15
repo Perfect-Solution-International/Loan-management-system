@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   ShieldCheck,
-  UserPlus,
   Users,
   CreditCard,
   BadgeCheck,
@@ -54,20 +53,14 @@ export default function HomePage() {
             <a href="#compliance" className="hover:text-white transition">Security & KYC</a>
           </nav>
 
-          {/* Action CTAs (No Dashboard links) */}
+          {/* Action CTAs */}
           <div className="hidden sm:flex items-center gap-3">
             <Link
               href="/login"
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/80 rounded-xl transition"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5 transition"
             >
+              <Lock size={14} />
               Login
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5 transition"
-            >
-              <UserPlus size={15} />
-              Register Customer
             </Link>
           </div>
 
@@ -117,19 +110,12 @@ export default function HomePage() {
             </nav>
             <div className="pt-4 border-t border-zinc-800 flex flex-col gap-2.5">
               <Link
-                href="/register"
+                href="/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-center text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30"
               >
-                <UserPlus size={16} />
-                Register 
-              </Link>
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 border border-zinc-700 bg-zinc-900 text-white font-medium rounded-xl text-center text-xs"
-              >
-                Staff Login
+                <Lock size={15} />
+                Login
               </Link>
             </div>
           </div>
@@ -164,28 +150,21 @@ export default function HomePage() {
             The unified loan management operating system for microfinance lenders, credit unions, and non-banking institutions. Accelerate loan origination, streamline collections, and stay audit-ready every day.
           </p>
 
-          {/* Primary Action Group (No Dashboard links) */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
-            <Link
-              href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl shadow-xl shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5 transition text-sm"
-            >
-              <UserPlus size={18} />
-              Register New Borrower
-            </Link>
-
+          {/* Primary Action Group */}
+          <div className="flex items-center justify-center max-w-md mx-auto">
             <Link
               href="/login"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold rounded-2xl transition text-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl shadow-xl shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5 transition text-sm"
             >
-              Authorized Staff Portal
+              <Lock size={18} />
+              Login to Portal
               <ArrowRight size={16} />
             </Link>
           </div>
 
           {/* Direct Route Hint */}
           <p className="mt-4 text-xs text-zinc-500">
-            Internal loan officers and staff can access their workspace via{" "}
+            Internal loan officers, staff, and registered borrowers can access their workspace via{" "}
             <Link href="/login" className="text-red-400 hover:underline font-mono">
               /login
             </Link>
@@ -382,10 +361,10 @@ export default function HomePage() {
               </div>
 
               <Link
-                href="/register"
+                href="/login"
                 className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5"
               >
-                Apply for this Loan Structure
+                Login to Apply
                 <ArrowRight size={14} />
               </Link>
             </div>
@@ -493,7 +472,7 @@ export default function HomePage() {
               </span>
               <h4 className="text-base font-bold text-white mb-1.5">Borrower KYC</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Register customer credentials, upload identity proofs, and generate a persistent sequential ID.
+                Verify borrower credentials, upload identity proofs, and generate a persistent sequential ID.
               </p>
             </div>
 
@@ -618,21 +597,16 @@ export default function HomePage() {
             Ready to Streamline Your Loan Portfolio?
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-8">
-            Register new borrowers with verified KYC credentials or sign in with your staff account to begin operations.
+            Sign in with your credentials to manage operations, loan portfolios, collections, and borrower profiles.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5 text-sm"
-            >
-              <UserPlus size={16} />
-              Register as New Borrower
-            </Link>
+          <div className="flex items-center justify-center">
             <Link
               href="/login"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold rounded-xl transition text-sm"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-0.5 text-sm"
             >
-              Authorized Staff Login →
+              <Lock size={16} />
+              Login to Portal
+              <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -648,8 +622,7 @@ export default function HomePage() {
             <a href="#calculator" className="hover:text-white transition">Loan Estimator</a>
             <a href="#workflow" className="hover:text-white transition">How it Works</a>
             <a href="#compliance" className="hover:text-white transition">Security & KYC</a>
-            <Link href="/register" className="hover:text-white transition">Borrower Registration</Link>
-            <Link href="/login" className="hover:text-white transition">Staff Login</Link>
+            <Link href="/login" className="hover:text-white transition">Portal Login</Link>
           </div>
 
           <p>© 2026 PSI One Loan Management System. All rights reserved.</p>
