@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   UserPlus,
   CheckCircle2,
   RefreshCw,
@@ -18,6 +19,9 @@ import {
   History,
   X,
   Camera,
+  ChevronRight,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -80,6 +84,77 @@ export default function NewCustomerPage() {
   }, [customers]);
 
   const [customerId, setCustomerId] = useState(() => generateCustomerId());
+  
+  // ── Multi-Step Wizard State ───────────────────────────────────────────────
+  const [currentStep, setCurrentStep] = useState<number>(1);
+
+  const STEPS = [
+    { number: 1, title: "Identity & Profile", subtitle: "Name, NIC & Photo" },
+    { number: 2, title: "Address & Contact", subtitle: "Residence & Phone" },
+    { number: 3, title: "NIC & Documents", subtitle: "Front, Back & Proofs" },
+    { number: 4, title: "Prior Loan & Review", subtitle: "History & Summary" },
+  ];
+
+  const goToStep = (stepNum: number) => {
+    if (stepNum > currentStep) {
+      if (currentStep === 1 || stepNum > 1) {
+        if (!form.fullName.trim()) {
+          setErrorMsg("Please enter customer's full legal name.");
+          setCurrentStep(1);
+          return;
+        }
+        if (!form.nic.trim()) {
+          setErrorMsg("Please enter a valid NIC Number.");
+          setCurrentStep(1);
+          return;
+        }
+      }
+      if (currentStep === 2 || (stepNum > 2 && currentStep >= 2)) {
+        if (!form.phone.trim()) {
+          setErrorMsg("Please enter a primary contact phone number.");
+          setCurrentStep(2);
+          return;
+        }
+      }
+    }
+    setErrorMsg("");
+    setCurrentStep(stepNum);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      if (!form.fullName.trim()) {
+        setErrorMsg("Please enter customer's full legal name.");
+        return;
+      }
+      if (!form.nic.trim()) {
+        setErrorMsg("Please enter a valid NIC Number.");
+        return;
+      }
+      setErrorMsg("");
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 2) {
+      if (!form.phone.trim()) {
+        setErrorMsg("Please enter a primary contact phone number.");
+        return;
+      }
+      setErrorMsg("");
+      setCurrentStep(3);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 3) {
+      setErrorMsg("");
+      setCurrentStep(4);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handlePrevStep = () => {
+    setErrorMsg("");
+    setCurrentStep((prev) => Math.max(1, prev - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   
   // 1. Core Profile Details (Clean defaults with NO unwanted auto-fill or dummy data)
   const [form, setForm] = useState({
@@ -312,14 +387,17 @@ export default function NewCustomerPage() {
 
     if (!form.fullName.trim()) {
       setErrorMsg("Please enter customer's full legal name.");
+      setCurrentStep(1);
       return;
     }
     if (!form.nic.trim()) {
       setErrorMsg("Please enter a valid NIC Number.");
+      setCurrentStep(1);
       return;
     }
     if (!form.phone.trim()) {
       setErrorMsg("Please enter a primary contact phone number.");
+      setCurrentStep(2);
       return;
     }
 
@@ -512,9 +590,67 @@ export default function NewCustomerPage() {
         </div>
       )}
 
+      {/* ── MULTI-STEP PROGRESS STEPPER ── */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-3 sm:p-4 shadow-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {STEPS.map((s) => {
+            const isActive = currentStep === s.number;
+            const isCompleted = currentStep > s.number;
+            return (
+              <button
+                key={s.number}
+                type="button"
+                onClick={() => goToStep(s.number)}
+                className={`flex items-center gap-3 p-3 rounded-2xl text-left transition cursor-pointer ${
+                  isActive
+                    ? "bg-red-50 border border-red-200 text-red-950 shadow-2xs ring-1 ring-red-500/20"
+                    : isCompleted
+                    ? "bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200"
+                    : "text-slate-600 hover:bg-slate-50/70 border border-transparent"
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                    isActive
+                      ? "bg-red-600 text-white shadow-xs"
+                      : isCompleted
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {isCompleted ? <Check size={16} /> : s.number}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                      Step {s.number}
+                    </span>
+                    {isCompleted && (
+                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
+                        Done
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`text-xs font-black truncate ${
+                      isActive ? "text-red-950" : isCompleted ? "text-slate-900" : "text-slate-600"
+                    }`}
+                  >
+                    {s.title}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-        {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+        {/* ── STEP 1: IDENTITY & PROFILE ── */}
+        {currentStep === 1 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-red-50 text-red-600 rounded-xl">
@@ -703,8 +839,31 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            {/* Step 1 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <Link
+                href="/customers"
+                className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition"
+              >
+                Cancel
+              </Link>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next: Address &amp; Contact Details</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 2: ADDRESS & CONTACT ── */}
+        {currentStep === 2 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
             <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <MapPin size={18} />
@@ -880,8 +1039,33 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            {/* Step 2 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back: Identity &amp; Profile</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next: NIC &amp; Supporting Documents</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: NIC & DOCUMENTS ── */}
+        {currentStep === 3 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
             <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <CreditCard size={18} />
@@ -1134,8 +1318,33 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+            {/* Step 3 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back: Address &amp; Contact</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next: Prior Loan &amp; Final Review</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: PRIOR LOAN & FINAL REVIEW ── */}
+        {currentStep === 4 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
@@ -1318,23 +1527,127 @@ export default function NewCustomerPage() {
           )}
         </div>
 
+            {/* SECTION 8: FINAL BORROWER DOSSIER REVIEW */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Step 4 Review: New Borrower Dossier Summary
+                  </h2>
+                  <p className="text-[11px] text-slate-600">
+                    Please verify all onboarded information before finalizing customer registration.
+                  </p>
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                {/* Profile card preview */}
+                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl flex items-center gap-4">
+                  {form.photoUrl ? (
+                    <img
+                      src={form.photoUrl}
+                      alt=""
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-red-500 shadow-xs"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-700 font-black text-lg flex items-center justify-center shrink-0">
+                      {(form.fullName || "C").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                        {customerId}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        {form.status}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-black text-slate-900 truncate mt-1">
+                      {form.fullName || "No Name Entered"}
+                    </h4>
+                    <p className="text-[11px] font-mono font-bold text-slate-700">
+                      NIC: {form.nic || "Pending"}
+                    </p>
+                  </div>
+                </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-          <Link
-            href="/customers"
-            className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
-          >
-            <UserPlus size={16} /> Register & Save Customer Record
-          </button>
-        </div>
+                {/* Location & Contact info */}
+                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-1 text-xs">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Contact &amp; Location
+                  </p>
+                  <p className="font-bold text-slate-900">Phone: {form.phone || "Not provided"}</p>
+                  <p className="text-slate-600 truncate">
+                    Address: {[form.address, form.village, form.town, form.district].filter(Boolean).join(", ") || "Main Road, Colombo"}
+                  </p>
+                  {form.emergencyContactName && (
+                    <p className="text-[11px] text-slate-500 truncate">
+                      Emergency: {form.emergencyContactName} ({form.emergencyContactRelationship || "Contact"})
+                    </p>
+                  )}
+                </div>
+
+                {/* Document and Loan status */}
+                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Verification &amp; Records
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600">NIC Images:</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        nicFrontUrl && nicBackUrl
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : nicFrontUrl || nicBackUrl
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {nicFrontUrl && nicBackUrl ? "Front & Back Uploaded" : nicFrontUrl ? "Front Only" : nicBackUrl ? "Back Only" : "Not Uploaded"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600">Other Documents:</span>
+                    <span className="font-bold text-slate-800">
+                      {attachedDocs.length} attached
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600">Prior Loan:</span>
+                    <span className="font-bold text-slate-800">
+                      {form.hasExistingLoan
+                        ? `Yes (${form.existingLoanNo || "Prior"} · ${MONEY(computedLoanCalculations?.outstanding || 0)})`
+                        : "None (New Borrower)"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back: NIC &amp; Documents</span>
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-7 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
+              >
+                <UserPlus size={16} />
+                <span>Register &amp; Save Customer Record</span>
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
