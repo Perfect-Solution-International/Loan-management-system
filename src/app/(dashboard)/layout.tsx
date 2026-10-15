@@ -2,8 +2,9 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, ExternalLink } from "lucide-react";
 import { DataProvider } from "@/providers/data-provider";
 import Sidebar from "@/components/layout/Sidebar";
 
@@ -13,7 +14,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   // Dynamic header breadcrumb name
   const pageTitle = React.useMemo(() => {
-    if (pathname === "/" || pathname === "/dashboard") return "Dashboard Overview";
+    if (pathname === "/" || pathname === "/dashboard") return "Dashboard";
+    if (pathname === "/staffdashboard") return "Staff Dashboard";
     if (pathname.startsWith("/customers/new")) return "Register Customer";
     if (pathname.startsWith("/customers/")) return "Borrower Profile";
     if (pathname === "/customers") return "Customer Directory";
@@ -23,10 +25,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith("/collections")) return "Today's Collections";
     if (pathname.startsWith("/arrears")) return "Delinquency & Arrears";
     if (pathname.startsWith("/reports")) return "Portfolio Analytics";
+    if (pathname.startsWith("/audit-logs")) return "Activity & Audit Trail";
     if (pathname.startsWith("/settings")) return "System Settings";
     if (pathname.startsWith("/repayments")) return "Repayment Ledger";
     return "Portfolio Operations";
   }, [pathname]);
+
+  const isStaffView = pathname === "/staffdashboard";
 
   return (
     <div className="flex h-screen bg-slate-100/80 overflow-hidden font-sans">
@@ -79,14 +84,44 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Right Header User Status */}
+          {/* Right Header User Status & Access Level Display */}
           <div className="flex items-center space-x-3 shrink-0">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-black text-slate-900">Admin Officer</p>
-              <p className="text-[11px] text-slate-600 font-semibold">Credit &amp; Recoveries</p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-md shadow-red-600/25 ring-2 ring-red-100">
-              AD
+            <Link
+              href="/customerdashboard"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 transition"
+              title="Preview Customer Self-Service Portal"
+            >
+              <ExternalLink size={13} className="text-slate-600" />
+              <span>Borrower Portal</span>
+            </Link>
+
+            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+              <div className="text-right hidden sm:block">
+                <div className="flex items-center justify-end gap-1.5">
+                  {isStaffView ? (
+                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-200">
+                      Loan Officer / Staff
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-200">
+                      Administrator
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-black text-slate-900 mt-0.5">
+                  {isStaffView ? "Field Officer" : "Admin Officer"}
+                </p>
+              </div>
+
+              {isStaffView ? (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-600/25 ring-2 ring-blue-100">
+                  FO
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-md shadow-red-600/25 ring-2 ring-red-100">
+                  AD
+                </div>
+              )}
             </div>
           </div>
         </header>

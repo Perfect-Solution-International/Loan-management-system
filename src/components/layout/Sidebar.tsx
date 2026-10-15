@@ -15,6 +15,7 @@ import {
   LogOut,
   Activity,
   X,
+  Receipt,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 
@@ -23,7 +24,7 @@ interface SidebarItem {
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   badge?: string;
-  badgeVariant?: 'red' | 'amber' | 'slate';
+  badgeVariant?: 'red' | 'amber' | 'slate' | 'purple';
   section?: string;
 }
 
@@ -66,6 +67,11 @@ const navSections = [
         badgeVariant: 'amber' as const,
       },
       {
+        name: 'Repayments Ledger',
+        href: '/repayments',
+        icon: Receipt,
+      },
+      {
         name: 'Arrears Register',
         href: '/arrears',
         icon: AlertTriangle,
@@ -81,6 +87,11 @@ const navSections = [
         name: 'Reports & Analytics',
         href: '/reports',
         icon: BarChart3,
+      },
+      {
+        name: 'Activity & Audit Logs',
+        href: '/audit-logs',
+        icon: Activity,
       },
       {
         name: 'System Settings',
@@ -107,11 +118,17 @@ function isPathActive(pathname: string, href: string): boolean {
   if (href === '/collections') {
     return pathname.startsWith('/collections');
   }
+  if (href === '/repayments') {
+    return pathname.startsWith('/repayments');
+  }
   if (href === '/arrears') {
     return pathname.startsWith('/arrears');
   }
   if (href === '/reports') {
     return pathname.startsWith('/reports');
+  }
+  if (href === '/audit-logs') {
+    return pathname.startsWith('/audit-logs');
   }
   if (href === '/settings') {
     return pathname.startsWith('/settings');
@@ -153,7 +170,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
         <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
           {navSections.map((section) => (
             <div key={section.title} className="space-y-1">
-              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-300 select-none">
+              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
                 {section.title}
               </p>
 
@@ -167,10 +184,10 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
                       key={item.href}
                       href={item.href}
                       onClick={onClose}
-                      className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 ${
+                      className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 ${
                         active
                           ? 'bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30'
-                          : 'text-slate-100 hover:text-white hover:bg-white/10'
+                          : 'text-slate-200 hover:text-white hover:bg-white/10'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -179,7 +196,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
                           className={`shrink-0 transition-colors ${
                             active
                               ? 'text-white'
-                              : 'text-slate-300 group-hover:text-white'
+                              : 'text-slate-400 group-hover:text-white'
                           }`}
                         />
                         <span className="truncate">{item.name}</span>
@@ -187,7 +204,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
 
                       {item.badge && (
                         <span
-                          className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                             active
                               ? 'bg-white/25 text-white'
                               : item.badgeVariant === 'red'

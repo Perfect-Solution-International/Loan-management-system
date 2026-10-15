@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   Shield,
@@ -23,6 +24,9 @@ import {
   Calculator,
   UserX,
   Check,
+  ArrowUpRight,
+  UserCheck,
+  CreditCard,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { initialSettings } from "@/lib/demo-data";
@@ -891,6 +895,159 @@ function SettingsContent() {
               </div>
               <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <Lock size={20} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── System Users and Access Levels Policy Matrix ── */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
+                  ACCESS CONTROL ARCHITECTURE &amp; RBAC
+                </p>
+                <h3 className="text-base font-black text-slate-900 tracking-tight mt-0.5">
+                  System Users and Access Levels
+                </h3>
+                <p className="text-xs text-slate-600 font-medium">
+                  Configured roles, operational boundaries, and system privileges across internal personnel and borrower accounts.
+                </p>
+              </div>
+
+              <span className="text-[11px] font-bold px-3 py-1 bg-slate-100 text-slate-800 border border-slate-200 rounded-xl self-start sm:self-auto">
+                Role-Based Access Control (RBAC) Active
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Level 1: Administrator */}
+              <div className="bg-slate-50/80 rounded-2xl border border-slate-200/90 p-5 space-y-3.5 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-200 uppercase tracking-wider">
+                      Tier 1 · Full Authority
+                    </span>
+                    <Shield size={16} className="text-purple-700" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900">Administrator</h4>
+                    <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">
+                      Full access to all authorized system management functions and regulatory controls.
+                    </p>
+                  </div>
+
+                  <ul className="space-y-1.5 text-xs text-slate-800 pt-1">
+                    {[
+                      "Manage staff accounts and permissions",
+                      "Register, view, edit, and manage customers",
+                      "Upload and manage customer documents",
+                      "Create and approve loans according to assigned authority",
+                      "Configure interest rates, deduction rules, and repayment methods",
+                      "View and manage loan records",
+                      "Record and supervise repayments",
+                      "View financial dashboards and reports",
+                      "Manage system settings and backups",
+                      "Review activity logs and financial adjustments",
+                    ].map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-purple-600 font-bold shrink-0 mt-0.5">✓</span>
+                        <span className="font-semibold text-slate-800 leading-tight">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 font-bold flex items-center justify-between">
+                  <span>Assigned Personnel:</span>
+                  <span className="font-mono text-purple-800">{staffUsers.filter((u) => u.role === "Administrator").length} Users</span>
+                </div>
+              </div>
+
+              {/* Level 2: Loan Officer / Staff */}
+              <div className="bg-slate-50/80 rounded-2xl border border-slate-200/90 p-5 space-y-3.5 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 uppercase tracking-wider">
+                      Tier 2 · Operational Staff
+                    </span>
+                    <UserCheck size={16} className="text-emerald-700" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900">Loan Officer / Staff</h4>
+                    <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">
+                      Operational functions permitted by the administrator for daily credit &amp; collection workflows.
+                    </p>
+                  </div>
+
+                  <ul className="space-y-1.5 text-xs text-slate-800 pt-1">
+                    {[
+                      "Register new customers",
+                      "Update customer details where permitted",
+                      "Upload customer photographs and documents",
+                      "Search and view customer profiles",
+                      "Create loan applications",
+                      "View loan calculations and repayment schedules",
+                      "Record customer payments when authorized",
+                      "Generate payment receipts",
+                      "View assigned reports and customer histories",
+                    ].map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-emerald-600 font-bold shrink-0 mt-0.5">✓</span>
+                        <span className="font-semibold text-slate-800 leading-tight">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 font-bold flex items-center justify-between">
+                  <span>Assigned Personnel:</span>
+                  <span className="font-mono text-emerald-800">{staffUsers.filter((u) => u.role === "Loan Officer" || u.role === "Collection Agent").length} Users</span>
+                </div>
+              </div>
+
+              {/* Level 3: Customer Account — Optional */}
+              <div className="bg-slate-50/80 rounded-2xl border border-slate-200/90 p-5 space-y-3.5 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-200 uppercase tracking-wider">
+                      Tier 3 · Borrower Portal (Optional)
+                    </span>
+                    <Users size={16} className="text-blue-700" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900">Customer Account</h4>
+                    <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">
+                      A future customer portal allowing borrowers self-service access to their portfolio.
+                    </p>
+                  </div>
+
+                  <ul className="space-y-1.5 text-xs text-slate-800 pt-1">
+                    {[
+                      "Log in securely",
+                      "View their own loan information",
+                      "Check installment due dates",
+                      "View repayment history",
+                      "Check outstanding balances",
+                      "Download available receipts and statements",
+                      "Included only if required in approved project scope",
+                    ].map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold shrink-0 mt-0.5">•</span>
+                        <span className="font-semibold text-slate-800 leading-tight">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200">
+                  <Link
+                    href="/customerdashboard"
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <span>Preview Borrower Portal</span>
+                    <ArrowUpRight size={13} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
