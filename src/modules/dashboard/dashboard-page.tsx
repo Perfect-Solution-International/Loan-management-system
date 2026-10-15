@@ -22,11 +22,8 @@ import {
   ShieldCheck,
   UserCheck,
   Receipt,
-  Activity,
   Settings,
   Sparkles,
-  Bell,
-  BellRing,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -326,12 +323,6 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 <AlertOctagon size={14} className="text-rose-600" /> Overdue UI
               </Link>
               <Link
-                href="/audit-logs"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 transition"
-              >
-                <Activity size={14} className="text-slate-700" /> Audit Trail
-              </Link>
-              <Link
                 href="/loans/new"
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/20 transition cursor-pointer"
               >
@@ -362,46 +353,6 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
           )}
         </div>
       </div>
-
-      {/* ── ADMIN ONLY: PENDING COMMITTEE APPROVAL NOTIFICATION BANNER ── */}
-      {role === "admin" && pendingLoans.length > 0 && (
-        <div className="bg-white border-2 border-amber-300/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-sm hover:shadow-md transition">
-          <div className="flex items-start gap-3.5">
-            <div className="relative p-2.5 bg-amber-500 text-white rounded-xl shrink-0 mt-0.5 shadow-md shadow-amber-500/25">
-              <BellRing size={20} className="animate-pulse" />
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-80" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 border border-white" />
-              </span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
-                  Approval Notification
-                </span>
-                <span className="text-[10px] text-slate-500 font-semibold font-mono">
-                  {pendingLoans.length} Pending Sign-off
-                </span>
-              </div>
-              <p className="font-black text-slate-900 text-sm">
-                {pendingLoans.length} Loan Application{pendingLoans.length > 1 ? "s" : ""} Awaiting Administrator Approval
-              </p>
-              <p className="text-slate-600 font-medium text-xs mt-0.5 max-w-xl leading-relaxed">
-                Underwriting documents and guarantor checks completed. Requires Credit Committee sign-off before capital disbursement.
-              </p>
-            </div>
-          </div>
-          <Link
-            href={`/loans/${pendingLoans[0].id}`}
-            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer inline-flex items-center gap-2 shrink-0"
-          >
-            <Bell size={14} />
-            <span>Review Applications ({pendingLoans.length})</span>
-            <ArrowRight size={13} />
-          </Link>
-        </div>
-      )}
 
       {/* ── STAFF ONLY: DAILY OPERATIONS ROUTINE BAR ── */}
       {role === "staff" && (
@@ -865,12 +816,6 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 href="/arrears"
               >
                 <AlertTriangle size={14} className="text-amber-600" /> Arrears & Risk
-              </Link>
-              <Link
-                className="px-4 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
-                href="/audit-logs"
-              >
-                <Activity size={14} className="text-blue-600" /> Audit Trail & Logs
               </Link>
               <Link
                 className="px-4 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
