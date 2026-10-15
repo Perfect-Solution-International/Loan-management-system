@@ -70,7 +70,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("psi_customers");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed: Customer[] = JSON.parse(stored);
+          const ids = new Set(parsed.map((c) => c.id));
+          const missing = initialCustomers.filter((c) => !ids.has(c.id));
+          return missing.length > 0 ? [...parsed, ...missing] : parsed;
+        }
       } catch (e) {
         console.error("Failed to parse stored customers", e);
       }
@@ -82,7 +87,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("psi_loans");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed: Loan[] = JSON.parse(stored);
+          const ids = new Set(parsed.map((l) => l.id));
+          const missing = initialLoans.filter((l) => !ids.has(l.id));
+          return missing.length > 0 ? [...parsed, ...missing] : parsed;
+        }
       } catch (e) {
         console.error("Failed to parse stored loans", e);
       }
@@ -94,7 +104,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("psi_payments");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed: Payment[] = JSON.parse(stored);
+          const ids = new Set(parsed.map((p) => p.id));
+          const missing = initialPayments.filter((p) => !ids.has(p.id));
+          return missing.length > 0 ? [...parsed, ...missing] : parsed;
+        }
       } catch (e) {
         console.error("Failed to parse stored payments", e);
       }

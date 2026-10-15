@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   UserPlus,
   CheckCircle2,
   RefreshCw,
@@ -18,6 +19,9 @@ import {
   History,
   X,
   Camera,
+  ChevronRight,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -80,14 +84,77 @@ export default function NewCustomerPage() {
   }, [customers]);
 
   const [customerId, setCustomerId] = useState(() => generateCustomerId());
+  
+  // ── Multi-Step Wizard State ───────────────────────────────────────────────
+  const [currentStep, setCurrentStep] = useState<number>(1);
 
-  // Keep customerId in sync if customers load asynchronously or change
-  React.useEffect(() => {
-    setCustomerId((prev) => {
-      if (!prev) return generateCustomerId();
-      return prev;
-    });
-  }, [generateCustomerId]);
+  const STEPS = [
+    { number: 1, title: "Identity & Profile", subtitle: "Name, NIC & Photo" },
+    { number: 2, title: "Address & Contact", subtitle: "Residence & Phone" },
+    { number: 3, title: "NIC & Documents", subtitle: "Front, Back & Proofs" },
+    { number: 4, title: "Prior Loan & Review", subtitle: "History & Summary" },
+  ];
+
+  const goToStep = (stepNum: number) => {
+    if (stepNum > currentStep) {
+      if (currentStep === 1 || stepNum > 1) {
+        if (!form.fullName.trim()) {
+          setErrorMsg("Please enter customer's full legal name.");
+          setCurrentStep(1);
+          return;
+        }
+        if (!form.nic.trim()) {
+          setErrorMsg("Please enter a valid NIC Number.");
+          setCurrentStep(1);
+          return;
+        }
+      }
+      if (currentStep === 2 || (stepNum > 2 && currentStep >= 2)) {
+        if (!form.phone.trim()) {
+          setErrorMsg("Please enter a primary contact phone number.");
+          setCurrentStep(2);
+          return;
+        }
+      }
+    }
+    setErrorMsg("");
+    setCurrentStep(stepNum);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      if (!form.fullName.trim()) {
+        setErrorMsg("Please enter customer's full legal name.");
+        return;
+      }
+      if (!form.nic.trim()) {
+        setErrorMsg("Please enter a valid NIC Number.");
+        return;
+      }
+      setErrorMsg("");
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 2) {
+      if (!form.phone.trim()) {
+        setErrorMsg("Please enter a primary contact phone number.");
+        return;
+      }
+      setErrorMsg("");
+      setCurrentStep(3);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 3) {
+      setErrorMsg("");
+      setCurrentStep(4);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handlePrevStep = () => {
+    setErrorMsg("");
+    setCurrentStep((prev) => Math.max(1, prev - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   
   // 1. Core Profile Details (Clean defaults with NO unwanted auto-fill or dummy data)
   const [form, setForm] = useState({
@@ -98,13 +165,13 @@ export default function NewCustomerPage() {
     fullName: "",
     nic: "",
     dob: "",
-    gender: "Male",
+    gender: "" as "Male" | "Female" | "Other" | "",
     
     // Residential address & Location
     address: "",
     village: "",
     town: "",
-    district: "Colombo",
+    district: "",
     
     // Contact
     phone: "",
@@ -112,7 +179,7 @@ export default function NewCustomerPage() {
     email: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
-    emergencyContactRelationship: "Spouse",
+    emergencyContactRelationship: "",
     
     // Customer Status
     status: "Active" as CustomerStatus,
@@ -320,14 +387,17 @@ export default function NewCustomerPage() {
 
     if (!form.fullName.trim()) {
       setErrorMsg("Please enter customer's full legal name.");
+      setCurrentStep(1);
       return;
     }
     if (!form.nic.trim()) {
       setErrorMsg("Please enter a valid NIC Number.");
+      setCurrentStep(1);
       return;
     }
     if (!form.phone.trim()) {
       setErrorMsg("Please enter a primary contact phone number.");
+      setCurrentStep(2);
       return;
     }
 
@@ -342,11 +412,11 @@ export default function NewCustomerPage() {
       fullName: form.fullName.trim(),
       nic: form.nic.trim().toUpperCase(),
       dob: form.dob || undefined,
-      gender: form.gender,
+      gender: (form.gender as "Male" | "Female" | "Other") || "Male",
       address: form.address.trim() || "Main Road",
       village: form.village.trim() || form.town.trim() || "Village Area",
       town: form.town.trim() || "Colombo",
-      district: form.district,
+      district: form.district || "Colombo",
       phone: form.phone.trim(),
       alternatePhone: form.alternatePhone.trim() || undefined,
       email: form.email.trim() || undefined,
@@ -487,7 +557,7 @@ export default function NewCustomerPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             PORTFOLIO / REGISTRATION
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -520,12 +590,70 @@ export default function NewCustomerPage() {
         </div>
       )}
 
+      {/* ── MULTI-STEP PROGRESS STEPPER ── */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-3 sm:p-4 shadow-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {STEPS.map((s) => {
+            const isActive = currentStep === s.number;
+            const isCompleted = currentStep > s.number;
+            return (
+              <button
+                key={s.number}
+                type="button"
+                onClick={() => goToStep(s.number)}
+                className={`flex items-center gap-3 p-3 rounded-2xl text-left transition cursor-pointer ${
+                  isActive
+                    ? "bg-red-50 border border-red-200 text-red-950 shadow-2xs ring-1 ring-red-500/20"
+                    : isCompleted
+                    ? "bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200"
+                    : "text-slate-600 hover:bg-slate-50/70 border border-transparent"
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                    isActive
+                      ? "bg-red-600 text-white shadow-xs"
+                      : isCompleted
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {isCompleted ? <Check size={16} /> : s.number}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                      Step {s.number}
+                    </span>
+                    {isCompleted && (
+                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
+                        Done
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`text-xs font-black truncate ${
+                      isActive ? "text-red-950" : isCompleted ? "text-slate-900" : "text-slate-600"
+                    }`}
+                  >
+                    {s.title}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-        {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+        {/* ── STEP 1: IDENTITY & PROFILE ── */}
+        {currentStep === 1 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                 <Camera size={18} />
               </div>
               <div>
@@ -543,7 +671,7 @@ export default function NewCustomerPage() {
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -560,7 +688,7 @@ export default function NewCustomerPage() {
                   <img
                     src={form.photoUrl}
                     alt="Customer Preview"
-                    className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-red-500 shadow-md bg-slate-100"
                   />
                   <button
                     type="button"
@@ -618,12 +746,12 @@ export default function NewCustomerPage() {
                       autoComplete="off"
                       value={customerId}
                       onChange={(e) => setCustomerId(e.target.value)}
-                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                     <button
                       type="button"
                       onClick={handleRegenerateId}
-                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition"
+                      className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-xl transition"
                       title="Regenerate Customer ID"
                     >
                       <RefreshCw size={14} />
@@ -663,8 +791,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.fullName}
                 onChange={handleChange}
-                placeholder="e.g. Kasun Chamara Perera"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -679,8 +806,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.nic}
                 onChange={handleChange}
-                placeholder="e.g. 198512345678 or 851234567V"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold uppercase"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
               />
             </div>
 
@@ -690,8 +816,9 @@ export default function NewCustomerPage() {
                 name="gender"
                 value={form.gender}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
+                <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -706,16 +833,39 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.dob}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
           </div>
         </div>
 
-        {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            {/* Step 1 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <Link
+                href="/customers"
+                className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition"
+              >
+                Cancel
+              </Link>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next: Address &amp; Contact Details</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 2: ADDRESS & CONTACT ── */}
+        {currentStep === 2 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <MapPin size={18} />
             </div>
             <div>
@@ -739,8 +889,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.address}
                 onChange={handleChange}
-                placeholder="No. 45/2, Temple Road"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -754,8 +903,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.village}
                 onChange={handleChange}
-                placeholder="e.g. Mahabage, Kiribathgoda"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -767,8 +915,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.town}
                 onChange={handleChange}
-                placeholder="e.g. Kelaniya, Colombo 03"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -778,8 +925,9 @@ export default function NewCustomerPage() {
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
+                <option value="">Select District</option>
                 {SRI_LANKA_DISTRICTS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -793,7 +941,7 @@ export default function NewCustomerPage() {
         {/* SECTION 4: CONTACT INFORMATION */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <Phone size={18} />
             </div>
             <div>
@@ -818,8 +966,7 @@ export default function NewCustomerPage() {
                 required
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="0771234567"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -833,8 +980,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.alternatePhone}
                 onChange={handleChange}
-                placeholder="0112345678"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -846,8 +992,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="customer@example.lk"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -859,8 +1004,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.emergencyContactName}
                 onChange={handleChange}
-                placeholder="e.g. Malini Perera"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -872,8 +1016,7 @@ export default function NewCustomerPage() {
                 autoComplete="off"
                 value={form.emergencyContactPhone}
                 onChange={handleChange}
-                placeholder="0719998888"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
 
@@ -883,8 +1026,9 @@ export default function NewCustomerPage() {
                 name="emergencyContactRelationship"
                 value={form.emergencyContactRelationship}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
               >
+                <option value="">Select Relationship</option>
                 <option value="Spouse">Spouse</option>
                 <option value="Parent">Parent</option>
                 <option value="Sibling">Sibling</option>
@@ -895,10 +1039,35 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            {/* Step 2 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back: Identity &amp; Profile</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next: NIC &amp; Supporting Documents</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: NIC & DOCUMENTS ── */}
+        {currentStep === 3 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <CreditCard size={18} />
             </div>
             <div>
@@ -916,7 +1085,7 @@ export default function NewCustomerPage() {
             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  <span className="w-2 h-2 rounded-full bg-red-600" />
                   NIC Front Image
                 </span>
                 {nicFrontUrl && (
@@ -954,7 +1123,7 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
                   <Upload size={22} className="text-slate-400 mb-2" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
                   <span className="text-[10px] text-slate-500 mt-1">
@@ -974,7 +1143,7 @@ export default function NewCustomerPage() {
             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  <span className="w-2 h-2 rounded-full bg-red-600" />
                   NIC Back Image
                 </span>
                 {nicBackUrl && (
@@ -1012,7 +1181,7 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
                   <Upload size={22} className="text-slate-400 mb-2" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
                   <span className="text-[10px] text-slate-500 mt-1">
@@ -1057,7 +1226,7 @@ export default function NewCustomerPage() {
                   className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
                       <FileText size={16} />
                     </div>
                     <div className="truncate">
@@ -1098,10 +1267,9 @@ export default function NewCustomerPage() {
                 <input
                   type="text"
                   autoComplete="off"
-                  placeholder="e.g. Utility Bill - Water Board"
                   value={newDocTitle}
                   onChange={(e) => setNewDocTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
 
@@ -1112,7 +1280,7 @@ export default function NewCustomerPage() {
                 <select
                   value={newDocType}
                   onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="other">Other Supporting Document</option>
                   <option value="utility_bill">Utility Bill / Address Proof</option>
@@ -1140,7 +1308,7 @@ export default function NewCustomerPage() {
                   <button
                     type="button"
                     onClick={handleAddDocumentToForm}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                    className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                   >
                     Attach
                   </button>
@@ -1150,8 +1318,33 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+            {/* Step 3 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back: Address &amp; Contact</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next: Prior Loan &amp; Final Review</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: PRIOR LOAN & FINAL REVIEW ── */}
+        {currentStep === 4 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
@@ -1174,7 +1367,7 @@ export default function NewCustomerPage() {
                 name="hasExistingLoan"
                 checked={form.hasExistingLoan}
                 onChange={handleChange}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
               />
               <span>Has Existing / Prior Loan Record</span>
             </label>
@@ -1189,10 +1382,10 @@ export default function NewCustomerPage() {
                   <input
                     type="text"
                     name="existingLoanNo"
+                    autoComplete="off"
                     value={form.existingLoanNo}
                     onChange={handleChange}
-                    placeholder="e.g. LN-2026-PRIOR-01"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold"
                   />
                 </div>
 
@@ -1201,10 +1394,11 @@ export default function NewCustomerPage() {
                   <input
                     type="number"
                     name="existingLoanPrincipal"
+                    autoComplete="off"
                     step="5000"
                     value={form.existingLoanPrincipal}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
 
@@ -1214,9 +1408,10 @@ export default function NewCustomerPage() {
                     type="number"
                     step="0.1"
                     name="existingInterestRate"
+                    autoComplete="off"
                     value={form.existingInterestRate}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
 
@@ -1225,10 +1420,11 @@ export default function NewCustomerPage() {
                   <input
                     type="number"
                     name="existingDuration"
+                    autoComplete="off"
                     min="1"
                     value={form.existingDuration}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
               </div>
@@ -1236,7 +1432,7 @@ export default function NewCustomerPage() {
               {/* Outstanding Balance & Previous Repayments */}
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                 <div className="flex items-center gap-2">
-                  <History size={16} className="text-blue-600" />
+                  <History size={16} className="text-red-600" />
                   <h3 className="text-xs font-bold text-slate-900">
                     Repayment History Ledger & Current Outstanding Balance Due
                   </h3>
@@ -1250,10 +1446,11 @@ export default function NewCustomerPage() {
                     <input
                       type="number"
                       name="previousAmountPaid"
+                      autoComplete="off"
                       step="1000"
                       value={form.previousAmountPaid}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     />
                     <p className="text-[10px] text-slate-600">Sum of prior installments settled.</p>
                   </div>
@@ -1265,9 +1462,10 @@ export default function NewCustomerPage() {
                     <input
                       type="number"
                       name="previousInstallmentsPaid"
+                      autoComplete="off"
                       value={form.previousInstallmentsPaid}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     />
                   </div>
 
@@ -1279,7 +1477,7 @@ export default function NewCustomerPage() {
                       name="previousPaymentMethod"
                       value={form.previousPaymentMethod}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     >
                       <option value="Cash">Cash</option>
                       <option value="Bank Transfer">Bank Transfer</option>
@@ -1296,21 +1494,21 @@ export default function NewCustomerPage() {
                     </label>
                     <textarea
                       name="previousRepaymentNotes"
+                      autoComplete="off"
                       rows={2}
                       value={form.previousRepaymentNotes}
                       onChange={handleChange}
-                      placeholder="e.g. Paid regular weekly installments on time with no delays."
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold resize-none"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold resize-none"
                     />
                   </div>
 
                   {/* Calculated Balance Callout */}
-                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl flex flex-col justify-between">
+                  <div className="p-3.5 bg-red-50/80 border border-red-200 rounded-xl flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                      <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
                         Current Outstanding Balance Due
                       </p>
-                      <p className="text-xl font-black font-mono text-blue-900 mt-0.5">
+                      <p className="text-xl font-black font-mono text-red-900 mt-0.5">
                         {MONEY(computedLoanCalculations?.outstanding || 0)}
                       </p>
                     </div>
@@ -1329,23 +1527,127 @@ export default function NewCustomerPage() {
           )}
         </div>
 
+            {/* SECTION 8: FINAL BORROWER DOSSIER REVIEW */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Step 4 Review: New Borrower Dossier Summary
+                  </h2>
+                  <p className="text-[11px] text-slate-600">
+                    Please verify all onboarded information before finalizing customer registration.
+                  </p>
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                {/* Profile card preview */}
+                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl flex items-center gap-4">
+                  {form.photoUrl ? (
+                    <img
+                      src={form.photoUrl}
+                      alt=""
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-red-500 shadow-xs"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-700 font-black text-lg flex items-center justify-center shrink-0">
+                      {(form.fullName || "C").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                        {customerId}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        {form.status}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-black text-slate-900 truncate mt-1">
+                      {form.fullName || "No Name Entered"}
+                    </h4>
+                    <p className="text-[11px] font-mono font-bold text-slate-700">
+                      NIC: {form.nic || "Pending"}
+                    </p>
+                  </div>
+                </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-          <Link
-            href="/customers"
-            className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
-          >
-            <UserPlus size={16} /> Register & Save Customer Record
-          </button>
-        </div>
+                {/* Location & Contact info */}
+                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-1 text-xs">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Contact &amp; Location
+                  </p>
+                  <p className="font-bold text-slate-900">Phone: {form.phone || "Not provided"}</p>
+                  <p className="text-slate-600 truncate">
+                    Address: {[form.address, form.village, form.town, form.district].filter(Boolean).join(", ") || "Main Road, Colombo"}
+                  </p>
+                  {form.emergencyContactName && (
+                    <p className="text-[11px] text-slate-500 truncate">
+                      Emergency: {form.emergencyContactName} ({form.emergencyContactRelationship || "Contact"})
+                    </p>
+                  )}
+                </div>
+
+                {/* Document and Loan status */}
+                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Verification &amp; Records
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600">NIC Images:</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        nicFrontUrl && nicBackUrl
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : nicFrontUrl || nicBackUrl
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {nicFrontUrl && nicBackUrl ? "Front & Back Uploaded" : nicFrontUrl ? "Front Only" : nicBackUrl ? "Back Only" : "Not Uploaded"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600">Other Documents:</span>
+                    <span className="font-bold text-slate-800">
+                      {attachedDocs.length} attached
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600">Prior Loan:</span>
+                    <span className="font-bold text-slate-800">
+                      {form.hasExistingLoan
+                        ? `Yes (${form.existingLoanNo || "Prior"} · ${MONEY(computedLoanCalculations?.outstanding || 0)})`
+                        : "None (New Borrower)"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back: NIC &amp; Documents</span>
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-7 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
+              >
+                <UserPlus size={16} />
+                <span>Register &amp; Save Customer Record</span>
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );

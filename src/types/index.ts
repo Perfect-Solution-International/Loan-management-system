@@ -49,6 +49,7 @@ export interface Customer {
 }
 
 export type LoanStatus = "Pending" | "Active" | "Completed" | "Rejected" | "Overdue";
+export type RepaymentType = "Capital + Interest" | "Interest Only";
 
 export interface Loan {
   id: string;
@@ -61,8 +62,9 @@ export interface Loan {
   interestDeduction: number;
   otherFees: number;
   interestRate: number;
-  ratePeriod: "Daily" | "Weekly" | "Monthly";
+  ratePeriod: "Daily" | "Weekly" | "Monthly" | "Flat";
   repaymentFrequency: "Daily" | "Weekly" | "Monthly";
+  repaymentType?: RepaymentType;
   duration: number;
   issueDate: string;
   firstPaymentDate: string;
@@ -72,6 +74,13 @@ export interface Loan {
   totalRepayment: number;
   netDisbursement: number;
   installment: number;
+  guarantorName?: string;
+  guarantorNic?: string;
+  guarantorPhone?: string;
+  guarantorRelationship?: string;
+  guarantorAddress?: string;
+  disbursementMethod?: "Cash" | "Bank Transfer" | "Cheque";
+  notes?: string;
 }
 
 export interface Payment {
@@ -95,6 +104,10 @@ export interface LoanCalculation {
   totalRepayment: number;
   installmentAmount: number;
   numberOfInstallments: number;
+  repaymentType?: RepaymentType;
+  periodicInterest?: number;
+  capitalAtMaturity?: number;
+  finalInstallmentAmount?: number;
 }
 
 export interface SystemSettings {

@@ -8,12 +8,12 @@ import {
   Eye,
   EyeOff,
   Fingerprint,
-  Landmark,
   LockKeyhole,
   Mail,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,16 +25,9 @@ export default function LoginPage() {
         <div className="login-visual-glow login-glow-one" />
         <div className="login-visual-glow login-glow-two" />
 
-        <Link href="/" className="login-brand">
-          <span className="login-brand-icon">
-            <Landmark size={24} />
-          </span>
-
-          <span>
-            PSI <b>ONE</b>
-            <small>LOAN MANAGEMENT</small>
-          </span>
-        </Link>
+        <div className="login-brand mb-4">
+          <BrandLogo href="/" size="lg" theme="dark" />
+        </div>
 
         <div className="login-visual-content">
           <span className="login-kicker">
@@ -89,11 +82,8 @@ export default function LoginPage() {
       {/* Right side - Login form */}
       <section className="login-form-side">
         <div className="login-form-wrap">
-          <div className="login-mobile-brand">
-            <span className="login-brand-icon">
-              <Landmark size={22} />
-            </span>
-            <span>PSI <b>ONE</b></span>
+          <div className="login-mobile-brand mb-6">
+            <BrandLogo href="/" size="md" theme="light" />
           </div>
 
           <div className="login-welcome-icon">
@@ -108,7 +98,7 @@ export default function LoginPage() {
             Enter your details below to access your workspace.
           </p>
 
-          <form action="/" className="login-form">
+          <form action="/dashboard" className="login-form">
             <label htmlFor="login-email">Email address</label>
 
             <div className="login-input-wrap">
@@ -190,8 +180,18 @@ export default function LoginPage() {
             Demo interface · Authentication is not connected yet
           </p>
 
-          <Link href="/" className="login-back-link">
-            ← Back to dashboard preview
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500">Need to register a customer?</span>
+            <Link href="/register" className="font-semibold text-red-600 hover:text-red-800 transition">
+              Customer Registration →
+            </Link>
+          </div>
+
+          <Link href="/dashboard" className="login-back-link">
+            ← Back to dashboard
+          </Link>
+          <Link href="/" className="login-back-link text-slate-400 mt-2 hover:text-slate-600 transition">
+            Go to main homepage
           </Link>
         </div>
 

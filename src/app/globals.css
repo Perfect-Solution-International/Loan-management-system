@@ -21,33 +21,194 @@ body {
   box-sizing: border-box;
 }
 
-button,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HIGH-CONTRAST LEGIBILITY ENFORCEMENT
+   Guarantees that active, hover, and dark/colored buttons always maintain 
+   crisp, legible text and badge contrast.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.text-white,
+[class~="text-white"],
+button.text-white,
+a.text-white,
+span.text-white,
+p.text-white,
+div.text-white {
+  color: #ffffff !important;
+}
+
+/* Ensure all dark/colored buttons, links, and active tabs render pure white text */
+button[class*="bg-red-600"],
+button[class*="bg-red-700"],
+button[class*="bg-red-800"],
+button[class*="bg-rose-600"],
+button[class*="bg-rose-700"],
+button[class*="bg-rose-800"],
+button[class*="bg-slate-900"],
+button[class*="bg-slate-850"],
+button[class*="bg-slate-800"],
+button[class*="bg-zinc-900"],
+button[class*="bg-zinc-850"],
+button[class*="bg-black"],
+button[class*="bg-emerald-600"],
+button[class*="bg-emerald-700"],
+button[class*="bg-amber-600"],
+button[class*="bg-orange-600"],
+a[class*="bg-red-600"],
+a[class*="bg-red-700"],
+a[class*="bg-rose-600"],
+a[class*="bg-rose-700"],
+a[class*="bg-slate-900"],
+a[class*="bg-zinc-900"],
+a[class*="bg-gradient-to-r"] {
+  color: #ffffff !important;
+}
+
+/* Icons inside dark/colored buttons must always be crisp white */
+button[class*="bg-red-600"] svg,
+button[class*="bg-red-700"] svg,
+button[class*="bg-rose-600"] svg,
+button[class*="bg-rose-700"] svg,
+button[class*="bg-slate-900"] svg,
+button[class*="bg-zinc-900"] svg,
+button[class*="bg-black"] svg,
+a[class*="bg-red-600"] svg,
+a[class*="bg-red-700"] svg,
+a[class*="bg-rose-600"] svg,
+a[class*="bg-rose-700"] svg,
+a[class*="bg-slate-900"] svg,
+a[class*="bg-zinc-900"] svg,
+a[class*="bg-gradient-to-r"] svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Spans inside dark/colored buttons inherit pure white */
+button[class*="bg-slate-900"] span:not([class*="bg-white"]),
+button[class*="bg-red-600"] span:not([class*="bg-white"]),
+button[class*="bg-red-700"] span:not([class*="bg-white"]),
+button[class*="bg-rose-600"] span:not([class*="bg-white"]),
+button[class*="bg-rose-700"] span:not([class*="bg-white"]),
+button[class*="bg-amber-600"] span:not([class*="bg-white"]),
+button[class*="bg-emerald-600"] span:not([class*="bg-white"]),
+button[class*="bg-orange-600"] span:not([class*="bg-white"]),
+a[class*="bg-gradient-to-r"] span {
+  color: #ffffff !important;
+}
+
+/* Light buttons & button links must always maintain dark, readable text */
+button[class~="bg-slate-100"],
+button[class~="bg-slate-50"],
+button[class~="bg-white"],
+button[class~="bg-emerald-50"],
+button[class~="bg-amber-50"],
+a[class~="bg-slate-100"],
+a[class~="bg-slate-50"],
+a[class~="bg-white"],
+a[class~="bg-emerald-50"],
+a[class~="bg-amber-50"] {
+  color: #0f172a;
+}
+
+/* Light red tinted badges/buttons */
+button[class~="bg-red-50"]:not([class*="text-white"]),
+button[class~="bg-red-100"]:not([class*="text-white"]),
+a[class~="bg-red-50"]:not([class*="text-white"]),
+a[class~="bg-red-100"]:not([class*="text-white"]) {
+  color: #991b1b !important;
+}
+
+/* Spans inside light buttons maintain crisp, dark text */
+button[class~="bg-slate-100"] span:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-emerald-"]),
+button[class~="bg-slate-50"] span:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-emerald-"]),
+button[class~="bg-white"] span:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-emerald-"]) {
+  color: #0f172a;
+}
+button[class~="bg-red-50"] span:not([class*="text-white"]),
+button[class~="bg-red-100"] span:not([class*="text-white"]) {
+  color: #991b1b !important;
+}
+
+/* Active counter badges on dark/colored buttons */
+button[class*="bg-slate-900"] span[class*="bg-white"],
+button[class*="bg-red-600"] span[class*="bg-white"],
+button[class*="bg-red-700"] span[class*="bg-white"],
+button[class*="bg-rose-600"] span[class*="bg-white"],
+button[class*="bg-amber-600"] span[class*="bg-white"],
+button[class*="bg-emerald-600"] span[class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* Common and legacy .btn classes */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn.secondary,
+.btn-secondary {
+  background-color: #ffffff;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1;
+}
+.btn.secondary:hover,
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  color: #020617 !important;
+  border-color: #94a3b8;
+}
+.btn.primary,
+.btn-primary {
+  background-color: #dc2626;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c;
+}
+.btn.primary:hover,
+.btn-primary:hover {
+  background-color: #b91c1c;
+  color: #ffffff !important;
+}
+
 input,
 select,
 textarea,
 option,
 optgroup {
   font: inherit;
-  color: #0f172a !important;
+  color: #0f172a;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #475569 !important;
-  opacity: 1 !important;
+  color: #64748b;
+  opacity: 1;
 }
 
 input,
 select,
 textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: #ffffff;
+  color: #0f172a;
   border-color: #cbd5e1;
 }
 
 select option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 /* PSI ONE Login Page Styles */
@@ -72,9 +233,10 @@ select option {
   color: #ffffff;
   background: linear-gradient(
     145deg,
-    #19164a 0%,
-    #29256f 48%,
-    #4d4ed0 100%
+    #050505 0%,
+    #230309 35%,
+    #4a0513 70%,
+    #881337 100%
   );
 }
 
@@ -90,7 +252,7 @@ select option {
 
 .login-brand b,
 .login-mobile-brand b {
-  color: #aaaaff;
+  color: #fda4af;
 }
 
 .login-brand small {
@@ -98,7 +260,7 @@ select option {
   margin-top: 4px;
   font-size: 9px;
   letter-spacing: 2px;
-  color: #c4c4ee;
+  color: #fecdd3;
 }
 
 .login-brand-icon {
@@ -122,9 +284,10 @@ select option {
   align-items: center;
   gap: 8px;
   padding: 10px 13px;
-  border: 1px solid #ffffff30;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 30px;
-  color: #dedfff;
+  background: rgba(136, 19, 55, 0.4);
+  color: #ffe4e6;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -139,12 +302,12 @@ select option {
 }
 
 .login-visual-content h1 span {
-  color: #b6b7ff;
+  color: #fda4af;
 }
 
 .login-visual-content > p {
   max-width: 430px;
-  color: #d0d0ed;
+  color: #f1f5f9;
   font-size: 14px;
   line-height: 1.9;
 }
@@ -168,7 +331,8 @@ select option {
   display: grid;
   place-items: center;
   border-radius: 13px;
-  background: #ffffff20;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fda4af;
 }
 
 .login-feature-list strong,
@@ -182,12 +346,12 @@ select option {
 }
 
 .login-feature-list small {
-  color: #c0c1e5;
+  color: #cbd5e1;
   font-size: 11px;
 }
 
 .login-visual-footer {
-  color: #d0d0ed;
+  color: #e2e8f0;
   font-size: 11px;
 }
 
@@ -197,7 +361,8 @@ select option {
   height: 7px;
   margin-right: 8px;
   border-radius: 50%;
-  background: #a7f3d0;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
 }
 
 .login-form-side {
@@ -225,13 +390,14 @@ select option {
   place-items: center;
   margin-bottom: 25px;
   border-radius: 15px;
-  background: #f0efff;
-  color: #5555c8;
+  background: #fff1f2;
+  color: #dc2626;
+  border: 1px solid #ffe4e6;
 }
 
 .login-eyebrow {
   margin-bottom: 10px;
-  color: #6665d4;
+  color: #dc2626;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 2px;
@@ -239,7 +405,7 @@ select option {
 
 .login-form-wrap h2 {
   margin: 0 0 10px;
-  color: #1c2340;
+  color: #09090b;
   font-size: 29px;
   letter-spacing: -1px;
   font-family: Arial, Helvetica, sans-serif;
@@ -247,7 +413,7 @@ select option {
 
 .login-intro {
   margin-bottom: 30px;
-  color: #8790a3;
+  color: #71717a;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -256,7 +422,7 @@ select option {
 .login-password-heading label {
   display: block;
   margin-bottom: 9px;
-  color: #38415a;
+  color: #27272a;
   font-size: 11px;
   font-weight: 700;
 }
@@ -268,15 +434,15 @@ select option {
   gap: 11px;
   margin-bottom: 22px;
   padding: 0 14px;
-  border: 1px solid #e4e7f0;
+  border: 1px solid #e4e4e7;
   border-radius: 11px;
   background: white;
-  color: #969eb0;
+  color: #71717a;
 }
 
 .login-input-wrap:focus-within {
-  border-color: #7778e7;
-  box-shadow: 0 0 0 4px #6869df12;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
 }
 
 .login-input-wrap input {
@@ -309,7 +475,7 @@ select option {
 
 .login-text-button {
   padding-bottom: 9px;
-  color: #5d5ed0;
+  color: #dc2626;
   font-size: 10px;
   font-weight: 700;
 }
@@ -318,7 +484,7 @@ select option {
   display: grid;
   place-items: center;
   padding: 4px;
-  color: #939bae;
+  color: #71717a;
 }
 
 .login-remember {
@@ -326,7 +492,7 @@ select option {
   align-items: center;
   gap: 9px;
   margin: 0 0 23px !important;
-  color: #6e778b !important;
+  color: #52525b !important;
   font-size: 11px !important;
   font-weight: 500 !important;
 }
@@ -334,7 +500,7 @@ select option {
 .login-remember input {
   width: 14px;
   height: 14px;
-  accent-color: #5557cb;
+  accent-color: #dc2626;
 }
 
 .login-submit {
@@ -346,22 +512,25 @@ select option {
   gap: 10px;
   border: 0;
   border-radius: 11px;
-  background: linear-gradient(100deg, #4d50bf, #7072e7);
+  background: linear-gradient(100deg, #dc2626, #991b1b);
   color: white;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
 }
 
 .login-submit:hover {
   transform: translateY(-2px);
+  background: linear-gradient(100deg, #b91c1c, #7f1d1d);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
 }
 
 .login-submit:focus-visible,
 .login-text-button:focus-visible,
 .login-eye-button:focus-visible {
-  outline: 2px solid #7778e7;
+  outline: 2px solid #dc2626;
   outline-offset: 3px;
 }
 
@@ -371,20 +540,20 @@ select option {
   align-items: center;
   gap: 8px;
   margin-top: 25px;
-  color: #858da0;
+  color: #71717a;
   font-size: 10px;
 }
 
 .login-demo-note {
   margin: 22px 0 10px;
-  color: #a0a6b5;
+  color: #a1a1aa;
   font-size: 10px;
   text-align: center;
 }
 
 .login-back-link {
   display: block;
-  color: #5e61cf;
+  color: #dc2626;
   font-size: 11px;
   font-weight: 700;
   text-align: center;
@@ -396,7 +565,7 @@ select option {
   bottom: 23px;
   left: 20px;
   right: 20px;
-  color: #a2a9b7;
+  color: #a1a1aa;
   font-size: 10px;
   text-align: center;
 }
@@ -419,7 +588,7 @@ select option {
     min-height: 100vh;
     padding: 35px 22px 75px;
     background:
-      radial-gradient(ellipse at top right, #f0efff, transparent 48%),
+      radial-gradient(ellipse at top right, #fff1f2, transparent 50%),
       #ffffff;
   }
 
@@ -433,7 +602,7 @@ select option {
   }
 
   .login-mobile-brand .login-brand-icon {
-    background: linear-gradient(135deg, #5358d7, #8b8df6);
+    background: linear-gradient(135deg, #dc2626, #881337);
   }
 }
 
@@ -532,8 +701,8 @@ select option {
 .customer-field input:focus,
 .customer-field textarea:focus,
 .customer-field select:focus {
-  border-color: #2864f0;
-  box-shadow: 0 0 0 3px rgba(40, 100, 240, 0.1);
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
   background: #fff;
 }
 
@@ -556,13 +725,13 @@ select option {
 }
 
 .customer-primary-button {
-  border: 1px solid #245ff0;
-  background: #245ff0;
+  border: 1px solid #dc2626;
+  background: #dc2626;
   color: #fff;
 }
 
 .customer-primary-button:hover {
-  background: #174bd0;
+  background: #b91c1c;
 }
 
 .customer-primary-button:disabled {
@@ -668,8 +837,8 @@ select option {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #e9efff;
-  color: #245ff0;
+  background: #fff1f2;
+  color: #dc2626;
   font-size: 14px;
   font-weight: 750;
 }
@@ -695,14 +864,14 @@ select option {
 .customer-view-button {
   min-height: 32px;
   padding: 6px 10px;
-  border: 1px solid #dce6ff;
-  background: #f3f6ff;
-  color: #245ff0;
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
   font-size: 12px;
 }
 
 .customer-view-button:hover {
-  background: #e6edff;
+  background: #ffe4e6;
 }
 
 .customer-no-results {
@@ -721,7 +890,7 @@ select option {
   justify-content: center;
   align-items: center;
   padding: 20px;
-  background: rgba(15, 24, 43, 0.58);
+  background: rgba(10, 10, 12, 0.75);
   backdrop-filter: blur(4px);
 }
 
@@ -731,7 +900,7 @@ select option {
   overflow-y: auto;
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 25px 80px rgba(10, 20, 40, 0.24);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
   animation: customer-modal-appear 0.18s ease-out;
 }
 
@@ -758,7 +927,7 @@ select option {
 }
 
 .customer-eyebrow {
-  color: #245ff0;
+  color: #dc2626;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1.3px;
@@ -822,8 +991,8 @@ select option {
   height: 38px;
   flex-shrink: 0;
   border-radius: 11px;
-  background: #edf2ff;
-  color: #245ff0;
+  background: #fff1f2;
+  color: #dc2626;
   font-size: 12px;
   font-weight: 800;
 }
@@ -860,8 +1029,8 @@ select option {
   flex-shrink: 0;
   border: 1px solid #e0e6f0;
   border-radius: 14px;
-  background: #edf2ff;
-  color: #7182a5;
+  background: #fff1f2;
+  color: #be123c;
   font-size: 28px;
 }
 
@@ -885,10 +1054,14 @@ select option {
 .customer-upload-button {
   min-height: 32px;
   padding: 6px 11px;
-  border: 1px solid #d9e3ff;
+  border: 1px solid #fecdd3;
   background: #fff;
-  color: #245ff0;
+  color: #dc2626;
   font-size: 12px;
+}
+
+.customer-upload-button:hover {
+  background: #fff1f2;
 }
 
 .customer-form-grid {
@@ -938,8 +1111,8 @@ select option {
 }
 
 .customer-document-upload:hover {
-  border-color: #245ff0;
-  background: #f5f8ff;
+  border-color: #dc2626;
+  background: #fff1f2;
 }
 
 .customer-document-icon {
@@ -950,8 +1123,8 @@ select option {
   height: 42px;
   flex-shrink: 0;
   border-radius: 11px;
-  background: #eaf0ff;
-  color: #245ff0;
+  background: #fff1f2;
+  color: #dc2626;
   font-size: 23px;
 }
 
@@ -1015,22 +1188,23 @@ select option {
 .customer-add-secondary {
   min-height: 38px;
   margin-top: 12px;
-  border: 1px solid #d7e2ff;
-  background: #f5f7ff;
-  color: #245ff0;
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #dc2626;
   font-size: 12px;
 }
 
 .customer-add-secondary:hover {
-  background: #eaf0ff;
+  background: #ffe4e6;
 }
 
 .customer-info-note {
   margin-top: 16px;
   padding: 12px 14px;
   border-radius: 9px;
-  background: #f1f6ff;
-  color: #52668b;
+  background: #fff1f2;
+  color: #881337;
+  border: 1px solid #ffe4e6;
   font-size: 11px;
   line-height: 1.7;
 }
@@ -1081,8 +1255,8 @@ select option {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #edf2ff;
-  color: #245ff0;
+  background: #fff1f2;
+  color: #dc2626;
   font-size: 32px;
   font-weight: 800;
 }

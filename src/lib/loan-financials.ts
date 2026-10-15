@@ -1,0 +1,113 @@
+import type { Loan, Payment } from "@/types";
+
+export interface LoanFinancials {
+  totalPaid: number;
+  balanceDue: number;
+  arrears: number;
+  missedInstallments: number;
+  overdueDays: number;
+  isDelinquent: boolean;
+  agingBucket: "CURRENT" | "1_30" | "31_60" | "61_90" | "90_PLUS";
+}
+
+export function parseDate(dateStr?: string): Date | null {
+  if (!dateStr) return null;
+  const parts = dateStr.slice(0, 10).split("-").map(Number);
+  if (parts.length < 3 || parts.some((p) => isNaN(p))) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+/**
+ * Pure calculation of loan financial standings, arrears, missed installments,
+ * and aging buckets relative to asOfDate.
+ */
+export function calculateLoanFinancials(
+  loan: Loan,
+  payments: Payment[],
+  asOfDate: Date = new Date(2026, 9, 14)
+): LoanFinancials {
+  const totalPaid = payments
+    .filter((p) => p.loanId === loan.id)
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  const totalRepayment =
+    loan.totalRepayment || (loan.principal || loan.amount || 0) + (loan.interest || 0);
+  const balanceDue = Math.max(0, totalRepayment - totalPaid);
+
+  const statusUpper = (loan.status || "").toUpperCase();
+
+  // Completed loans
+  if (statusUpper === "COMPLETED" || (totalRepayment > 0 && totalPaid >= totalRepayment)) {
+    return {
+      totalPaid,
+      balanceDue: 0,
+      arrears: 0,
+      missedInstallments: 0,
+      overdueDays: 0,
+      isDelinquent: false,
+      agingBucket: "CURRENT",
+    };
+  }
+
+  // Pending / rejected loans
+  if (statusUpper === "PENDING" || statusUpper === "REJECTED") {
+    return {
+      totalPaid: 0,
+      balanceDue: totalRepayment,
+      arrears: 0,
+      missedInstallments: 0,
+      overdueDays: 0,
+      isDelinquent: false,
+      agingBucket: "CURRENT",
+    };
+  }
+
+  const startDate = parseDate(loan.firstPaymentDate || loan.issueDate);
+  let rawArrears = 0;
+  let overdueDays = 0;
+
+  if (startDate && asOfDate >= startDate) {
+    const diffDays = Math.max(
+      0,
+      Math.floor((asOfDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
+    let cycleDays = 30;
+    if (loan.repaymentFrequency === "Daily") cycleDays = 1;
+    else if (loan.repaymentFrequency === "Weekly") cycleDays = 7;
+
+    const cyclesElapsed = Math.min(
+      loan.duration || 1,
+      Math.floor(diffDays / cycleDays) + 1
+    );
+    const expectedDue = Math.min(totalRepayment, cyclesElapsed * (loan.installment || 0));
+    rawArrears = Math.max(0, expectedDue - totalPaid);
+    overdueDays = rawArrears > 0 ? diffDays : 0;
+  }
+
+  const isOverdueStatus = statusUpper === "OVERDUE";
+  const arrears =
+    isOverdueStatus && rawArrears <= 0 ? loan.installment || 0 : rawArrears;
+  const missedInstallments =
+    loan.installment > 0 && arrears > 0 ? Math.ceil(arrears / loan.installment) : 0;
+  const isDelinquent = isOverdueStatus || arrears > 0;
+
+  // Determine aging bucket
+  let agingBucket: LoanFinancials["agingBucket"] = "CURRENT";
+  if (isDelinquent) {
+    const days = overdueDays > 0 ? overdueDays : 15;
+    if (days <= 30) agingBucket = "1_30";
+    else if (days <= 60) agingBucket = "31_60";
+    else if (days <= 90) agingBucket = "61_90";
+    else agingBucket = "90_PLUS";
+  }
+
+  return {
+    totalPaid,
+    balanceDue,
+    arrears,
+    missedInstallments,
+    overdueDays: overdueDays > 0 ? overdueDays : isDelinquent ? 15 : 0,
+    isDelinquent,
+    agingBucket,
+  };
+}

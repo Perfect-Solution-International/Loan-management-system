@@ -26,6 +26,14 @@ import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
 
+function createDocId(): string {
+  return `DOC-${Date.now()}`;
+}
+
+function getUploadDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function CustomerDetailsContent() {
   const params = useParams<{ customerId?: string; id?: string }>();
   const customerId = params?.customerId || params?.id;
@@ -92,7 +100,7 @@ function CustomerDetailsContent() {
           <div>
             <Link
               href="/customers"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-500 transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-500 transition"
             >
               <ArrowLeft size={14} /> Back to Customer Directory
             </Link>
@@ -128,7 +136,7 @@ function CustomerDetailsContent() {
     if (!uploadTitle.trim()) return;
 
     const newDoc: CustomerDocument = {
-      id: `DOC-${Date.now()}`,
+      id: createDocId(),
       customerId: customer.id,
       title: uploadTitle.trim(),
       type: uploadType,
@@ -142,7 +150,7 @@ function CustomerDetailsContent() {
       fileUrl:
         selectedFileUrl ||
         "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
-      uploadedAt: new Date().toISOString().slice(0, 10),
+      uploadedAt: getUploadDate(),
       uploader: "Admin Officer",
     };
 
@@ -169,7 +177,7 @@ function CustomerDetailsContent() {
       {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             PORTFOLIO / CUSTOMER PROFILE
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
@@ -200,7 +208,7 @@ function CustomerDetailsContent() {
           </Link>
           <Link
             href={`/loans/new?customerId=${customer.id}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white shadow-md transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-bold text-white shadow-md transition"
           >
             <Plus size={14} /> Issue New Loan
           </Link>
@@ -224,7 +232,7 @@ function CustomerDetailsContent() {
                 "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80"
               }
               alt={customer.name}
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-red-500 shadow-md bg-slate-100"
             />
             <span
               className={`absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase shadow-xs ${
@@ -245,7 +253,7 @@ function CustomerDetailsContent() {
               <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-slate-100 rounded-md text-slate-600">
                 {customer.id}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
                 {customer.occupation || "Employed"}
               </span>
             </div>
@@ -280,7 +288,7 @@ function CustomerDetailsContent() {
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Active Loans
             </p>
-            <p className="text-lg font-black text-blue-600 mt-0.5">
+            <p className="text-lg font-black text-red-600 mt-0.5">
               {customerLoans.filter((l) => l.status === "Active").length} Loans
             </p>
           </div>
@@ -296,10 +304,10 @@ function CustomerDetailsContent() {
       </div>
 
       {/* OUTSTANDING BALANCE & SETTLEMENT PROGRESS BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 p-6 rounded-2xl text-white shadow-lg space-y-4">
+      <div className="bg-gradient-to-r from-black via-[#2a040b] to-[#4a0512] border border-red-950 p-6 rounded-2xl text-white shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-rose-400 uppercase tracking-wider">
               CURRENT OUTSTANDING LOAN BALANCE & SETTLEMENT
             </p>
             <h3 className="text-2xl font-black font-mono text-white mt-1">
@@ -343,7 +351,7 @@ function CustomerDetailsContent() {
         {/* Prior Repayment History Notes if available */}
         {customer.priorRepaymentHistory && (
           <div className="pt-2 text-xs text-slate-300 flex items-center gap-2">
-            <History size={14} className="text-blue-400 shrink-0" />
+            <History size={14} className="text-rose-400 shrink-0" />
             <span>
               <strong>Prior Credit History:</strong> {customer.priorRepaymentHistory}
             </span>
@@ -358,7 +366,7 @@ function CustomerDetailsContent() {
           {/* Identity & Residential Panel */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-              <User size={14} className="text-blue-600" /> Personal & Residential Profile
+              <User size={14} className="text-red-600" /> Personal & Residential Profile
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -407,7 +415,7 @@ function CustomerDetailsContent() {
           {/* Contact & Communication Profile */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-              <Phone size={14} className="text-blue-600" /> Contact & Communication Details
+              <Phone size={14} className="text-red-600" /> Contact & Communication Details
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -445,7 +453,7 @@ function CustomerDetailsContent() {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <FileText size={16} className="text-blue-600" />
+                <FileText size={16} className="text-red-600" />
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Uploaded Identity Documents ({customerDocs.length})
                 </h3>
@@ -453,7 +461,7 @@ function CustomerDetailsContent() {
               <button
                 type="button"
                 onClick={() => setIsUploadModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-xs font-bold transition cursor-pointer"
               >
                 <Upload size={13} /> Upload Document
               </button>
@@ -463,11 +471,11 @@ function CustomerDetailsContent() {
               {customerDocs.map((doc: CustomerDocument) => (
                 <div
                   key={doc.id}
-                  className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 transition bg-slate-50/50 flex flex-col justify-between space-y-3"
+                  className="p-4 rounded-xl border border-slate-200 hover:border-red-300 transition bg-slate-50/50 flex flex-col justify-between space-y-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-red-100 text-red-700 flex items-center justify-center shrink-0">
                         <FileText size={20} />
                       </div>
                       <div>
@@ -489,7 +497,7 @@ function CustomerDetailsContent() {
                       <button
                         type="button"
                         onClick={() => setSelectedDocForPreview(doc)}
-                        className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-white rounded-lg transition"
+                        className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition"
                         title="Preview Document"
                       >
                         <Eye size={14} />
@@ -536,7 +544,7 @@ function CustomerDetailsContent() {
               </div>
               <Link
                 href="/repayments"
-                className="text-xs font-bold text-blue-600 hover:text-blue-500 inline-flex items-center gap-1"
+                className="text-xs font-bold text-red-600 hover:text-red-500 inline-flex items-center gap-1"
               >
                 Go to Terminal <ArrowUpRight size={13} />
               </Link>
@@ -560,7 +568,7 @@ function CustomerDetailsContent() {
                       <td className="py-2.5 px-4 font-mono font-medium text-slate-600">
                         {payment.date}
                       </td>
-                      <td className="py-2.5 px-4 font-mono font-bold text-blue-600">
+                      <td className="py-2.5 px-4 font-mono font-bold text-red-600">
                         {payment.receiptNo || payment.id}
                       </td>
                       <td className="py-2.5 px-4 font-mono text-slate-700">
@@ -570,7 +578,7 @@ function CustomerDetailsContent() {
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             payment.type === "Capital"
-                              ? "bg-blue-100 text-blue-700"
+                              ? "bg-red-100 text-red-700"
                               : payment.type === "Interest"
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-amber-100 text-amber-700"
@@ -611,7 +619,7 @@ function CustomerDetailsContent() {
           {/* Guarantor Details Card */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-              <ShieldCheck size={14} className="text-blue-600" /> Guarantor Information
+              <ShieldCheck size={14} className="text-red-600" /> Guarantor Information
             </h3>
 
             {customer.guarantorName || customer.guarantor ? (
@@ -664,7 +672,7 @@ function CustomerDetailsContent() {
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Existing Loans Portfolio
               </h3>
-              <span className="text-xs font-bold text-blue-600">
+              <span className="text-xs font-bold text-red-600">
                 {customerLoans.length} Loans
               </span>
             </div>
@@ -680,7 +688,7 @@ function CustomerDetailsContent() {
                   <Link
                     key={loan.id}
                     href={`/loans/${loan.id}`}
-                    className="p-3.5 bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 rounded-xl block transition space-y-2"
+                    className="p-3.5 bg-slate-50 hover:bg-red-50/80 border border-slate-200/80 rounded-xl block transition space-y-2"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-mono font-bold text-slate-800">
@@ -691,7 +699,7 @@ function CustomerDetailsContent() {
                           loan.status.toLowerCase() === "active"
                             ? "bg-emerald-100 text-emerald-700"
                             : loan.status.toLowerCase() === "completed"
-                            ? "bg-blue-100 text-blue-700"
+                            ? "bg-red-100 text-red-700"
                             : loan.status.toLowerCase() === "overdue"
                             ? "bg-red-100 text-red-700"
                             : "bg-slate-200 text-slate-600"
@@ -755,7 +763,7 @@ function CustomerDetailsContent() {
                 />
               ) : (
                 <div className="text-center text-slate-400 space-y-3 p-8">
-                  <FileText size={48} className="mx-auto text-blue-400" />
+                  <FileText size={48} className="mx-auto text-rose-400" />
                   <p className="text-sm font-semibold text-slate-200">
                     PDF Document: {selectedDocForPreview.fileName}
                   </p>
@@ -765,7 +773,7 @@ function CustomerDetailsContent() {
                   <button
                     type="button"
                     onClick={() => handleDownload(selectedDocForPreview)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition"
                   >
                     <Download size={14} /> Download Document
                   </button>
@@ -784,7 +792,7 @@ function CustomerDetailsContent() {
               <button
                 type="button"
                 onClick={() => setSelectedDocForPreview(null)}
-                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition"
+                className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-500 transition"
               >
                 Close Preview
               </button>
@@ -816,10 +824,9 @@ function CustomerDetailsContent() {
                 <label className="text-xs font-bold text-slate-700">Document Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. NIC Card Front / Salary Slip Sep 2026"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                   required
                 />
               </div>
@@ -829,7 +836,7 @@ function CustomerDetailsContent() {
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value as CustomerDocument["type"])}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
                 >
                   <option value="other">Other Supporting Document</option>
                   <option value="utility_bill">Proof of Billing / Utility Bill</option>
@@ -841,7 +848,7 @@ function CustomerDetailsContent() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">Select File</label>
-                <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 cursor-pointer bg-slate-50/50 hover:bg-blue-50/30 transition text-center">
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-red-500 rounded-2xl p-6 cursor-pointer bg-slate-50/50 hover:bg-red-50/30 transition text-center">
                   <Upload size={24} className="text-slate-400 mb-2" />
                   <span className="text-xs font-semibold text-slate-700">
                     {selectedFileName || "Click to browse JPG, PNG or PDF"}
@@ -868,7 +875,7 @@ function CustomerDetailsContent() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition shadow-xs"
+                  className="px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl transition shadow-xs"
                 >
                   Save & Attach
                 </button>
