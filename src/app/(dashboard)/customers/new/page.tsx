@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Check,
   AlertTriangle,
+  Lock,
+  Shield,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -89,32 +91,28 @@ export default function NewCustomerPage() {
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   const STEPS = [
-    { number: 1, title: "Identity & Profile", subtitle: "Name, NIC & Photo" },
-    { number: 2, title: "Address & Contact", subtitle: "Residence & Phone" },
-    { number: 3, title: "NIC & Documents", subtitle: "Front, Back & Proofs" },
-    { number: 4, title: "Prior Loan & Review", subtitle: "History & Summary" },
+    { number: 1, title: "Photo & Customer ID", subtitle: "Portrait & System Number" },
+    { number: 2, title: "Customer Details", subtitle: "Name, NIC, Address & Contacts" },
+    { number: 3, title: "Document Uploads", subtitle: "NIC Front/Back & Proofs" },
+    { number: 4, title: "Prior Loan & Review", subtitle: "Existing Facility & Submit" },
   ];
 
   const goToStep = (stepNum: number) => {
-    if (stepNum > currentStep) {
-      if (currentStep === 1 || stepNum > 1) {
-        if (!form.fullName.trim()) {
-          setErrorMsg("Please enter customer's full legal name.");
-          setCurrentStep(1);
-          return;
-        }
-        if (!form.nic.trim()) {
-          setErrorMsg("Please enter a valid NIC Number.");
-          setCurrentStep(1);
-          return;
-        }
+    if (stepNum > 2 && currentStep >= 2) {
+      if (!form.fullName.trim()) {
+        setErrorMsg("Please enter customer's full legal name.");
+        setCurrentStep(2);
+        return;
       }
-      if (currentStep === 2 || (stepNum > 2 && currentStep >= 2)) {
-        if (!form.phone.trim()) {
-          setErrorMsg("Please enter a primary contact phone number.");
-          setCurrentStep(2);
-          return;
-        }
+      if (!form.nic.trim()) {
+        setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
+        setCurrentStep(2);
+        return;
+      }
+      if (!form.phone.trim()) {
+        setErrorMsg("Please enter a primary contact phone number.");
+        setCurrentStep(2);
+        return;
       }
     }
     setErrorMsg("");
@@ -124,18 +122,18 @@ export default function NewCustomerPage() {
 
   const handleNextStep = () => {
     if (currentStep === 1) {
+      setErrorMsg("");
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 2) {
       if (!form.fullName.trim()) {
         setErrorMsg("Please enter customer's full legal name.");
         return;
       }
       if (!form.nic.trim()) {
-        setErrorMsg("Please enter a valid NIC Number.");
+        setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
         return;
       }
-      setErrorMsg("");
-      setCurrentStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (currentStep === 2) {
       if (!form.phone.trim()) {
         setErrorMsg("Please enter a primary contact phone number.");
         return;
@@ -387,12 +385,12 @@ export default function NewCustomerPage() {
 
     if (!form.fullName.trim()) {
       setErrorMsg("Please enter customer's full legal name.");
-      setCurrentStep(1);
+      setCurrentStep(2);
       return;
     }
     if (!form.nic.trim()) {
-      setErrorMsg("Please enter a valid NIC Number.");
-      setCurrentStep(1);
+      setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
+      setCurrentStep(2);
       return;
     }
     if (!form.phone.trim()) {
@@ -646,398 +644,430 @@ export default function NewCustomerPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-        {/* ── STEP 1: IDENTITY & PROFILE ── */}
+        {/* ── STEP 1: PHOTO & CUSTOMER ID ── */}
         {currentStep === 1 && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                <Camera size={18} />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Customer Photograph & Account Identity
-                </h2>
-                <p className="text-[11px] text-slate-600">
-                  Upload borrower facial portrait, auto-generate Customer ID, and set customer status.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">Status:</span>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Suspended">Suspended</option>
-              </select>
-            </div>
-          </div>
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-red-50 text-red-600 rounded-xl">
+                    <Camera size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-slate-900">
+                      Step 1: Customer Photograph &amp; Registration Number
+                    </h2>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Upload the borrower&apos;s portrait photograph and verify the auto-generated system reference.
+                    </p>
+                  </div>
+                </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            {/* Photo Avatar Preview */}
-            <div className="relative group shrink-0">
-              {form.photoUrl ? (
-                <div className="relative">
-                  <img
-                    src={form.photoUrl}
-                    alt="Customer Preview"
-                    className="w-24 h-24 rounded-2xl object-cover border-2 border-red-500 shadow-md bg-slate-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
-                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-xs cursor-pointer transition"
-                    title="Remove Photo"
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-700">Account Standing:</span>
+                  <select
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                    className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer shadow-2xs"
                   >
-                    <X size={12} />
-                  </button>
+                    <option value="Active">Active (Eligible)</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Suspended">Suspended</option>
+                  </select>
                 </div>
-              ) : (
-                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400">
-                  <Camera size={26} className="text-slate-400 mb-1" />
-                  <span className="text-[10px] font-bold">No Photo</span>
-                </div>
-              )}
-            </div>
-
-            {/* Photo Controls */}
-            <div className="space-y-3 flex-1">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Upload Customer Photograph (JPG, PNG)
-                </label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition">
-                    <Upload size={14} /> Browse Photo from Device
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {form.photoUrl && (
-                    <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                      <CheckCircle2 size={13} /> Photo selected
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Select a clear portrait image of the customer for identity verification.
-                </p>
               </div>
 
-              {/* Customer ID Display / Edit */}
-              <div className="pt-2 flex items-center gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500">
-                    Auto-generated Customer ID
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      autoComplete="off"
-                      value={customerId}
-                      onChange={(e) => setCustomerId(e.target.value)}
-                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRegenerateId}
-                      className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-xl transition"
-                      title="Regenerate Customer ID"
-                    >
-                      <RefreshCw size={14} />
-                    </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                {/* 1. Customer Photograph Upload */}
+                <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <Camera size={14} className="text-red-600" />
+                      Customer Photograph
+                    </span>
+                    {form.photoUrl && (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                        <CheckCircle2 size={11} /> Photo Uploaded
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-5">
+                    {/* Portrait Avatar Preview */}
+                    <div className="relative shrink-0">
+                      {form.photoUrl ? (
+                        <div className="relative group">
+                          <img
+                            src={form.photoUrl}
+                            alt="Customer Portrait"
+                            className="w-28 h-28 rounded-2xl object-cover border-2 border-red-600 shadow-md bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                            className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md cursor-pointer transition"
+                            title="Remove Photo"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
+                          <Camera size={32} className="text-slate-400 mb-1" />
+                          <span className="text-[10px] font-bold text-slate-600">No Image</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload button & guidance */}
+                    <div className="space-y-2.5 flex-1 text-center sm:text-left">
+                      <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
+                        <Upload size={14} />
+                        <span>{form.photoUrl ? "Change Photograph" : "Upload Customer Photo"}</span>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/webp"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                        Attach a clear, recent portrait photograph of the customer for facial verification and dossier identification.
+                      </p>
+                      <span className="text-[10px] text-slate-500 font-mono block">
+                        Supported: JPG, PNG, WEBP (Max 5MB)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. System Auto-Generated Customer ID (Non-Editable) */}
+                <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <Lock size={14} className="text-slate-600" />
+                      Auto-Generated Customer ID
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                      System Assigned
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-white rounded-xl border-2 border-slate-300 shadow-2xs space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
+                      Registration Reference Number
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black font-mono text-slate-900 tracking-wider">
+                        {customerId}
+                      </span>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+                        <Lock size={12} className="text-slate-500" />
+                        <span>Locked</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    This official Customer ID is automatically assigned by the portfolio registry and is locked to prevent duplication or manual tampering.
+                  </p>
+
+                  <div className="pt-1 flex items-center justify-between text-xs font-semibold text-slate-700 border-t border-slate-200/80">
+                    <span>Onboarding Date:</span>
+                    <span className="font-mono font-bold text-slate-900">{new Date().toISOString().slice(0, 10)}</span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* SECTION 2: PERSONAL IDENTITY & NIC */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-              <UserCheck size={18} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                Full Name & National Identity (NIC)
-              </h2>
-              <p className="text-[11px] text-slate-600">
-                Sri Lankan National Identity Card details and birth data.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Full Legal Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                autoComplete="off"
-                required
-                value={form.fullName}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                NIC Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="nic"
-                autoComplete="off"
-                required
-                value={form.nic}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Gender</label>
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
-              >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Date of Birth (DOB)</label>
-              <input
-                type="date"
-                name="dob"
-                autoComplete="off"
-                value={form.dob}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
-          </div>
-        </div>
-
-            {/* Step 1 Navigation Bar */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-              <Link
-                href="/customers"
-                className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition"
-              >
-                Cancel
-              </Link>
-              <button
-                type="button"
-                onClick={handleNextStep}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
-              >
-                <span>Next: Address &amp; Contact Details</span>
-                <ArrowRight size={15} />
-              </button>
+              {/* Step 1 Navigation Bar */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                <Link
+                  href="/customers"
+                  className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                >
+                  <span>Next: Customer Details</span>
+                  <ArrowRight size={15} />
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* ── STEP 2: ADDRESS & CONTACT ── */}
+        {/* ── STEP 2: CUSTOMER DETAILS (NAME, NIC, GENDER, DOB, ADDRESS, CONTACTS) ── */}
         {currentStep === 2 && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
+            {/* 1. PERSONAL IDENTITY & NIC */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-              <MapPin size={18} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                Residential Address, Village & Town
-              </h2>
-              <p className="text-[11px] text-slate-600">
-                Detailed permanent domicile location and administrative region.
-              </p>
-            </div>
-          </div>
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                  <UserCheck size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Personal Identity &amp; National Identity Card (NIC)
+                  </h2>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Legal full name, National Identity Card, gender, and date of birth.
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Residential Address (House / Street)
-              </label>
-              <input
-                type="text"
-                name="address"
-                autoComplete="off"
-                value={form.address}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Full Legal Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    autoComplete="off"
+                    required
+                    placeholder="e.g. Kasun Chamara Perera"
+                    value={form.fullName}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Village / Suburb / Grama Niladhari
-              </label>
-              <input
-                type="text"
-                name="village"
-                autoComplete="off"
-                value={form.village}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    National Identity Card (NIC) <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nic"
+                    autoComplete="off"
+                    required
+                    placeholder="e.g. 199012345678 or 881234567V"
+                    value={form.nic}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Town / City</label>
-              <input
-                type="text"
-                name="town"
-                autoComplete="off"
-                value={form.town}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Gender</label>
+                  <select
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">District</label>
-              <select
-                name="district"
-                value={form.district}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
-              >
-                <option value="">Select District</option>
-                {SRI_LANKA_DISTRICTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* SECTION 4: CONTACT INFORMATION */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-              <Phone size={18} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                Contact Numbers & Emergency Contacts
-              </h2>
-              <p className="text-[11px] text-slate-600">
-                Active telecommunication channels for collections and notifications.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Primary Contact Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                autoComplete="off"
-                required
-                value={form.phone}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Date of Birth (DOB)</label>
+                  <input
+                    type="date"
+                    name="dob"
+                    autoComplete="off"
+                    value={form.dob}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Alternative Contact Number
-              </label>
-              <input
-                type="tel"
-                name="alternatePhone"
-                autoComplete="off"
-                value={form.alternatePhone}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
+            {/* 2. RESIDENTIAL ADDRESS & LOCATION */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Residential Address &amp; Region
+                  </h2>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Permanent residence location, village / Grama Niladhari division, and administrative district.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Residential Address (House / Street)
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    autoComplete="off"
+                    placeholder="e.g. No. 45/2, Temple Road"
+                    value={form.address}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Village / Suburb / Grama Niladhari
+                  </label>
+                  <input
+                    type="text"
+                    name="village"
+                    autoComplete="off"
+                    placeholder="e.g. Mahabage West"
+                    value={form.village}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Town / City</label>
+                  <input
+                    type="text"
+                    name="town"
+                    autoComplete="off"
+                    placeholder="e.g. Wattala"
+                    value={form.town}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">District</label>
+                  <select
+                    name="district"
+                    value={form.district}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  >
+                    <option value="">Select District</option>
+                    {SRI_LANKA_DISTRICTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Email Address (Optional)</label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="off"
-                value={form.email}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
+            {/* 3. CONTACT NUMBERS & EMERGENCY CONTACTS */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Contact Numbers &amp; Emergency Contacts
+                  </h2>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Direct phone lines, emergency notification contact person and emergency phone number.
+                  </p>
+                </div>
+              </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Emergency Contact Person</label>
-              <input
-                type="text"
-                name="emergencyContactName"
-                autoComplete="off"
-                value={form.emergencyContactName}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Primary Contact Number <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    autoComplete="off"
+                    required
+                    placeholder="e.g. 0771234567"
+                    value={form.phone}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Emergency Contact Phone</label>
-              <input
-                type="tel"
-                name="emergencyContactPhone"
-                autoComplete="off"
-                value={form.emergencyContactPhone}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-              />
-            </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Alternative Contact Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="alternatePhone"
+                    autoComplete="off"
+                    placeholder="e.g. 0112345678"
+                    value={form.alternatePhone}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Emergency Relationship</label>
-              <select
-                name="emergencyContactRelationship"
-                value={form.emergencyContactRelationship}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
-              >
-                <option value="">Select Relationship</option>
-                <option value="Spouse">Spouse</option>
-                <option value="Parent">Parent</option>
-                <option value="Sibling">Sibling</option>
-                <option value="Relative">Relative</option>
-                <option value="Friend">Friend</option>
-              </select>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="off"
+                    placeholder="e.g. customer@example.com"
+                    value={form.email}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Emergency Contact Person Name</label>
+                  <input
+                    type="text"
+                    name="emergencyContactName"
+                    autoComplete="off"
+                    placeholder="e.g. Nimal Perera"
+                    value={form.emergencyContactName}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Emergency Contact Phone Number</label>
+                  <input
+                    type="tel"
+                    name="emergencyContactPhone"
+                    autoComplete="off"
+                    placeholder="e.g. 0719876543"
+                    value={form.emergencyContactPhone}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Emergency Relationship</label>
+                  <select
+                    name="emergencyContactRelationship"
+                    value={form.emergencyContactRelationship}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  >
+                    <option value="">Select Relationship</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Child">Child</option>
+                    <option value="Relative">Relative</option>
+                    <option value="Friend">Friend</option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
             {/* Step 2 Navigation Bar */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
@@ -1047,14 +1077,14 @@ export default function NewCustomerPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
                 <ArrowLeft size={15} />
-                <span>Back: Identity &amp; Profile</span>
+                <span>Back: Photo &amp; Customer ID</span>
               </button>
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
-                <span>Next: NIC &amp; Supporting Documents</span>
+                <span>Next: Document Uploads</span>
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -1326,14 +1356,14 @@ export default function NewCustomerPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
                 <ArrowLeft size={15} />
-                <span>Back: Address &amp; Contact</span>
+                <span>Back: Customer Details</span>
               </button>
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
-                <span>Next: Prior Loan &amp; Final Review</span>
+                <span>Next: Prior Loan &amp; Review</span>
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -1636,11 +1666,11 @@ export default function NewCustomerPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
                 <ArrowLeft size={15} />
-                <span>Back: NIC &amp; Documents</span>
+                <span>Back: Document Uploads</span>
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-7 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
               >
                 <UserPlus size={16} />
                 <span>Register &amp; Save Customer Record</span>
