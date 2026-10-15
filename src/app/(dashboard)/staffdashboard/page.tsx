@@ -1,15 +1,15 @@
 import React, { Suspense } from "react";
-import { DashboardPage } from "@/modules/dashboard/dashboard-page";
+import { StaffDashboard } from "@/modules/dashboard/staff-dashboard";
 
 export const metadata = {
-  title: "Staff Dashboard | Microfinance Operations",
-  description: "Field collection schedule, assigned borrowers, repayments, and daily operational targets.",
+  title: "Staff Operations Dashboard | Microfinance Core",
+  description: "Enterprise management console for staff authority, customer lifecycle, loan approvals, interest rules, repayments, and audit supervision.",
 };
 
 export default function StaffDashboardPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Loading staff dashboard...</div>}>
-      <DashboardPage initialRole="staff" />
+    <Suspense fallback={<div className="p-12 text-center text-slate-700 font-semibold">Loading operations console...</div>}>
+      <StaffDashboard />
     </Suspense>
   );
 }
