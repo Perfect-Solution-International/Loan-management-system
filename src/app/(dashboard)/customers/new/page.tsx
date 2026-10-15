@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Upload,
   Phone,
-  MapPin,
   UserCheck,
   FileText,
   CreditCard,
@@ -28,34 +27,6 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Customer, CustomerStatus, CustomerDocument, Loan, Payment } from "@/types";
-
-const SRI_LANKA_DISTRICTS = [
-  "Colombo",
-  "Gampaha",
-  "Kalutara",
-  "Kandy",
-  "Matale",
-  "Nuwara Eliya",
-  "Galle",
-  "Matara",
-  "Hambantota",
-  "Jaffna",
-  "Kilinochchi",
-  "Mannar",
-  "Vavuniya",
-  "Mullaitivu",
-  "Batticaloa",
-  "Ampara",
-  "Trincomalee",
-  "Kurunegala",
-  "Puttalam",
-  "Anuradhapura",
-  "Polonnaruwa",
-  "Badulla",
-  "Moneragala",
-  "Ratnapura",
-  "Kegalle",
-];
 
 interface AttachedDoc {
   id: string;
@@ -794,10 +765,10 @@ export default function NewCustomerPage() {
           </div>
         )}
 
-        {/* ── STEP 2: CUSTOMER DETAILS (NAME, NIC, GENDER, DOB, ADDRESS, CONTACTS) ── */}
+        {/* ── STEP 2: CUSTOMER DETAILS (PERSONAL DETAILS & EMERGENCY CONTACT) ── */}
         {currentStep === 2 && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. PERSONAL IDENTITY & NIC */}
+            {/* 1. PERSONAL DETAILS */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
                 <div className="p-2 bg-red-50 text-red-600 rounded-xl">
@@ -805,10 +776,10 @@ export default function NewCustomerPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
-                    Personal Identity &amp; National Identity Card (NIC)
+                    Personal Details
                   </h2>
                   <p className="text-[11px] text-slate-600 font-medium">
-                    Legal full name, National Identity Card, gender, and date of birth.
+                    Legal full name, National Identity Card, gender, date of birth, contact details, and address.
                   </p>
                 </div>
               </div>
@@ -870,105 +841,10 @@ export default function NewCustomerPage() {
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* 2. RESIDENTIAL ADDRESS & LOCATION */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                  <MapPin size={18} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900">
-                    Residential Address &amp; Region
-                  </h2>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Permanent residence location, village / Grama Niladhari division, and administrative district.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="sm:col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
-                    Residential Address (House / Street)
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    autoComplete="off"
-                    value={form.address}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800">
-                    Village / Suburb / Grama Niladhari
-                  </label>
-                  <input
-                    type="text"
-                    name="village"
-                    autoComplete="off"
-                    value={form.village}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Town / City</label>
-                  <input
-                    type="text"
-                    name="town"
-                    autoComplete="off"
-                    value={form.town}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">District</label>
-                  <select
-                    name="district"
-                    value={form.district}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  >
-                    <option value="">Select District</option>
-                    {SRI_LANKA_DISTRICTS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. CONTACT NUMBERS & EMERGENCY CONTACTS */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                  <Phone size={18} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900">
-                    Contact Numbers &amp; Emergency Contacts
-                  </h2>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Direct phone lines, emergency notification contact person and emergency phone number.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
-                    Primary Contact Number <span className="text-red-600">*</span>
+                    Contact Number <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="tel"
@@ -981,21 +857,7 @@ export default function NewCustomerPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
-                    Alternative Contact Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="alternatePhone"
-                    autoComplete="off"
-                    value={form.alternatePhone}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
+                <div className="sm:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-800">Email Address (Optional)</label>
                   <input
                     type="email"
@@ -1007,6 +869,39 @@ export default function NewCustomerPage() {
                   />
                 </div>
 
+                <div className="sm:col-span-2 lg:col-span-4 space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    autoComplete="off"
+                    value={form.address}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 2. EMERGENCY CONTACT */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Emergency Contact
+                  </h2>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Emergency contact person details and relationship to borrower.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800">Emergency Contact Person Name</label>
                   <input
