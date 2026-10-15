@@ -105,14 +105,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 aria-label="View notifications"
               >
                 {pendingLoans.length > 0 ? (
-                  <BellRing size={20} className="text-amber-600 animate-pulse" />
+                  <BellRing size={20} className="text-red-600" />
                 ) : (
                   <Bell size={20} />
                 )}
                 {pendingLoans.length > 0 && (
-                  <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600" />
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                    {pendingLoans.length}
                   </span>
                 )}
               </button>
