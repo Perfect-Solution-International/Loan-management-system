@@ -390,7 +390,7 @@ export function NewLoanForm({
         </div>
         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-mono max-w-sm mx-auto space-y-1.5 text-left">
           <div className="flex justify-between">
-            <span className="text-slate-500">Gross Principal:</span>
+            <span className="text-slate-500">Loan Amount:</span>
             <span className="font-bold text-slate-800">{MONEY(calculations.gross)}</span>
           </div>
           <div className="flex justify-between">
@@ -909,11 +909,11 @@ export function NewLoanForm({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Gross Loan Amount */}
+                  {/* Loan Amount */}
                   <div className="space-y-1.5 sm:col-span-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-700">
-                        Gross Loan Amount (LKR) <span className="text-red-500">*</span>
+                        Loan Amount (LKR) <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center gap-1.5">
                         {["50000", "100000", "200000", "500000"].map((preset) => {
@@ -1417,7 +1417,7 @@ export function NewLoanForm({
 
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                    <span className="text-slate-400">Gross Principal</span>
+                    <span className="text-slate-400">Loan Amount</span>
                     <span className="font-mono font-bold text-slate-100">{MONEY(calculations.gross)}</span>
                   </div>
 

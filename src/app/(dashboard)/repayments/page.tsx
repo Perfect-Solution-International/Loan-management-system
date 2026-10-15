@@ -446,7 +446,7 @@ export default function RepaymentsCollectionsPage() {
             {/* Balances List */}
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between py-1 border-b border-zinc-800/60">
-                <span className="text-zinc-400">Gross Principal</span>
+                <span className="text-zinc-400">Loan Amount</span>
                 <span className="font-semibold text-zinc-200">
                   {MONEY(selectedLoan?.principal || selectedLoan?.amount || 0)}
                 </span>

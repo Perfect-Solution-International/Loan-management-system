@@ -925,11 +925,11 @@ function IssueNewLoanContent() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Gross Loan Amount */}
+                    {/* Loan Amount */}
                     <div className="space-y-1.5 sm:col-span-2">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-slate-700">
-                          Gross Loan Amount (LKR) <span className="text-red-500">*</span>
+                          Loan Amount (LKR) <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center gap-1.5">
                           {["50000", "100000", "200000", "500000"].map((preset) => {
@@ -1433,7 +1433,7 @@ function IssueNewLoanContent() {
 
                   <div className="space-y-3 text-xs">
                     <div className="flex justify-between items-center py-1 border-b border-zinc-800">
-                      <span className="text-zinc-400">Gross Principal</span>
+                      <span className="text-zinc-400">Loan Amount</span>
                       <span className="font-mono font-bold text-zinc-100">{MONEY(calculations.gross)}</span>
                     </div>
 
@@ -1597,7 +1597,7 @@ function IssueNewLoanContent() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Gross Principal:</span>
+                <span className="text-slate-500">Loan Amount:</span>
                 <span className="font-bold text-slate-900">{MONEY(calculations.gross)}</span>
               </div>
               <div className="flex justify-between">

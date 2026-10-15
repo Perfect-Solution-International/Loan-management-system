@@ -118,7 +118,7 @@ function LoanDetailsContent() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Gross Principal</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Loan Amount</span>
               <strong className="text-sm sm:text-base font-mono font-black text-slate-900 mt-1 block">
                 {MONEY(loan.principal || loan.amount || 0)}
               </strong>
