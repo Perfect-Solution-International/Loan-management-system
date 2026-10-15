@@ -256,18 +256,7 @@ export function StaffDashboard() {
     triggerToast(`Updated permission for ${staff.name}.`);
   };
 
-  // 2. Loan Approval / Rejection
-  const handleApproveLoan = (loanId: string, customerName: string = "Borrower") => {
-    updateLoan(loanId, { status: "Active" });
-    triggerToast(`Loan facility for ${customerName} officially approved and authorized for disbursement.`);
-  };
-
-  const handleRejectLoan = (loanId: string, customerName: string = "Borrower") => {
-    updateLoan(loanId, { status: "Rejected" });
-    triggerToast(`Loan application for ${customerName} rejected / returned for underwriting revision.`);
-  };
-
-  // 3. Record Repayment
+  // 2. Record Repayment
   const handleRecordRepayment = (e: React.FormEvent) => {
     e.preventDefault();
     const amountNum = Number(paymentForm.amount);
@@ -410,7 +399,7 @@ export function StaffDashboard() {
               Operational Staff Command Console
             </h1>
             <p className="text-xs text-slate-700 font-semibold max-w-3xl leading-relaxed">
-              Consolidated supervisory workspace for staff access governance, customer dossiers, loan authority underwriting, repayment supervision, and compliance auditing.
+              Consolidated operational workspace for field collection scheduling, customer KYC, fast repayment vouchers, and loan portfolio supervision.
             </p>
           </div>
 
@@ -475,11 +464,11 @@ export function StaffDashboard() {
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <div className="flex items-center justify-between text-slate-700">
-              <span className="text-[11px] font-bold">Pending Approvals</span>
-              <Clock size={16} className="text-amber-600" />
+              <span className="text-[11px] font-bold">Overdue Accounts</span>
+              <AlertTriangle size={16} className="text-rose-600" />
             </div>
-            <p className="text-lg font-black text-slate-900 mt-1">{pendingLoans.length}</p>
-            <span className="text-[10px] text-amber-800 font-bold">Awaiting officer sign-off</span>
+            <p className="text-lg font-black text-slate-900 mt-1">{overdueLoans.length}</p>
+            <span className="text-[10px] text-rose-700 font-bold">Field recovery visits</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
@@ -553,12 +542,7 @@ export function StaffDashboard() {
           }`}
         >
           <CreditCard size={15} />
-          <span>4 &amp; 6. Loan Authority &amp; Ledger ({loans.length})</span>
-          {pendingLoans.length > 0 && (
-            <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-950 text-[10px] font-black flex items-center justify-center">
-              {pendingLoans.length}
-            </span>
-          )}
+          <span>4 &amp; 6. Loan Records &amp; Ledger ({loans.length})</span>
         </button>
 
         <button
@@ -687,25 +671,24 @@ export function StaffDashboard() {
               {/* Pillar 4 */}
               <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
                 <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-                    <FileCheck2 size={20} />
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                    <CreditCard size={20} />
                   </div>
                   <h3 className="text-sm font-black text-slate-900">
-                    4. Create &amp; Approve Loans (Authority)
+                    4. Issue &amp; Submit Loan Facilities
                   </h3>
                   <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Authority limits per officer tier. Credit Committee sign-offs and one-click loan activation.
+                    Originate borrower credit facilities, record guarantors, and submit applications for Credit Committee sign-off.
                   </p>
                 </div>
                 <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-amber-900">{pendingLoans.length} Pending Approval</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("loans")}
+                  <span className="text-[11px] font-bold text-blue-900">{activeLoans.length} Active Facilities</span>
+                  <Link
+                    href="/loans/new"
                     className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
                   >
-                    Authority Desk <ArrowRight size={13} />
-                  </button>
+                    Issue Loan <ArrowRight size={13} />
+                  </Link>
                 </div>
               </div>
 
@@ -1179,70 +1162,29 @@ export function StaffDashboard() {
               </Link>
             </div>
 
-            {/* PENDING COMMITTEE APPROVAL SECTION */}
-            {pendingLoans.length > 0 && (
-              <div className="space-y-3.5 p-5 rounded-2xl bg-amber-50/70 border border-amber-300">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-ping" />
-                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-950">
-                      Credit Committee Review Pipeline ({pendingLoans.length} Pending Approval)
-                    </h3>
-                  </div>
-                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    Authority Required
-                  </span>
+            {/* Field Portfolio Operational Notice */}
+            <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold shrink-0">
+                  <CreditCard size={18} />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {pendingLoans.map((pLoan) => (
-                    <div
-                      key={pLoan.id}
-                      className="p-4 bg-white rounded-xl border border-amber-200 shadow-xs space-y-3 flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-black text-sm text-slate-900">{pLoan.customerName}</p>
-                            <span className="text-[10px] font-mono text-slate-500 font-bold">{pLoan.loanNo}</span>
-                          </div>
-                          <span className="text-base font-black text-amber-900">{MONEY(pLoan.principal)}</span>
-                        </div>
-                        <p className="text-xs text-slate-600 font-medium mt-2">
-                          Purpose: {pLoan.purpose || "Business Capital"} · Term: {pLoan.duration} Months ({pLoan.repaymentFrequency})
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <Link
-                          href={`/loans/${pLoan.id}`}
-                          className="text-xs font-bold text-slate-600 hover:text-slate-900"
-                        >
-                          View Schedule →
-                        </Link>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleRejectLoan(pLoan.id, pLoan.customerName || "Borrower")}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition cursor-pointer"
-                          >
-                            Reject
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleApproveLoan(pLoan.id, pLoan.customerName || "Borrower")}
-                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1"
-                          >
-                            <Check size={13} />
-                            <span>Approve</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <h3 className="text-xs font-black text-slate-900">
+                    Loan Portfolio Ledger &amp; Field Schedule Records
+                  </h3>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Monitor active borrower facilities, verify guarantor dossiers, and track scheduled repayment dates.
+                  </p>
                 </div>
               </div>
-            )}
+              <Link
+                href="/loans/new"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shrink-0"
+              >
+                <Plus size={13} />
+                <span>Submit New Facility</span>
+              </Link>
+            </div>
 
             {/* Filter controls */}
             <div className="flex flex-col sm:flex-row gap-3">
@@ -1264,7 +1206,7 @@ export function StaffDashboard() {
               >
                 <option value="all">All Statuses ({loans.length})</option>
                 <option value="active">Active Only ({activeLoans.length})</option>
-                <option value="pending">Pending Approval ({pendingLoans.length})</option>
+                <option value="pending">Under Committee Review ({pendingLoans.length})</option>
                 <option value="overdue">Overdue ({overdueLoans.length})</option>
               </select>
             </div>
@@ -1304,7 +1246,9 @@ export function StaffDashboard() {
                               : "bg-amber-100 text-amber-900 border border-amber-200"
                           }`}
                         >
-                          {loan.status}
+                          {(loan.status || "").toLowerCase() === "pending"
+                            ? "Under Committee Review"
+                            : loan.status}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
