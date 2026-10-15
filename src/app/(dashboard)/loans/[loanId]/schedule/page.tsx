@@ -76,20 +76,29 @@ export default function LoanSchedulePreviewPage() {
       let principalPortion = 0;
       let interestPortion = 0;
 
+      const remainingGross = Math.max(0, gross - (loan.capitalDeduction || 0));
+
       if (repaymentType === "Interest Only") {
-        interestPortion = Math.round(totalInterest / duration);
         if (i === duration) {
-          principalPortion = gross;
-          installmentAmt = gross + interestPortion;
+          principalPortion = remainingGross;
+          installmentAmt = runningBalance;
+          interestPortion = Math.max(0, installmentAmt - principalPortion);
         } else {
+          interestPortion = Math.round(totalInterest / duration);
           principalPortion = 0;
           installmentAmt = interestPortion;
         }
       } else {
         // Capital + Interest
-        installmentAmt = Math.round(totalRepay / duration);
-        principalPortion = Math.round(gross / duration);
-        interestPortion = Math.max(0, installmentAmt - principalPortion);
+        if (i === duration) {
+          installmentAmt = runningBalance;
+          interestPortion = Math.max(0, totalInterest - Math.round(totalInterest / duration) * (duration - 1));
+          principalPortion = Math.max(0, installmentAmt - interestPortion);
+        } else {
+          installmentAmt = Math.round(totalRepay / duration);
+          principalPortion = Math.round(remainingGross / duration);
+          interestPortion = Math.max(0, installmentAmt - principalPortion);
+        }
       }
 
       runningBalance = Math.max(0, runningBalance - installmentAmt);

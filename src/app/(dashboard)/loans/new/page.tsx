@@ -189,9 +189,10 @@ function IssueNewLoanContent() {
     // 4. Total Interest over the loan term
     const totalInterest = Math.round(gross * (rate / 100) * periods);
 
-    // 5. Total Repayment (subtract upfront interest deduction if already deducted at disbursement)
+    // 5. Total Repayment (subtract upfront capital and interest deductions if already deducted at disbursement)
+    const remainingCapital = Math.max(0, gross - capDed);
     const remainingInterest = Math.max(0, totalInterest - intDed);
-    const totalRepayment = gross + remainingInterest;
+    const totalRepayment = remainingCapital + remainingInterest;
 
     // 6. Installments breakdown based on Repayment Scheme
     let installmentAmount = 0;
@@ -200,15 +201,18 @@ function IssueNewLoanContent() {
 
     if (repaymentType === "Interest Only") {
       // Under Interest Only, regular installments only cover periodic interest.
-      // Entire principal is paid back in the final installment at maturity.
+      // Remaining principal is repaid in the final installment at maturity.
       periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
       installmentAmount = periodicInterest;
-      finalInstallmentAmount = gross + periodicInterest;
+      finalInstallmentAmount = remainingCapital + periodicInterest;
     } else {
-      // Capital + Interest: equal periodic installments of principal and interest
+      // Capital + Interest: equal periodic installments
       installmentAmount = dur > 0 ? Math.round((totalRepayment / dur) * 100) / 100 : 0;
       periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
-      finalInstallmentAmount = installmentAmount;
+      // Final installment absorbs any rounding cents/rupees
+      finalInstallmentAmount = dur > 1
+        ? Math.round((totalRepayment - installmentAmount * (dur - 1)) * 100) / 100
+        : installmentAmount;
     }
 
     return {
@@ -221,7 +225,7 @@ function IssueNewLoanContent() {
       numberOfInstallments: dur,
       repaymentType,
       periodicInterest,
-      capitalAtMaturity: gross,
+      capitalAtMaturity: remainingCapital,
       finalInstallmentAmount,
     };
   }, [
@@ -255,12 +259,12 @@ function IssueNewLoanContent() {
         d.setMonth(d.getMonth() + (i - 1));
       }
       const isFinal = i === calculations.numberOfInstallments;
-      const amt = (repaymentType === "Interest Only" && isFinal)
+      const amt = isFinal
         ? calculations.finalInstallmentAmount
         : calculations.installmentAmount;
       const typeLabel = repaymentType === "Interest Only"
         ? (isFinal ? "Capital + Interest" : "Interest Only")
-        : "Principal + Interest";
+        : (isFinal ? "Final Installment" : "Principal + Interest");
 
       list.push({
         num: i,
@@ -1420,96 +1424,96 @@ function IssueNewLoanContent() {
 
               {/* Right Column: Financial Summary & Submit */}
               <div className="space-y-4 sticky top-24">
-                <div className="bg-[#0e0e11] text-white p-6 rounded-3xl shadow-xl space-y-5 border border-zinc-800">
+                <div className="bg-gradient-to-br from-black via-[#160205] to-[#2d050c] text-white p-6 rounded-3xl shadow-xl space-y-5 border-2 border-red-950">
                   <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                     <div className="flex items-center gap-2">
                       <Calculator size={18} className="text-rose-400" />
-                      <h3 className="font-black text-sm tracking-tight">Financial Summary</h3>
+                      <h3 className="font-extrabold text-base text-white tracking-tight">Financial Summary</h3>
                     </div>
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
                       Live
                     </span>
                   </div>
 
                   <div className="space-y-3 text-xs">
-                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
-                      <span className="text-zinc-400">Loan Amount</span>
-                      <span className="font-mono font-bold text-zinc-100">{MONEY(calculations.gross)}</span>
+                    <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/80">
+                      <span className="text-slate-300 font-bold">Loan Amount</span>
+                      <span className="font-mono font-black text-white text-sm">{MONEY(calculations.gross)}</span>
                     </div>
 
-                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
-                      <span className="text-zinc-400">Total Deductions</span>
-                      <span className="font-mono font-bold text-red-400">
+                    <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/80">
+                      <span className="text-slate-300 font-bold">Total Deductions</span>
+                      <span className="font-mono font-black text-rose-400 text-sm">
                         - {MONEY(calculations.totalDeductions)}
                       </span>
                     </div>
 
                     {/* Net Cash Disbursement */}
-                    <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex justify-between items-center">
+                    <div className="p-3.5 bg-emerald-950/60 border-2 border-emerald-500/40 rounded-2xl flex justify-between items-center shadow-xs">
                       <div>
-                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                        <span className="text-[11px] font-black text-emerald-300 uppercase tracking-wider block">
                           Net Disbursement
                         </span>
-                        <span className="text-[10px] text-zinc-400">Borrower cashout</span>
+                        <span className="text-xs text-slate-300 font-medium">Borrower cashout</span>
                       </div>
-                      <span className="font-mono text-base font-black text-emerald-400">
+                      <span className="font-mono text-lg font-black text-emerald-300">
                         {MONEY(calculations.netDisbursement)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
-                      <span className="text-zinc-400">Total Interest ({interestRate || 0}%)</span>
-                      <span className="font-mono font-bold text-rose-300">
+                    <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/80">
+                      <span className="text-slate-300 font-bold">Total Interest ({interestRate || 0}%)</span>
+                      <span className="font-mono font-black text-rose-300 text-sm">
                         + {MONEY(calculations.totalInterest)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-1 border-b border-zinc-800">
-                      <span className="text-zinc-300 font-bold">Total Repayment</span>
-                      <span className="font-mono font-black text-white text-sm">
+                    <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/80">
+                      <span className="text-slate-200 font-black uppercase tracking-wide">Total Repayment</span>
+                      <span className="font-mono font-black text-amber-300 text-base">
                         {MONEY(calculations.totalRepayment)}
                       </span>
                     </div>
 
                     {repaymentType === "Interest Only" ? (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
+                      <div className="space-y-2 pt-1">
+                        <div className="p-3 bg-red-950/80 border-2 border-red-500/40 rounded-2xl flex justify-between items-center shadow-xs">
                           <div>
-                            <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                            <span className="text-[11px] font-black text-rose-200 uppercase tracking-wider block">
                               Periodic Interest Payment
                             </span>
-                            <span className="text-[10px] text-zinc-400">
+                            <span className="text-xs text-slate-300 font-medium">
                               {calculations.numberOfInstallments} cycles ({frequency})
                             </span>
                           </div>
-                          <span className="font-mono text-base font-black text-rose-400">
+                          <span className="font-mono text-base font-black text-rose-300">
                             {MONEY(calculations.installmentAmount)}
                           </span>
                         </div>
 
-                        <div className="p-2.5 bg-zinc-900/90 border border-zinc-700/60 rounded-xl flex justify-between items-center text-xs">
+                        <div className="p-3 bg-zinc-900/90 border border-zinc-700 rounded-2xl flex justify-between items-center text-xs">
                           <div>
-                            <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider block">
+                            <span className="text-[10px] font-black text-slate-200 uppercase tracking-wider block">
                               Capital at Maturity
                             </span>
-                            <span className="text-[10px] text-zinc-400">Final balloon payment</span>
+                            <span className="text-[11px] text-slate-400 font-medium">Final balloon repayment</span>
                           </div>
-                          <span className="font-mono font-bold text-white">
+                          <span className="font-mono font-black text-white text-sm">
                             {MONEY(calculations.capitalAtMaturity || 0)}
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
+                      <div className="p-3.5 bg-red-950/80 border-2 border-red-500/40 rounded-2xl flex justify-between items-center shadow-xs">
                         <div>
-                          <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                          <span className="text-[11px] font-black text-rose-200 uppercase tracking-wider block">
                             {frequency} Installment
                           </span>
-                          <span className="text-[10px] text-zinc-400">
-                            {calculations.numberOfInstallments} equal payments
+                          <span className="text-xs text-slate-300 font-medium">
+                            {calculations.numberOfInstallments} equal installments
                           </span>
                         </div>
-                        <span className="font-mono text-lg font-black text-rose-400">
+                        <span className="font-mono text-lg font-black text-rose-300">
                           {MONEY(calculations.installmentAmount)}
                         </span>
                       </div>
@@ -1518,36 +1522,38 @@ function IssueNewLoanContent() {
 
                   {/* Installment breakdown preview */}
                   {schedulePreview.length > 0 && (
-                    <div className="space-y-1.5 pt-1 border-t border-zinc-800 text-[11px]">
-                      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
-                        <span>Installment Schedule Preview</span>
-                        <span>{repaymentType}</span>
+                    <div className="space-y-2 pt-2 border-t border-zinc-800 text-xs">
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-slate-300 font-black">
+                        <span>Installment Preview</span>
+                        <span className="text-rose-300 font-bold">{repaymentType}</span>
                       </div>
-                      {schedulePreview.map((item) => (
-                        <div
-                          key={item.num}
-                          className="flex items-center justify-between p-1.5 bg-zinc-900/80 rounded-lg text-[10px] font-mono text-zinc-300"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span>
-                              #{item.num} · {item.date}
-                            </span>
-                            {item.isFinal && (
-                              <span className="text-[9px] font-sans font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                Maturity
+                      <div className="space-y-1.5">
+                        {schedulePreview.map((item) => (
+                          <div
+                            key={item.num}
+                            className="flex items-center justify-between p-2 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs font-mono text-slate-200"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white">
+                                #{item.num} · {item.date}
                               </span>
-                            )}
+                              {item.isFinal && (
+                                <span className="text-[10px] font-sans font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  Final Due
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <span className="font-black text-rose-300">{MONEY(item.amount)}</span>
+                              {repaymentType === "Interest Only" && (
+                                <span className="block text-[10px] text-slate-400 font-sans font-medium">
+                                  {item.typeLabel}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
-                            {repaymentType === "Interest Only" && (
-                              <span className="block text-[8px] text-zinc-400 font-sans">
-                                {item.typeLabel}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
 

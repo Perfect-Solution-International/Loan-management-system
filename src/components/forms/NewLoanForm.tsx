@@ -193,9 +193,10 @@ export function NewLoanForm({
     // 4. Total Interest over the loan term
     const totalInterest = Math.round(gross * (rate / 100) * periods);
 
-    // 5. Total Repayment (subtract upfront interest deduction if already deducted at disbursement)
+    // 5. Total Repayment (subtract upfront capital and interest deductions if already deducted at disbursement)
+    const remainingCapital = Math.max(0, gross - capDed);
     const remainingInterest = Math.max(0, totalInterest - intDed);
-    const totalRepayment = gross + remainingInterest;
+    const totalRepayment = remainingCapital + remainingInterest;
 
     // 6. Installments breakdown based on Repayment Scheme
     let installmentAmount = 0;
@@ -204,15 +205,18 @@ export function NewLoanForm({
 
     if (repaymentType === "Interest Only") {
       // Under Interest Only, regular installments only cover periodic interest.
-      // Entire principal is paid back in the final installment at maturity.
+      // Remaining principal is repaid in the final installment at maturity.
       periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
       installmentAmount = periodicInterest;
-      finalInstallmentAmount = gross + periodicInterest;
+      finalInstallmentAmount = remainingCapital + periodicInterest;
     } else {
-      // Capital + Interest: equal periodic installments of principal and interest
+      // Capital + Interest: equal periodic installments
       installmentAmount = dur > 0 ? Math.round((totalRepayment / dur) * 100) / 100 : 0;
       periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
-      finalInstallmentAmount = installmentAmount;
+      // Final installment absorbs any rounding cents/rupees
+      finalInstallmentAmount = dur > 1
+        ? Math.round((totalRepayment - installmentAmount * (dur - 1)) * 100) / 100
+        : installmentAmount;
     }
 
     return {
@@ -225,7 +229,7 @@ export function NewLoanForm({
       numberOfInstallments: dur,
       repaymentType,
       periodicInterest,
-      capitalAtMaturity: gross,
+      capitalAtMaturity: remainingCapital,
       finalInstallmentAmount,
     };
   }, [
@@ -259,12 +263,12 @@ export function NewLoanForm({
         d.setMonth(d.getMonth() + (i - 1));
       }
       const isFinal = i === calculations.numberOfInstallments;
-      const amt = (repaymentType === "Interest Only" && isFinal)
+      const amt = isFinal
         ? calculations.finalInstallmentAmount
         : calculations.installmentAmount;
       const typeLabel = repaymentType === "Interest Only"
         ? (isFinal ? "Capital + Interest" : "Interest Only")
-        : "Principal + Interest";
+        : (isFinal ? "Final Installment" : "Principal + Interest");
 
       list.push({
         num: i,
