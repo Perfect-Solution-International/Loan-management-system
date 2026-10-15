@@ -627,10 +627,10 @@ export default function NewCustomerPage() {
                   </div>
                   <div>
                     <h2 className="text-base font-black text-slate-900">
-                      Step 1: Customer Photograph &amp; Registration Number
+                      Step 1: Customer Photograph &amp; ID
                     </h2>
                     <p className="text-xs text-slate-600 font-medium">
-                      Upload the borrower&apos;s portrait photograph and verify the auto-generated system reference.
+                      Upload the borrower&apos;s portrait photograph for identity verification.
                     </p>
                   </div>
                 </div>
@@ -650,96 +650,82 @@ export default function NewCustomerPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                {/* 1. Customer Photograph Upload */}
-                <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                      <Camera size={14} className="text-red-600" />
-                      Customer Photograph
+              {/* Single Consolidated Customer Photograph Card with Compact ID */}
+              <div className="p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <Camera size={14} className="text-red-600" />
+                    Customer Photograph
+                  </span>
+
+                  {/* Compact Auto-Generated Customer ID embedded right inside photo section */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                      <Lock size={12} className="text-slate-400" />
+                      Customer ID:
+                    </span>
+                    <input
+                      type="text"
+                      value={customerId}
+                      readOnly
+                      className="px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white font-mono font-bold text-slate-900 w-28 cursor-not-allowed select-all shadow-2xs"
+                    />
+                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                      Auto-Generated
                     </span>
                     {form.photoUrl && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                         <CheckCircle2 size={11} /> Photo Uploaded
                       </span>
                     )}
                   </div>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-5">
-                    {/* Portrait Avatar Preview */}
-                    <div className="relative shrink-0">
-                      {form.photoUrl ? (
-                        <div className="relative group">
-                          <img
-                            src={form.photoUrl}
-                            alt="Customer Portrait"
-                            className="w-28 h-28 rounded-2xl object-cover border-2 border-red-600 shadow-md bg-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
-                            className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md cursor-pointer transition"
-                            title="Remove Photo"
-                          >
-                            <X size={13} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
-                          <Camera size={32} className="text-slate-400 mb-1" />
-                          <span className="text-[10px] font-bold text-slate-600">No Image</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Upload button & guidance */}
-                    <div className="space-y-2.5 flex-1 text-center sm:text-left">
-                      <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
-                        <Upload size={14} />
-                        <span>{form.photoUrl ? "Change Photograph" : "Upload Customer Photo"}</span>
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg, image/webp"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                        Attach a clear, recent portrait photograph of the customer for facial verification and dossier identification.
-                      </p>
-                      <span className="text-[10px] text-slate-500 font-mono block">
-                        Supported: JPG, PNG, WEBP (Max 5MB)
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
-                {/* 2. System Auto-Generated Customer ID (Non-Editable & Compact) */}
-                <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3.5">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <Lock size={13} className="text-slate-500" />
-                      <span>Customer ID (Auto-Generated)</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={customerId}
-                        readOnly
-                        className="px-3 py-2 text-xs rounded-xl border border-slate-300 bg-slate-100 font-mono font-bold text-slate-800 w-36 cursor-not-allowed select-all shadow-2xs"
-                      />
-                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300">
-                        System Assigned • Locked
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      Unique reference number assigned by the system. Non-editable.
-                    </p>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  {/* Portrait Avatar Preview */}
+                  <div className="relative shrink-0">
+                    {form.photoUrl ? (
+                      <div className="relative group">
+                        <img
+                          src={form.photoUrl}
+                          alt="Customer Portrait"
+                          className="w-32 h-32 rounded-2xl object-cover border-2 border-red-600 shadow-md bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                          className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md cursor-pointer transition"
+                          title="Remove Photo"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
+                        <Camera size={36} className="text-slate-400 mb-1" />
+                        <span className="text-[10px] font-bold text-slate-600">No Image</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between text-xs font-semibold text-slate-600 border-t border-slate-200/80">
-                    <span>Onboarding Date:</span>
-                    <span className="font-mono font-bold text-slate-800">{new Date().toISOString().slice(0, 10)}</span>
+                  {/* Upload button & guidance */}
+                  <div className="space-y-3 flex-1 text-center sm:text-left">
+                    <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
+                      <Upload size={14} />
+                      <span>{form.photoUrl ? "Change Photograph" : "Upload Customer Photo"}</span>
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      Attach a clear, recent portrait photograph of the customer for facial verification and dossier identification.
+                    </p>
+                    <span className="text-[11px] text-slate-500 font-mono block">
+                      Supported: JPG, PNG, WEBP (Max 5MB)
+                    </span>
                   </div>
                 </div>
               </div>
