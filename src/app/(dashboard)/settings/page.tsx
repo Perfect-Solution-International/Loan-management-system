@@ -1040,13 +1040,10 @@ function SettingsContent() {
                 </div>
 
                 <div className="pt-3 border-t border-slate-200">
-                  <Link
-                    href="/customerdashboard"
-                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
-                  >
-                    <span>Preview Borrower Portal</span>
-                    <ArrowUpRight size={13} />
-                  </Link>
+                  <div className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600">
+                    <ShieldCheck size={14} className="text-blue-600 shrink-0" />
+                    <span>Customer Self-Service Only (Restricted)</span>
+                  </div>
                 </div>
               </div>
             </div>

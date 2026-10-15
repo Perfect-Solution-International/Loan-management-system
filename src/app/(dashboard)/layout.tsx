@@ -4,7 +4,7 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, ExternalLink } from "lucide-react";
+import { Menu } from "lucide-react";
 import { DataProvider } from "@/providers/data-provider";
 import Sidebar from "@/components/layout/Sidebar";
 
@@ -86,16 +86,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
           {/* Right Header User Status & Access Level Display */}
           <div className="flex items-center space-x-3 shrink-0">
-            <Link
-              href="/customerdashboard"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 transition"
-              title="Preview Customer Self-Service Portal"
-            >
-              <ExternalLink size={13} className="text-slate-600" />
-              <span>Borrower Portal</span>
-            </Link>
-
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+            <div className="flex items-center gap-2.5">
               <div className="text-right hidden sm:block">
                 <div className="flex items-center justify-end gap-1.5">
                   {isStaffView ? (
