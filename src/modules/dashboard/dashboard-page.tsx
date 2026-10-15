@@ -25,6 +25,8 @@ import {
   Activity,
   Settings,
   Sparkles,
+  Bell,
+  BellRing,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -361,27 +363,42 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         </div>
       </div>
 
-      {/* ── ADMIN ONLY: PENDING COMMITTEE APPROVAL BANNER ── */}
+      {/* ── ADMIN ONLY: PENDING COMMITTEE APPROVAL NOTIFICATION BANNER ── */}
       {role === "admin" && pendingLoans.length > 0 && (
-        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-100 text-amber-800 rounded-xl shrink-0 mt-0.5 border border-amber-200">
-              <AlertTriangle size={18} />
+        <div className="bg-white border-2 border-amber-300/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-sm hover:shadow-md transition">
+          <div className="flex items-start gap-3.5">
+            <div className="relative p-2.5 bg-amber-500 text-white rounded-xl shrink-0 mt-0.5 shadow-md shadow-amber-500/25">
+              <BellRing size={20} className="animate-pulse" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-80" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 border border-white" />
+              </span>
             </div>
             <div>
-              <p className="font-black text-amber-950 text-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
+                  Approval Notification
+                </span>
+                <span className="text-[10px] text-slate-500 font-semibold font-mono">
+                  {pendingLoans.length} Pending Sign-off
+                </span>
+              </div>
+              <p className="font-black text-slate-900 text-sm">
                 {pendingLoans.length} Loan Application{pendingLoans.length > 1 ? "s" : ""} Awaiting Administrator Approval
               </p>
-              <p className="text-amber-900 font-medium text-[11px] mt-0.5">
+              <p className="text-slate-600 font-medium text-xs mt-0.5 max-w-xl leading-relaxed">
                 Underwriting documents and guarantor checks completed. Requires Credit Committee sign-off before capital disbursement.
               </p>
             </div>
           </div>
           <Link
             href={`/loans/${pendingLoans[0].id}`}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition shadow-xs whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer inline-flex items-center gap-2 shrink-0"
           >
-            Review Applications ({pendingLoans.length}) <ArrowRight size={13} />
+            <Bell size={14} />
+            <span>Review Applications ({pendingLoans.length})</span>
+            <ArrowRight size={13} />
           </Link>
         </div>
       )}
