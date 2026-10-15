@@ -4,46 +4,38 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Users,
-  UserCheck,
   UserPlus,
   Shield,
   ShieldCheck,
   FileText,
   Upload,
-  Download,
   CreditCard,
-  TrendingUp,
-  HandCoins,
   Wallet,
   Percent,
-  Sliders,
   CheckCircle2,
-  AlertCircle,
   AlertTriangle,
   Calendar,
   Clock,
   ArrowRight,
   Search,
   Plus,
-  RefreshCw,
-  Lock,
-  Eye,
-  Check,
-  X,
-  Activity,
-  HardDriveDownload,
-  Building2,
   Receipt,
-  FileCheck2,
-  Sparkles,
+  Download,
+  Phone,
+  MapPin,
+  ExternalLink,
+  ChevronRight,
+  Printer,
+  History,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
-import { getDailyCollections, formatFriendlyDate } from "@/lib/collection-schedule";
+import { getDailyCollections, formatFriendlyDate, type ScheduledCollectionItem } from "@/lib/collection-schedule";
 import type { Customer, Loan, Payment, CustomerDocument, StaffUser, StaffPermissions } from "@/types";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
 
-type ActiveTab = "hub" | "staff" | "customers" | "loans" | "repayments" | "settings";
+type ActiveTab = "overview" | "collections" | "customers" | "loans" | "repayments" | "team" | "settings";
 
 export function StaffDashboard() {
   const {
@@ -53,7 +45,6 @@ export function StaffDashboard() {
     documents,
     settings,
     staffUsers,
-    updateLoan,
     addPayment,
     addDocument,
     updateSettings,
@@ -61,10 +52,9 @@ export function StaffDashboard() {
     updateStaffUser,
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>("hub");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [successToast, setSuccessToast] = useState<string>("");
 
-  // Quick helper to show feedback
   const triggerToast = (msg: string) => {
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(""), 3500);
@@ -96,11 +86,6 @@ export function StaffDashboard() {
     [payments]
   );
 
-  const outstandingBalance = useMemo(
-    () => Math.max(0, totalDisbursedCapital * 1.15 - totalRepaymentsCollected),
-    [totalDisbursedCapital, totalRepaymentsCollected]
-  );
-
   // Today's collections metrics
   const todayStr = new Date().toISOString().slice(0, 10);
   const collectionData = useMemo(
@@ -109,15 +94,10 @@ export function StaffDashboard() {
   );
   const collectionSchedule = collectionData.items;
   const collectionTargetToday = collectionData.summary.targetAmount;
-
-  const collectedToday = useMemo(() => {
-    return payments
-      .filter((p) => p.date === todayStr)
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  }, [payments, todayStr]);
+  const collectionCollectedToday = collectionData.summary.collectedAmount;
 
   const collectionRate = collectionTargetToday > 0
-    ? Math.min(100, Math.round((collectedToday / collectionTargetToday) * 100))
+    ? Math.min(100, Math.round((collectionCollectedToday / collectionTargetToday) * 100))
     : 100;
 
   // ── 2. Modal States ───────────────────────────────────────────────────────
@@ -130,7 +110,7 @@ export function StaffDashboard() {
     branch: "Colombo Central",
     status: "Active",
     permissions: {
-      approveLoans: true,
+      approveLoans: false,
       recordRepayments: true,
       exportReports: true,
       manageSettings: false,
@@ -148,6 +128,18 @@ export function StaffDashboard() {
     method: "Cash" as Payment["method"],
     notes: "",
   });
+
+  // Pre-fill payment modal for a specific collection item
+  const handleQuickCollect = (item: ScheduledCollectionItem) => {
+    setPaymentForm({
+      customerId: item.loan.customerId,
+      loanId: item.loan.id,
+      amount: String(item.totalDueToday || item.installmentAmount),
+      method: "Cash",
+      notes: `Installment #${item.cycleNumber} collected via field route`,
+    });
+    setShowPaymentModal(true);
+  };
 
   // C. Document Upload Modal State
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
@@ -167,10 +159,11 @@ export function StaffDashboard() {
     gracePeriodDays: settings.gracePeriodDays || 3,
   });
 
-  // Search states for tables
+  // Search & Filter states
   const [customerSearch, setCustomerSearch] = useState("");
   const [loanSearch, setLoanSearch] = useState("");
   const [loanStatusFilter, setLoanStatusFilter] = useState("all");
+  const [routeFilter, setRouteFilter] = useState("all");
 
   // Filtered lists
   const filteredCustomers = useMemo(() => {
@@ -200,12 +193,19 @@ export function StaffDashboard() {
     });
   }, [loans, loanStatusFilter, loanSearch]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
-  // 1. Staff Add
+  const filteredSchedule = useMemo(() => {
+    if (routeFilter === "all") return collectionSchedule;
+    if (routeFilter === "collected") return collectionSchedule.filter((i) => i.isCollectedToday);
+    if (routeFilter === "overdue") return collectionSchedule.filter((i) => i.status === "OVERDUE");
+    if (routeFilter === "due") return collectionSchedule.filter((i) => !i.isCollectedToday);
+    return collectionSchedule;
+  }, [collectionSchedule, routeFilter]);
+
+  // ── 3. Action Handlers ────────────────────────────────────────────────────
   const handleSaveStaff = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaff.name?.trim() || !newStaff.email?.trim()) {
-      alert("Please provide staff member's full name and email.");
+      alert("Please provide staff member's full name and email address.");
       return;
     }
     const created: StaffUser = {
@@ -217,7 +217,7 @@ export function StaffDashboard() {
       status: "Active",
       joinedDate: new Date().toISOString().slice(0, 10),
       permissions: newStaff.permissions || {
-        approveLoans: true,
+        approveLoans: false,
         recordRepayments: true,
         exportReports: true,
         manageSettings: false,
@@ -233,17 +233,16 @@ export function StaffDashboard() {
       branch: "Colombo Central",
       status: "Active",
       permissions: {
-        approveLoans: true,
+        approveLoans: false,
         recordRepayments: true,
         exportReports: true,
         manageSettings: false,
         manageCustomers: true,
       },
     });
-    triggerToast(`Staff account for ${created.name} registered with permissions.`);
+    triggerToast(`Staff account for ${created.name} added successfully.`);
   };
 
-  // Toggle Staff Permission
   const handleTogglePermission = (
     staffId: string,
     perm: keyof StaffPermissions,
@@ -253,10 +252,9 @@ export function StaffDashboard() {
     if (!staff) return;
     const updatedPerms = { ...staff.permissions, [perm]: !currentValue };
     updateStaffUser(staffId, { permissions: updatedPerms });
-    triggerToast(`Updated permission for ${staff.name}.`);
+    triggerToast(`Updated authorization for ${staff.name}.`);
   };
 
-  // 2. Record Repayment
   const handleRecordRepayment = (e: React.FormEvent) => {
     e.preventDefault();
     const amountNum = Number(paymentForm.amount);
@@ -276,9 +274,9 @@ export function StaffDashboard() {
       amount: amountNum,
       date: new Date().toISOString().slice(0, 10),
       type: "Capital",
-      notes: paymentForm.notes || "Field collection authorized receipt",
+      notes: paymentForm.notes || "Field collection voucher",
       method: paymentForm.method || "Cash",
-      collectedBy: "Authorized Loan Officer",
+      collectedBy: "Field Officer",
       receiptNo: `RCP-${Math.floor(100000 + Math.random() * 900000)}`,
     };
 
@@ -292,14 +290,13 @@ export function StaffDashboard() {
       method: "Cash",
       notes: "",
     });
-    triggerToast(`Repayment of ${MONEY(amountNum)} recorded for ${customer?.fullName || "Borrower"}. Official Receipt issued.`);
+    triggerToast(`Collection of ${MONEY(amountNum)} recorded for ${customer?.fullName || "Borrower"}. Receipt issued.`);
   };
 
-  // 4. Upload Document
   const handleAddDocument = (e: React.FormEvent) => {
     e.preventDefault();
     if (!docForm.customerId || !docForm.title.trim()) {
-      alert("Please select a borrower and provide document title.");
+      alert("Please select a borrower and enter document title.");
       return;
     }
     const newDoc: CustomerDocument = {
@@ -312,7 +309,7 @@ export function StaffDashboard() {
       fileType: "application/pdf",
       fileUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
       uploadedAt: new Date().toISOString().slice(0, 10),
-      uploader: "Operations Officer",
+      uploader: "Field Officer",
     };
     addDocument(newDoc);
     setShowDocUploadModal(false);
@@ -322,10 +319,9 @@ export function StaffDashboard() {
       type: "nic_front",
       fileName: "",
     });
-    triggerToast(`Customer document '${newDoc.title}' verified and archived.`);
+    triggerToast(`Document '${newDoc.title}' uploaded and verified.`);
   };
 
-  // 5. Save System Pricing Rules
   const handleSavePricing = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings({
@@ -335,13 +331,12 @@ export function StaffDashboard() {
       lateFeePercentage: Number(pricingForm.lateFeePercentage),
       gracePeriodDays: Number(pricingForm.gracePeriodDays),
     });
-    triggerToast("Interest rate tiers and deduction parameters updated successfully.");
+    triggerToast("Lending parameters saved successfully.");
   };
 
-  // 6. Database Backup Download
   const handleExportBackup = () => {
     const backupData = {
-      system: "PSI ONE Loan Management System",
+      system: "Microfinance Core - Field Operations Snapshot",
       exportDate: new Date().toISOString(),
       metadata: {
         totalCustomers: customers.length,
@@ -360,62 +355,60 @@ export function StaffDashboard() {
     const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", jsonStr);
-    downloadAnchor.setAttribute("download", `psi_one_backup_${todayStr}.json`);
+    downloadAnchor.setAttribute("download", `microfinance_backup_${todayStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    triggerToast("Encrypted system database backup generated and downloaded.");
+    triggerToast("Operational database snapshot downloaded.");
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-7 animate-in fade-in duration-150">
-      {/* ── LIVE TOAST FEEDBACK NOTIFICATION ── */}
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* ── TOAST NOTIFICATION ── */}
       {successToast && (
-        <div className="fixed top-20 right-6 z-50 p-4 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-top-3 duration-200">
-          <div className="p-1.5 bg-emerald-500 text-white rounded-xl">
-            <CheckCircle2 size={18} />
+        <div className="fixed top-20 right-4 sm:right-6 z-50 p-4 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-top-3 duration-200">
+          <div className="p-1.5 bg-emerald-500 text-white rounded-xl shrink-0">
+            <CheckCircle2 size={16} />
           </div>
           <p className="text-xs font-bold">{successToast}</p>
         </div>
       )}
 
-      {/* ── TOP OPERATIONAL EXECUTIVE HEADER ── */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 rounded-lg border border-red-200">
-                Staff Operations Command Center
+      {/* ── HEADER CONSOLE ── */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Field Operations Console
               </span>
-              <span className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-800 rounded-lg border border-slate-200">
-                Authority: Loan Officer &amp; Supervisor
-              </span>
-              <span className="px-2.5 py-1 text-[10px] font-bold text-emerald-800 bg-emerald-100 rounded-lg flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                All 10 Modules Online
+              <span className="text-slate-300">•</span>
+              <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Shift Active
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Operational Staff Command Console
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Borrower Management &amp; Collections
             </h1>
-            <p className="text-xs text-slate-700 font-semibold max-w-3xl leading-relaxed">
-              Consolidated operational workspace for field collection scheduling, customer KYC, fast repayment vouchers, and loan portfolio supervision.
+            <p className="text-xs text-slate-600 font-medium">
+              Daily collection schedules, borrower registration, KYC verification, and repayment processing.
             </p>
           </div>
 
-          {/* High-Impact Action Group */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* Quick Action Buttons - Fully Responsive */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 pt-2 lg:pt-0">
             <Link
               href="/customers/new"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
             >
               <UserPlus size={15} />
-              <span>Register Customer</span>
+              <span>Register Borrower</span>
             </Link>
 
             <Link
               href="/loans/new"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition"
             >
               <Plus size={15} />
               <span>Issue Loan</span>
@@ -424,7 +417,7 @@ export function StaffDashboard() {
             <button
               type="button"
               onClick={() => setShowPaymentModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
             >
               <Receipt size={15} />
               <span>Record Repayment</span>
@@ -432,551 +425,270 @@ export function StaffDashboard() {
 
             <button
               type="button"
-              onClick={handleExportBackup}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
-              title="Download Full Database Backup Snapshot"
+              onClick={() => setShowDocUploadModal(true)}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
             >
-              <HardDriveDownload size={15} className="text-slate-700" />
-              <span>Backup</span>
+              <Upload size={14} className="text-slate-700" />
+              <span>Upload KYC</span>
             </button>
           </div>
         </div>
 
-        {/* ── TOP 5 OPERATIONAL KPI STRIP ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 pt-4 border-t border-slate-100">
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="text-[11px] font-bold">Active Portfolio</span>
-              <Wallet size={16} className="text-red-600" />
-            </div>
-            <p className="text-lg font-black text-slate-900 mt-1">{MONEY(totalDisbursedCapital)}</p>
-            <span className="text-[10px] text-slate-600 font-semibold">{activeLoans.length} active credit facilities</span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="text-[11px] font-bold">Today&apos;s Target</span>
+        {/* ── KPI METRICS CARDS ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-5 pt-5 border-t border-slate-100">
+          {/* 1. Today's Target */}
+          <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-600">
+              <span className="text-xs font-bold">Today&apos;s Target</span>
               <Calendar size={16} className="text-amber-600" />
             </div>
-            <p className="text-lg font-black text-slate-900 mt-1">{MONEY(collectionTargetToday)}</p>
-            <span className="text-[10px] text-slate-600 font-semibold">{collectionRate}% collection efficiency</span>
+            <div className="my-1.5">
+              <p className="text-base sm:text-xl font-black text-slate-900 truncate">
+                {MONEY(collectionTargetToday)}
+              </p>
+              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div
+                  className="bg-amber-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${collectionRate}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
+              <span>{collectionRate}% Collected</span>
+              <span>{collectionSchedule.length} Due</span>
+            </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="text-[11px] font-bold">Overdue Accounts</span>
+          {/* 2. Active Portfolio */}
+          <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-600">
+              <span className="text-xs font-bold">Active Portfolio</span>
+              <Wallet size={16} className="text-red-600" />
+            </div>
+            <div className="my-1.5">
+              <p className="text-base sm:text-xl font-black text-slate-900 truncate">
+                {MONEY(totalDisbursedCapital)}
+              </p>
+              <p className="text-[11px] text-slate-600 font-semibold mt-0.5">
+                {activeLoans.length} active credit facilities
+              </p>
+            </div>
+            <span className="text-[10px] text-emerald-700 font-bold">Performing capital</span>
+          </div>
+
+          {/* 3. Overdue Risk */}
+          <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-600">
+              <span className="text-xs font-bold">Overdue Accounts</span>
               <AlertTriangle size={16} className="text-rose-600" />
             </div>
-            <p className="text-lg font-black text-slate-900 mt-1">{overdueLoans.length}</p>
-            <span className="text-[10px] text-rose-700 font-bold">Field recovery visits</span>
+            <div className="my-1.5">
+              <p className="text-base sm:text-xl font-black text-slate-900">
+                {overdueLoans.length}
+              </p>
+              <p className="text-[11px] text-rose-700 font-bold mt-0.5">
+                Immediate follow-up required
+              </p>
+            </div>
+            <span className="text-[10px] text-slate-500 font-medium">Field recovery visits</span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="text-[11px] font-bold">Borrower Network</span>
+          {/* 4. Verified Borrowers */}
+          <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-600">
+              <span className="text-xs font-bold">Borrowers &amp; KYC</span>
               <Users size={16} className="text-blue-600" />
             </div>
-            <p className="text-lg font-black text-slate-900 mt-1">{customers.length}</p>
-            <span className="text-[10px] text-slate-600 font-semibold">100% KYC verified</span>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="text-[11px] font-bold">Staff Accounts</span>
-              <ShieldCheck size={16} className="text-purple-600" />
+            <div className="my-1.5">
+              <p className="text-base sm:text-xl font-black text-slate-900">
+                {customers.length}
+              </p>
+              <p className="text-[11px] text-slate-600 font-semibold mt-0.5">
+                {documents.length} verified documents
+              </p>
             </div>
-            <p className="text-lg font-black text-slate-900 mt-1">{staffUsers.length}</p>
-            <span className="text-[10px] text-slate-600 font-semibold">Active role permissions</span>
+            <span className="text-[10px] text-blue-700 font-bold">100% Identity verified</span>
           </div>
         </div>
       </div>
 
-      {/* ── CONSOLE NAVIGATION TABS (ALL 10 PILLARS INTEGRATED) ── */}
+      {/* ── NAVIGATION TABS ── */}
       <div className="flex items-center gap-1.5 p-1.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-x-auto scrollbar-none">
         <button
           type="button"
-          onClick={() => setActiveTab("hub")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-            activeTab === "hub"
-              ? "bg-red-600 text-white shadow-xs"
+          onClick={() => setActiveTab("overview")}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+            activeTab === "overview"
+              ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
           }`}
         >
-          <Sparkles size={15} />
-          <span>10 Operational Pillars</span>
+          <History size={14} />
+          <span>Operational Overview</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab("staff")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-            activeTab === "staff"
-              ? "bg-red-600 text-white shadow-xs"
+          onClick={() => setActiveTab("collections")}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+            activeTab === "collections"
+              ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
           }`}
         >
-          <Shield size={15} />
-          <span>1. Staff &amp; Permissions ({staffUsers.length})</span>
+          <Calendar size={14} />
+          <span>Today&apos;s Field Route ({collectionSchedule.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("customers")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeTab === "customers"
-              ? "bg-red-600 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
           }`}
         >
-          <Users size={15} />
-          <span>2 &amp; 3. Customers &amp; Documents ({customers.length})</span>
+          <Users size={14} />
+          <span>Borrowers &amp; KYC ({customers.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("loans")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeTab === "loans"
-              ? "bg-red-600 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
           }`}
         >
-          <CreditCard size={15} />
-          <span>4 &amp; 6. Loan Records &amp; Ledger ({loans.length})</span>
+          <CreditCard size={14} />
+          <span>Loan Facilities ({loans.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("repayments")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeTab === "repayments"
-              ? "bg-red-600 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
           }`}
         >
-          <Receipt size={15} />
-          <span>7. Repayments &amp; Supervision ({payments.length})</span>
+          <Receipt size={14} />
+          <span>Repayments Journal ({payments.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("team")}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+            activeTab === "team"
+              ? "bg-slate-900 text-white shadow-xs"
+              : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
+          }`}
+        >
+          <Shield size={14} />
+          <span>Staff Roster ({staffUsers.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeTab === "settings"
-              ? "bg-red-600 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
           }`}
         >
-          <Sliders size={15} />
-          <span>5, 8, 9 &amp; 10. Rules, Reports &amp; Audit</span>
+          <SlidersHorizontal size={14} />
+          <span>Rates &amp; Policies</span>
         </button>
       </div>
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ── TAB 1: 10 OPERATIONAL PILLARS OVERVIEW HUB ── */}
+      {/* ── TAB 1: OPERATIONAL OVERVIEW ── */}
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "hub" && (
+      {activeTab === "overview" && (
         <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+          {/* Today's Collection Highlights */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
                 <h2 className="text-base font-black text-slate-900">
-                  Comprehensive 10 Operational Pillars
+                  Today&apos;s Field Collection Schedule
                 </h2>
-                <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                  Direct supervisory access into all microfinance lending workflows, permissions, and risk management modules.
-                </p>
-              </div>
-              <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                10 / 10 Pillars Enabled
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Pillar 1 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
-                    <Shield size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    1. Staff Accounts &amp; Permissions
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Manage field officers, collection agents, auditors, and administrators with role-based permission toggles.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-purple-800">{staffUsers.length} Active Accounts</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("staff")}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Manage Staff <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pillar 2 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                    <Users size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    2. Register, View, Edit Customers
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    KYC verified borrower profiles, complete identity dossiers, residential tracking, and credit ratings.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-blue-800">{customers.length} Verified Borrowers</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("customers")}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Directory <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pillar 3 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                    <FileText size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    3. Upload &amp; Manage Documents
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Upload NIC front/back photographs, proof of income, utility bills, and promissory notes.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-emerald-800">{documents.length} Archived Files</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowDocUploadModal(true)}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Upload File <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pillar 4 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
-                    <CreditCard size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    4. Issue &amp; Submit Loan Facilities
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Originate borrower credit facilities, record guarantors, and submit applications for Credit Committee sign-off.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-blue-900">{activeLoans.length} Active Facilities</span>
-                  <Link
-                    href="/loans/new"
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Issue Loan <ArrowRight size={13} />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Pillar 5 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center font-bold">
-                    <Percent size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    5. Configure Interest Rates &amp; Deductions
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Dynamic interest engine (2% - 3.5%), upfront capital deductions, processing fees, and payment channels.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-800">{settings.defaultMonthlyRate}% Monthly Flat</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("settings")}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Adjust Rates <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pillar 6 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                    <CreditCard size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    6. View &amp; Manage Loan Records
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Complete facility ledger across Active, Overdue, and Settled loans with real-time installment schedules.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-indigo-800">{loans.length} Total Facilities</span>
-                  <Link
-                    href="/loans"
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Loan Ledger <ArrowRight size={13} />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Pillar 7 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
-                    <Receipt size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    7. Record &amp; Supervise Repayments
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Field collection logging, cash and bank transfer receipts, and supervisor verification audit notes.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-teal-800">{payments.length} Payments Logged</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("repayments")}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Supervise <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pillar 8 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
-                    <TrendingUp size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    8. Financial Dashboards &amp; Reports
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Portfolio yield analytics, arrears ratios, collection efficiency charts, and capital exposure.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-rose-800">{collectionRate}% Recovery Efficiency</span>
-                  <Link
-                    href="/reports"
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Open Reports <ArrowRight size={13} />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Pillar 9 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-800 flex items-center justify-center font-bold">
-                    <HardDriveDownload size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    9. System Settings &amp; Backups
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Instant JSON database snapshot exports, institution parameters, branch metadata, and disaster recovery.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-800">Encrypted Backups</span>
-                  <button
-                    type="button"
-                    onClick={handleExportBackup}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    Backup Now <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pillar 10 */}
-              <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold">
-                    <Activity size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    10. Activity Logs &amp; Adjustments
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    Immutable audit logs of staff logins, loan state transitions, interest waivers, and supervisor adjustments.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-cyan-900">Real-Time Auditing</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("settings")}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    View Logs <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ── TAB 2: PILLAR 1: MANAGE STAFF ACCOUNTS & PERMISSIONS ── */}
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "staff" && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <h2 className="text-base font-black text-slate-900">
-                  Staff Accounts &amp; Permissions Matrix
-                </h2>
-                <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                  Manage active credit officers, branch assignments, and toggle individual security permissions.
+                <p className="text-xs text-slate-600 font-medium">
+                  {formatFriendlyDate(todayStr)} · {collectionSchedule.length} borrowers scheduled for collection
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setShowAddStaffModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                onClick={() => setActiveTab("collections")}
+                className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
               >
-                <UserPlus size={15} />
-                <span>Add Staff Member</span>
+                <span>View Full Route Sheet</span>
+                <ArrowRight size={13} />
               </button>
             </div>
 
-            {/* Staff Accounts Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-              <table className="w-full text-left text-xs">
+            {/* Quick table preview of today's route */}
+            <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              <table className="w-full text-left text-xs min-w-[620px]">
                 <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
                   <tr>
-                    <th className="py-3.5 px-4">Staff Member</th>
-                    <th className="py-3.5 px-4">Role &amp; Branch</th>
-                    <th className="py-3.5 px-4 text-center">Approve Loans</th>
-                    <th className="py-3.5 px-4 text-center">Record Payments</th>
-                    <th className="py-3.5 px-4 text-center">Export Reports</th>
-                    <th className="py-3.5 px-4 text-center">Manage Settings</th>
-                    <th className="py-3.5 px-4 text-center">Manage KYC</th>
+                    <th className="py-2.5 px-3">Borrower &amp; Route</th>
+                    <th className="py-2.5 px-3">Facility</th>
+                    <th className="py-2.5 px-3 text-right">Installment</th>
+                    <th className="py-2.5 px-3 text-right">Total Due</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {staffUsers.map((staff) => (
-                    <tr key={staff.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                            {staff.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{staff.name}</p>
-                            <p className="text-[11px] text-slate-500 font-mono">{staff.email}</p>
-                          </div>
-                        </div>
+                  {collectionSchedule.slice(0, 5).map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <td className="py-3 px-3">
+                        <p className="font-bold text-slate-900">{item.customer?.fullName || item.loan.customerName}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">{item.routeArea} · {item.customer?.phone || "No phone"}</p>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-block px-2 py-0.5 text-[10px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-200">
-                          {staff.role}
-                        </span>
-                        <p className="text-[11px] text-slate-600 font-medium mt-0.5">{staff.branch}</p>
+                      <td className="py-3 px-3">
+                        <span className="font-mono font-bold text-slate-800">{item.loan.loanNo || item.loan.id}</span>
+                        <span className="text-[10px] text-slate-500 block">Cycle #{item.cycleNumber} of {item.totalCycles}</span>
                       </td>
-                      {/* Permission 1: approveLoans */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePermission(staff.id, "approveLoans", staff.permissions.approveLoans)}
-                          className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition cursor-pointer ${
-                            staff.permissions.approveLoans
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : "bg-slate-100 text-slate-400 border border-slate-200"
-                          }`}
-                          title="Toggle Approve Loans Permission"
-                        >
-                          {staff.permissions.approveLoans ? <Check size={14} /> : <X size={14} />}
-                        </button>
+                      <td className="py-3 px-3 text-right font-bold text-slate-900">
+                        {MONEY(item.installmentAmount)}
                       </td>
-                      {/* Permission 2: recordRepayments */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePermission(staff.id, "recordRepayments", staff.permissions.recordRepayments)}
-                          className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition cursor-pointer ${
-                            staff.permissions.recordRepayments
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : "bg-slate-100 text-slate-400 border border-slate-200"
-                          }`}
-                          title="Toggle Record Repayments Permission"
-                        >
-                          {staff.permissions.recordRepayments ? <Check size={14} /> : <X size={14} />}
-                        </button>
+                      <td className="py-3 px-3 text-right font-black text-slate-900">
+                        {MONEY(item.totalDueToday)}
                       </td>
-                      {/* Permission 3: exportReports */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePermission(staff.id, "exportReports", staff.permissions.exportReports)}
-                          className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition cursor-pointer ${
-                            staff.permissions.exportReports
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : "bg-slate-100 text-slate-400 border border-slate-200"
-                          }`}
-                          title="Toggle Export Reports Permission"
-                        >
-                          {staff.permissions.exportReports ? <Check size={14} /> : <X size={14} />}
-                        </button>
+                      <td className="py-3 px-3 text-center">
+                        {item.isCollectedToday ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Collected
+                          </span>
+                        ) : item.status === "OVERDUE" ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                            Overdue
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                            Due Today
+                          </span>
+                        )}
                       </td>
-                      {/* Permission 4: manageSettings */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePermission(staff.id, "manageSettings", staff.permissions.manageSettings)}
-                          className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition cursor-pointer ${
-                            staff.permissions.manageSettings
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : "bg-slate-100 text-slate-400 border border-slate-200"
-                          }`}
-                          title="Toggle Manage Settings Permission"
-                        >
-                          {staff.permissions.manageSettings ? <Check size={14} /> : <X size={14} />}
-                        </button>
-                      </td>
-                      {/* Permission 5: manageCustomers */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePermission(staff.id, "manageCustomers", staff.permissions.manageCustomers)}
-                          className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition cursor-pointer ${
-                            staff.permissions.manageCustomers
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : "bg-slate-100 text-slate-400 border border-slate-200"
-                          }`}
-                          title="Toggle Manage Customers Permission"
-                        >
-                          {staff.permissions.manageCustomers ? <Check size={14} /> : <X size={14} />}
-                        </button>
+                      <td className="py-3 px-3 text-right">
+                        {item.isCollectedToday ? (
+                          <span className="text-[11px] font-bold text-emerald-700">Receipt Issued</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleQuickCollect(item)}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-2xs cursor-pointer"
+                          >
+                            Collect
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -984,604 +696,681 @@ export function StaffDashboard() {
               </table>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ── TAB 3: PILLARS 2 & 3: CUSTOMERS & DOCUMENTS ── */}
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "customers" && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <h2 className="text-base font-black text-slate-900">
-                  Borrower KYC &amp; Document Management Desk
-                </h2>
-                <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                  Register, edit, and audit borrower identities, verified contact lines, and attached dossiers.
-                </p>
+          {/* Quick Operations Matrix */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2.5 text-blue-700">
+                <Users size={18} />
+                <h3 className="font-black text-sm text-slate-900">Customer KYC &amp; Onboarding</h3>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/customers/new"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
-                >
-                  <UserPlus size={15} />
-                  <span>Register Customer</span>
-                </Link>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Verify borrower identification, check emergency references, and upload signed documentation.
+              </p>
+              <div className="pt-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">{customers.length} Registered</span>
                 <button
                   type="button"
-                  onClick={() => setShowDocUploadModal(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  onClick={() => setActiveTab("customers")}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
                 >
-                  <Upload size={14} />
-                  <span>Upload Document</span>
+                  Manage <ArrowRight size={13} />
                 </button>
               </div>
             </div>
 
-            {/* Search filter bar */}
-            <div className="relative">
-              <Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
+            <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2.5 text-slate-800">
+                <CreditCard size={18} />
+                <h3 className="font-black text-sm text-slate-900">Active Facilities &amp; Schedules</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Review installment schedules, maturity balances, interest calculations, and active terms.
+              </p>
+              <div className="pt-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">{loans.length} Facilities</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("loans")}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                >
+                  Directory <ArrowRight size={13} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2.5 text-emerald-700">
+                <Receipt size={18} />
+                <h3 className="font-black text-sm text-slate-900">Collections &amp; Receipts</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Record cash vouchers, supervise field payments, and issue official print-ready receipts.
+              </p>
+              <div className="pt-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">{payments.length} Payments Recorded</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("repayments")}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                >
+                  Journal <ArrowRight size={13} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ── TAB 2: TODAY'S FIELD ROUTE SHEET ── */}
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "collections" && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-black text-slate-900">
+                Daily Field Collection Route Sheet
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                Directly record borrower payments, mark collected installments, and track daily progress.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={routeFilter}
+                onChange={(e) => setRouteFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300 text-slate-800 bg-white shadow-2xs focus:outline-none"
+              >
+                <option value="all">All Items ({collectionSchedule.length})</option>
+                <option value="due">Due Today Only</option>
+                <option value="overdue">Overdue Only</option>
+                <option value="collected">Collected Today</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition cursor-pointer"
+              >
+                <Printer size={13} />
+                <span className="hidden sm:inline">Print Route</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs min-w-[700px]">
+              <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-3.5">Borrower Details</th>
+                  <th className="py-3 px-3.5">Route Area</th>
+                  <th className="py-3 px-3.5">Facility / Term</th>
+                  <th className="py-3 px-3.5 text-right">Installment</th>
+                  <th className="py-3 px-3.5 text-right">Arrears</th>
+                  <th className="py-3 px-3.5 text-right">Total Due Today</th>
+                  <th className="py-3 px-3.5 text-center">Status</th>
+                  <th className="py-3 px-3.5 text-right">Collection Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredSchedule.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-3.5">
+                      <p className="font-bold text-slate-900">{item.customer?.fullName || item.loan.customerName}</p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium mt-0.5">
+                        <Phone size={10} />
+                        <span>{item.customer?.phone || "No phone listed"}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3.5 font-medium text-slate-700">
+                      <div className="flex items-center gap-1">
+                        <MapPin size={11} className="text-slate-400" />
+                        <span>{item.routeArea}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3.5">
+                      <span className="font-mono font-bold text-slate-800">{item.loan.loanNo || item.loan.id}</span>
+                      <span className="text-[10px] text-slate-500 block">Cycle #{item.cycleNumber} of {item.totalCycles}</span>
+                    </td>
+                    <td className="py-3 px-3.5 text-right font-bold text-slate-900">
+                      {MONEY(item.installmentAmount)}
+                    </td>
+                    <td className="py-3 px-3.5 text-right font-bold text-rose-700">
+                      {item.arrearsAmount > 0 ? MONEY(item.arrearsAmount) : "—"}
+                    </td>
+                    <td className="py-3 px-3.5 text-right font-black text-slate-900">
+                      {MONEY(item.totalDueToday)}
+                    </td>
+                    <td className="py-3 px-3.5 text-center">
+                      {item.isCollectedToday ? (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Collected
+                        </span>
+                      ) : item.status === "OVERDUE" ? (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                          Overdue
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                          Due Today
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3.5 text-right">
+                      {item.isCollectedToday ? (
+                        <span className="text-xs font-bold text-emerald-700">Paid ✓</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleQuickCollect(item)}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer"
+                        >
+                          Collect Payment
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ── TAB 3: BORROWERS & KYC ── */}
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "customers" && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-black text-slate-900">
+                Borrower Directory &amp; KYC Verification
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                Search borrowers, check emergency contacts, and upload verified identification documents.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDocUploadModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition cursor-pointer"
+              >
+                <Upload size={14} />
+                <span>Upload KYC Doc</span>
+              </button>
+              <Link
+                href="/customers/new"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+              >
+                <UserPlus size={14} />
+                <span>New Borrower</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3.5 top-2.5 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by full name, NIC number, phone number, or ID..."
+              value={customerSearch}
+              onChange={(e) => setCustomerSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
+            />
+          </div>
+
+          {/* Borrowers table */}
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs min-w-[650px]">
+              <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-3.5">Borrower</th>
+                  <th className="py-3 px-3.5">NIC Number</th>
+                  <th className="py-3 px-3.5">Contact</th>
+                  <th className="py-3 px-3.5">Residential Address</th>
+                  <th className="py-3 px-3.5">KYC Status</th>
+                  <th className="py-3 px-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredCustomers.map((cust) => (
+                  <tr key={cust.id} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-3.5">
+                      <div className="flex items-center gap-2.5">
+                        {cust.photoUrl ? (
+                          <img
+                            src={cust.photoUrl}
+                            alt={cust.fullName || "Customer"}
+                            className="w-8 h-8 rounded-full object-cover border border-slate-300 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0">
+                            {(cust.fullName || "C").slice(0, 1)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold text-slate-900">{cust.fullName || "Unnamed Borrower"}</p>
+                          <span className="font-mono text-[10px] text-slate-500 font-bold">{cust.id}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3.5 font-mono font-bold text-slate-800 uppercase">{cust.nic}</td>
+                    <td className="py-3 px-3.5 font-semibold text-slate-700">{cust.phone}</td>
+                    <td className="py-3 px-3.5 text-slate-600 font-medium max-w-[200px] truncate">{cust.address}</td>
+                    <td className="py-3 px-3.5">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-200">
+                        <CheckCircle2 size={11} />
+                        Verified
+                      </span>
+                    </td>
+                    <td className="py-3 px-3.5 text-right">
+                      <div className="inline-flex items-center gap-1.5">
+                        <Link
+                          href={`/customers/${cust.id}`}
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                        >
+                          Profile
+                        </Link>
+                        <Link
+                          href={`/customers/${cust.id}/edit`}
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                        >
+                          Edit
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ── TAB 4: LOAN FACILITIES ── */}
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "loans" && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-black text-slate-900">
+                Loan Facilities &amp; Schedules
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                Overview of active microfinance loans, installment terms, and repayment schedules.
+              </p>
+            </div>
+
+            <Link
+              href="/loans/new"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs self-start sm:self-auto"
+            >
+              <Plus size={14} />
+              <span>Issue New Facility</span>
+            </Link>
+          </div>
+
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-2.5 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="Search customers by name, NIC, phone number or Customer ID..."
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
+                placeholder="Filter by borrower name, loan number or facility ID..."
+                value={loanSearch}
+                onChange={(e) => setLoanSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
               />
             </div>
 
-            {/* Customers Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">Customer Name &amp; ID</th>
-                    <th className="py-3 px-4">NIC</th>
-                    <th className="py-3 px-4">Contact Phone</th>
-                    <th className="py-3 px-4">Address</th>
-                    <th className="py-3 px-4">Documents</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredCustomers.map((cust) => {
-                    const custDocs = documents.filter((d) => d.customerId === cust.id);
-                    return (
-                      <tr key={cust.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            {cust.photoUrl ? (
-                              <img
-                                src={cust.photoUrl}
-                                alt={cust.fullName || "Customer"}
-                                className="w-8 h-8 rounded-full object-cover border border-slate-300"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs">
-                                {(cust.fullName || "C").slice(0, 1)}
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-bold text-slate-900">{cust.fullName || "Unnamed Borrower"}</p>
-                              <span className="font-mono text-[10px] text-slate-500 font-bold">{cust.id}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-slate-800 uppercase">{cust.nic}</td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-700">{cust.phone}</td>
-                        <td className="py-3.5 px-4 text-slate-600 font-medium max-w-[180px] truncate">{cust.address}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[10px]">
-                            <FileText size={11} className="text-red-600" />
-                            {custDocs.length} Dossier{custDocs.length !== 1 ? "s" : ""}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
-                            {cust.status}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="inline-flex items-center gap-2">
-                            <Link
-                              href={`/customers/${cust.id}`}
-                              className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
-                            >
-                              Profile
-                            </Link>
-                            <Link
-                              href={`/customers/${cust.id}/edit`}
-                              className="px-2.5 py-1 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
-                            >
-                              Edit
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Document Dossier Browser */}
-            <div className="pt-4 border-t border-slate-100 space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
-                Archived Borrower Identity Proofs ({documents.length} Files)
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {documents.slice(0, 8).map((doc) => {
-                  const owner = customers.find((c) => c.id === doc.customerId);
-                  return (
-                    <div key={doc.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded uppercase">
-                          {doc.type.replace("_", " ")}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">{doc.fileSize}</span>
-                      </div>
-                      <p className="text-xs font-bold text-slate-900 truncate">{doc.title}</p>
-                      <p className="text-[10px] text-slate-600 font-medium">Borrower: {owner?.fullName || doc.customerId}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <select
+              value={loanStatusFilter}
+              onChange={(e) => setLoanStatusFilter(e.target.value)}
+              className="px-3 py-2 text-xs rounded-xl border border-slate-300 font-bold bg-white text-slate-800 focus:outline-none shadow-2xs"
+            >
+              <option value="all">All Statuses ({loans.length})</option>
+              <option value="active">Active Only ({activeLoans.length})</option>
+              <option value="pending">Under Committee Review ({pendingLoans.length})</option>
+              <option value="overdue">Overdue ({overdueLoans.length})</option>
+            </select>
           </div>
-        </div>
-      )}
 
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ── TAB 4: PILLARS 4 & 6: LOAN AUTHORITY & LEDGER ── */}
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "loans" && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <h2 className="text-base font-black text-slate-900">
-                  Loan Origination Authority &amp; Active Ledger
-                </h2>
-                <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                  Authorize pending loans, evaluate underwriting parameters, and manage active credit contracts.
-                </p>
-              </div>
-
-              <Link
-                href="/loans/new"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
-              >
-                <Plus size={15} />
-                <span>Issue Loan Facility</span>
-              </Link>
-            </div>
-
-            {/* Field Portfolio Operational Notice */}
-            <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold shrink-0">
-                  <CreditCard size={18} />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-slate-900">
-                    Loan Portfolio Ledger &amp; Field Schedule Records
-                  </h3>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Monitor active borrower facilities, verify guarantor dossiers, and track scheduled repayment dates.
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/loans/new"
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shrink-0"
-              >
-                <Plus size={13} />
-                <span>Submit New Facility</span>
-              </Link>
-            </div>
-
-            {/* Filter controls */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Filter by borrower name, loan number or facility ID..."
-                  value={loanSearch}
-                  onChange={(e) => setLoanSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
-                />
-              </div>
-
-              <select
-                value={loanStatusFilter}
-                onChange={(e) => setLoanStatusFilter(e.target.value)}
-                className="px-3 py-2.5 text-xs rounded-xl border border-slate-300 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs cursor-pointer"
-              >
-                <option value="all">All Statuses ({loans.length})</option>
-                <option value="active">Active Only ({activeLoans.length})</option>
-                <option value="pending">Under Committee Review ({pendingLoans.length})</option>
-                <option value="overdue">Overdue ({overdueLoans.length})</option>
-              </select>
-            </div>
-
-            {/* Full Loan Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">Loan No &amp; Borrower</th>
-                    <th className="py-3 px-4">Disbursed Principal</th>
-                    <th className="py-3 px-4">Rate &amp; Duration</th>
-                    <th className="py-3 px-4">Installment</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredLoans.map((loan) => (
-                    <tr key={loan.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">{loan.customerName}</p>
-                        <span className="font-mono text-[10px] text-slate-500 font-bold">{loan.loanNo}</span>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{MONEY(loan.principal)}</td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-700">
-                        {loan.interestRate}% · {loan.duration} mos ({loan.repaymentFrequency})
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{MONEY(loan.installment)}</td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                            (loan.status || "").toLowerCase() === "active"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : (loan.status || "").toLowerCase() === "overdue"
-                              ? "bg-rose-100 text-rose-800 border border-rose-200"
-                              : "bg-amber-100 text-amber-900 border border-amber-200"
-                          }`}
+          {/* Loans Table */}
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs min-w-[650px]">
+              <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-3.5">Loan No &amp; Borrower</th>
+                  <th className="py-3 px-3.5">Disbursed Principal</th>
+                  <th className="py-3 px-3.5">Rate &amp; Duration</th>
+                  <th className="py-3 px-3.5">Installment</th>
+                  <th className="py-3 px-3.5">Status</th>
+                  <th className="py-3 px-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredLoans.map((loan) => (
+                  <tr key={loan.id} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-3.5">
+                      <p className="font-bold text-slate-900">{loan.customerName}</p>
+                      <span className="font-mono text-[10px] text-slate-500 font-bold">{loan.loanNo}</span>
+                    </td>
+                    <td className="py-3 px-3.5 font-mono font-bold text-slate-900">{MONEY(loan.principal)}</td>
+                    <td className="py-3 px-3.5 font-semibold text-slate-700">
+                      {loan.interestRate}% · {loan.duration} mos ({loan.repaymentFrequency})
+                    </td>
+                    <td className="py-3 px-3.5 font-mono font-bold text-slate-900">{MONEY(loan.installment)}</td>
+                    <td className="py-3 px-3.5">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          (loan.status || "").toLowerCase() === "active"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : (loan.status || "").toLowerCase() === "overdue"
+                            ? "bg-rose-100 text-rose-800 border border-rose-200"
+                            : "bg-amber-100 text-amber-900 border border-amber-200"
+                        }`}
+                      >
+                        {(loan.status || "").toLowerCase() === "pending"
+                          ? "Under Committee Review"
+                          : loan.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3.5 text-right">
+                      <div className="inline-flex items-center gap-1.5">
+                        <Link
+                          href={`/loans/${loan.id}/schedule`}
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
                         >
-                          {(loan.status || "").toLowerCase() === "pending"
-                            ? "Under Committee Review"
-                            : loan.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <Link
-                            href={`/loans/${loan.id}/schedule`}
-                            className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
-                          >
-                            Schedule
-                          </Link>
-                          <Link
-                            href={`/loans/${loan.id}`}
-                            className="px-2.5 py-1 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
-                          >
-                            Inspect
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          Schedule
+                        </Link>
+                        <Link
+                          href={`/loans/${loan.id}`}
+                          className="px-2.5 py-1 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                        >
+                          Details
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ── TAB 5: PILLAR 7: REPAYMENTS & SUPERVISION ── */}
+      {/* ── TAB 5: REPAYMENTS JOURNAL ── */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       {activeTab === "repayments" && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <h2 className="text-base font-black text-slate-900">
-                  Repayment Receipts &amp; Supervision Journal
-                </h2>
-                <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                  Supervise field installment collection, issue official receipts, and audit transaction records.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
-                >
-                  <Receipt size={15} />
-                  <span>Record Payment Voucher</span>
-                </button>
-                <Link
-                  href="/collections"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition"
-                >
-                  <Calendar size={14} className="text-red-600" />
-                  <span>Today&apos;s Route Sheet</span>
-                </Link>
-              </div>
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-black text-slate-900">
+                Repayment Receipts &amp; Payment Journal
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                Supervise field installment collection, issue official receipts, and audit transaction records.
+              </p>
             </div>
 
-            {/* Repayments History Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">Receipt No &amp; Date</th>
-                    <th className="py-3 px-4">Customer</th>
-                    <th className="py-3 px-4">Amount Paid</th>
-                    <th className="py-3 px-4">Channel</th>
-                    <th className="py-3 px-4">Collected By</th>
-                    <th className="py-3 px-4">Supervisory Status</th>
-                    <th className="py-3 px-4 text-right">Receipt</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {payments.slice(0, 15).map((pmt) => {
-                    const cust = customers.find((c) => c.id === pmt.customerId);
-                    return (
-                      <tr key={pmt.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4">
-                          <p className="font-mono font-bold text-slate-900">{pmt.receiptNo || pmt.id}</p>
-                          <span className="text-[10px] text-slate-500 font-semibold">{pmt.date}</span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <p className="font-bold text-slate-900">{cust?.fullName || pmt.customerId}</p>
-                          <span className="text-[10px] text-slate-500 font-mono">{pmt.customerId}</span>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-black text-emerald-800">
-                          {MONEY(pmt.amount)}
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-700">
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[10px] font-bold">
-                            {pmt.method || "Cash"}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-700 font-medium">{pmt.collectedBy || "Field Officer"}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            <CheckCircle2 size={11} className="text-emerald-600" />
-                            Verified &amp; Supervised
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedReceiptPayment(pmt)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
-                          >
-                            Print Receipt
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowPaymentModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs self-start sm:self-auto cursor-pointer"
+            >
+              <Receipt size={14} />
+              <span>Record Payment</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs min-w-[650px]">
+              <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-3.5">Receipt No &amp; Date</th>
+                  <th className="py-3 px-3.5">Borrower</th>
+                  <th className="py-3 px-3.5 font-mono">Amount Paid</th>
+                  <th className="py-3 px-3.5">Method</th>
+                  <th className="py-3 px-3.5">Collected By</th>
+                  <th className="py-3 px-3.5 text-right">Receipt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {payments.slice(0, 15).map((pmt) => {
+                  const cust = customers.find((c) => c.id === pmt.customerId);
+                  return (
+                    <tr key={pmt.id} className="hover:bg-slate-50 transition">
+                      <td className="py-3 px-3.5">
+                        <p className="font-mono font-bold text-slate-900">{pmt.receiptNo || pmt.id}</p>
+                        <span className="text-[10px] text-slate-500 font-semibold">{pmt.date}</span>
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <p className="font-bold text-slate-900">{cust?.fullName || pmt.customerId}</p>
+                        <span className="text-[10px] text-slate-500 font-mono">{pmt.customerId}</span>
+                      </td>
+                      <td className="py-3 px-3.5 font-mono font-black text-emerald-800">
+                        {MONEY(pmt.amount)}
+                      </td>
+                      <td className="py-3 px-3.5 font-semibold text-slate-700">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[10px] font-bold">
+                          {pmt.method || "Cash"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3.5 text-slate-700 font-medium">{pmt.collectedBy || "Field Officer"}</td>
+                      <td className="py-3 px-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReceiptPayment(pmt)}
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+                        >
+                          Print Receipt
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ── TAB 6: PILLARS 5, 8, 9 & 10: RULES, FINANCIALS, BACKUPS & AUDIT ── */}
+      {/* ── TAB 6: STAFF ROSTER & ACCESS ── */}
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "settings" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* PILLAR 5: Configure Interest Rates & Deductions */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                  <Percent size={18} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-900">
-                    5. Interest Rates &amp; Deduction Rules Engine
-                  </h2>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Configure loan product interest rules, processing deductions, and late fees.
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSavePricing} className="space-y-3.5 text-xs">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-800">Monthly Interest Rate (%)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={pricingForm.defaultMonthlyRate}
-                      onChange={(e) => setPricingForm({ ...pricingForm, defaultMonthlyRate: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-800">Weekly Interest Rate (%)</label>
-                    <input
-                      type="number"
-                      step="0.05"
-                      value={pricingForm.defaultWeeklyRate}
-                      onChange={(e) => setPricingForm({ ...pricingForm, defaultWeeklyRate: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-800">Processing Fee (LKR)</label>
-                    <input
-                      type="number"
-                      value={pricingForm.defaultProcessingFee}
-                      onChange={(e) => setPricingForm({ ...pricingForm, defaultProcessingFee: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-800">Grace Period (Days)</label>
-                    <input
-                      type="number"
-                      value={pricingForm.gracePeriodDays}
-                      onChange={(e) => setPricingForm({ ...pricingForm, gracePeriodDays: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-xs cursor-pointer"
-                >
-                  Save Financial Engine Rules
-                </button>
-              </form>
+      {activeTab === "team" && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-black text-slate-900">
+                Staff Roster &amp; Branch Authorizations
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                Operational roster for Colombo Central branch, role limits, and system permissions.
+              </p>
             </div>
 
-            {/* PILLAR 9: System Settings & Backups */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                <div className="p-2 bg-slate-100 text-slate-800 rounded-xl">
-                  <HardDriveDownload size={18} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-900">
-                    9. System Governance &amp; Encrypted Backups
-                  </h2>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Automated snapshots, disaster recovery downloads, and database export.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                  <p className="font-bold text-slate-900">Automated Daily Ledger Snapshots</p>
-                  <p className="text-slate-600 text-[11px]">Last verified backup created: {todayStr} (100% Health)</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={handleExportBackup}
-                    className="p-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer"
-                  >
-                    <Download size={15} />
-                    <span>Download JSON Backup</span>
-                  </button>
-                  <Link
-                    href="/settings"
-                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl flex items-center justify-center gap-2 transition text-center"
-                  >
-                    <Sliders size={15} />
-                    <span>Advanced Settings</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowAddStaffModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs self-start sm:self-auto cursor-pointer"
+            >
+              <UserPlus size={14} />
+              <span>New Staff Account</span>
+            </button>
           </div>
 
-          {/* PILLAR 8 & 10: Financial Intelligence & Activity Log */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* PILLAR 8: Financial Intelligence */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-                    <TrendingUp size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-black text-slate-900">
-                      8. Financial Health &amp; Analytics
-                    </h2>
-                    <p className="text-[11px] text-slate-600 font-medium">
-                      Executive ledger exposure, portfolio recovery, and yield performance.
-                    </p>
-                  </div>
-                </div>
-                <Link href="/reports" className="text-xs font-bold text-red-600 hover:text-red-700">
-                  Full Reports →
-                </Link>
-              </div>
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs min-w-[650px]">
+              <thead className="bg-slate-100 text-slate-800 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-3.5">Staff Member</th>
+                  <th className="py-3 px-3.5">Assigned Role</th>
+                  <th className="py-3 px-3.5">Branch</th>
+                  <th className="py-3 px-3.5">Record Repayments</th>
+                  <th className="py-3 px-3.5">Customer KYC</th>
+                  <th className="py-3 px-3.5">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {staffUsers.map((staff) => (
+                  <tr key={staff.id} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-3.5">
+                      <p className="font-bold text-slate-900">{staff.name}</p>
+                      <span className="text-[10px] text-slate-500 font-mono">{staff.email}</span>
+                    </td>
+                    <td className="py-3 px-3.5">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[10px]">
+                        {staff.role}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3.5 text-slate-700 font-medium">{staff.branch}</td>
+                    <td className="py-3 px-3.5">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePermission(staff.id, "recordRepayments", staff.permissions.recordRepayments)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                          staff.permissions.recordRepayments
+                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        {staff.permissions.recordRepayments ? "Authorized ✓" : "Disabled ✕"}
+                      </button>
+                    </td>
+                    <td className="py-3 px-3.5">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePermission(staff.id, "manageCustomers", staff.permissions.manageCustomers)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                          staff.permissions.manageCustomers
+                            ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        {staff.permissions.manageCustomers ? "Authorized ✓" : "Disabled ✕"}
+                      </button>
+                    </td>
+                    <td className="py-3 px-3.5">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        {staff.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="text-slate-600 text-[10px] font-bold uppercase">Total Disbursed</span>
-                  <p className="text-base font-black text-slate-900 mt-0.5">{MONEY(totalDisbursedCapital)}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="text-slate-600 text-[10px] font-bold uppercase">Total Recovered</span>
-                  <p className="text-base font-black text-emerald-800 mt-0.5">{MONEY(totalRepaymentsCollected)}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="text-slate-600 text-[10px] font-bold uppercase">Outstanding Exposure</span>
-                  <p className="text-base font-black text-amber-900 mt-0.5">{MONEY(outstandingBalance)}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="text-slate-600 text-[10px] font-bold uppercase">Collection Efficiency</span>
-                  <p className="text-base font-black text-blue-900 mt-0.5">{collectionRate}%</p>
-                </div>
-              </div>
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ── TAB 7: RATES & POLICIES ── */}
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "settings" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+            <div className="border-b border-slate-100 pb-3">
+              <h2 className="text-base font-black text-slate-900">
+                Lending Rates &amp; Parameter Rules
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                Standard rate tiers and deduction parameters applied to new loan applications.
+              </p>
             </div>
 
-            {/* PILLAR 10: Activity Log & Financial Adjustments */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-cyan-50 text-cyan-700 rounded-xl">
-                    <Activity size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-black text-slate-900">
-                      10. Activity Logs &amp; Adjustments
-                    </h2>
-                    <p className="text-[11px] text-slate-600 font-medium">
-                      Immutable record of approvals, payment vouchers, and staff events.
-                    </p>
-                  </div>
+            <form onSubmit={handleSavePricing} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Monthly Interest Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={pricingForm.defaultMonthlyRate}
+                    onChange={(e) => setPricingForm({ ...pricingForm, defaultMonthlyRate: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
                 </div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  Audit Ready
-                </span>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Weekly Interest Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={pricingForm.defaultWeeklyRate}
+                    onChange={(e) => setPricingForm({ ...pricingForm, defaultWeeklyRate: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Default Processing Fee (LKR)
+                  </label>
+                  <input
+                    type="number"
+                    value={pricingForm.defaultProcessingFee}
+                    onChange={(e) => setPricingForm({ ...pricingForm, defaultProcessingFee: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Late Payment Penalty (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={pricingForm.lateFeePercentage}
+                    onChange={(e) => setPricingForm({ ...pricingForm, lateFeePercentage: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                {payments.slice(0, 5).map((pmt, i) => (
-                  <div key={pmt.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <div>
-                        <p className="font-bold text-slate-900">Payment Settled: {MONEY(pmt.amount)}</p>
-                        <p className="text-[10px] text-slate-500 font-mono">Borrower ID: {pmt.customerId} · {pmt.date}</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-600 uppercase">{pmt.method || "Cash"}</span>
-                  </div>
-                ))}
-                {pendingLoans.map((pl) => (
-                  <div key={pl.id} className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      <div>
-                        <p className="font-bold text-amber-950">Loan Application Submitted: {MONEY(pl.principal)}</p>
-                        <p className="text-[10px] text-amber-800 font-mono">{pl.customerName} · Committee Sign-Off Pending</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded">Pending</span>
-                  </div>
-                ))}
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  Save Lending Rules
+                </button>
               </div>
+            </form>
+          </div>
+
+          {/* Database Backup Box */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-2">
+              <h3 className="text-sm font-black text-slate-900">
+                Operational Data Backup
+              </h3>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Download an offline encrypted JSON snapshot containing borrower records, facility schedules, and collections.
+              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={handleExportBackup}
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <Download size={14} />
+              <span>Download Backup (.json)</span>
+            </button>
           </div>
         </div>
       )}
@@ -1590,178 +1379,86 @@ export function StaffDashboard() {
       {/* ── MODALS ── */}
       {/* ────────────────────────────────────────────────────────────────────── */}
 
-      {/* 1. Add Staff Modal */}
-      {showAddStaffModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Shield size={18} className="text-red-600" />
-                <h3 className="font-black text-sm text-slate-900">Register New Staff Account</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddStaffModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-800 rounded-full"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveStaff} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Kasun Chamara Perera"
-                  value={newStaff.name}
-                  onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-900"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Email Address *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. kasun.p@psione.lk"
-                  value={newStaff.email}
-                  onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-900"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-800">System Role</label>
-                  <select
-                    value={newStaff.role}
-                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value as StaffUser["role"] })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold bg-white text-slate-900"
-                  >
-                    <option value="Loan Officer">Loan Officer</option>
-                    <option value="Administrator">Administrator</option>
-                    <option value="Collection Agent">Collection Agent</option>
-                    <option value="Auditor">Auditor</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-800">Branch Office</label>
-                  <input
-                    type="text"
-                    value={newStaff.branch}
-                    onChange={(e) => setNewStaff({ ...newStaff, branch: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-900"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddStaffModal(false)}
-                  className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-xs"
-                >
-                  Save Staff Member
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Record Repayment Modal */}
+      {/* 1. RECORD REPAYMENT MODAL */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Receipt size={18} className="text-emerald-600" />
-                <h3 className="font-black text-sm text-slate-900">Record Borrower Repayment</h3>
-              </div>
+              <h3 className="text-sm font-black text-slate-900">Record Borrower Repayment</h3>
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-800 rounded-full"
+                className="text-slate-400 hover:text-slate-700 font-bold text-sm cursor-pointer"
               >
-                <X size={18} />
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleRecordRepayment} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Select Borrower *</label>
+            <form onSubmit={handleRecordRepayment} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Select Borrower *</label>
                 <select
-                  required
                   value={paymentForm.customerId}
                   onChange={(e) => setPaymentForm({ ...paymentForm, customerId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold bg-white text-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
                 >
                   <option value="">-- Choose Borrower --</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.fullName} ({c.nic}) - {c.id}
+                      {c.fullName || c.name} ({c.nic})
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Repayment Amount (LKR) *</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Repayment Amount (LKR) *</label>
                 <input
                   type="number"
-                  required
-                  min="1"
-                  placeholder="e.g. 15000"
+                  placeholder="e.g. 5000"
                   value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-black text-slate-900 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Payment Method</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Payment Method</label>
                 <select
                   value={paymentForm.method}
                   onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value as Payment["method"] })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold bg-white text-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="Cash">Cash (Field Agent)</option>
-                  <option value="Bank Transfer">Bank Transfer / Online Deposit</option>
-                  <option value="Cheque">Bank Cheque</option>
+                  <option value="Cash">Cash (Field Collection)</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cheque">Cheque</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Supervisory Notes (Optional)</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Voucher Notes</label>
                 <input
                   type="text"
-                  placeholder="e.g. Field receipt batch #45"
+                  placeholder="Optional notes or receipt remarks"
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold"
+                  className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-xs"
+                  className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition cursor-pointer"
                 >
                   Confirm &amp; Issue Receipt
                 </button>
@@ -1771,84 +1468,80 @@ export function StaffDashboard() {
         </div>
       )}
 
-      {/* 3. Upload Document Modal */}
+      {/* 2. UPLOAD KYC DOCUMENT MODAL */}
       {showDocUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Upload size={18} className="text-red-600" />
-                <h3 className="font-black text-sm text-slate-900">Upload Customer KYC Document</h3>
-              </div>
+              <h3 className="text-sm font-black text-slate-900">Upload Customer KYC Document</h3>
               <button
                 type="button"
                 onClick={() => setShowDocUploadModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-800 rounded-full"
+                className="text-slate-400 hover:text-slate-700 font-bold text-sm cursor-pointer"
               >
-                <X size={18} />
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleAddDocument} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Select Customer *</label>
+            <form onSubmit={handleAddDocument} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Select Borrower *</label>
                 <select
-                  required
                   value={docForm.customerId}
                   onChange={(e) => setDocForm({ ...docForm, customerId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold bg-white text-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
                 >
                   <option value="">-- Choose Borrower --</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.fullName} ({c.id})
+                      {c.fullName || c.name} ({c.nic})
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Document Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. NIC Front Copy / Salary Slip"
-                  value={docForm.title}
-                  onChange={(e) => setDocForm({ ...docForm, title: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-900"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800">Document Classification</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Document Category</label>
                 <select
                   value={docForm.type}
                   onChange={(e) => setDocForm({ ...docForm, type: e.target.value as CustomerDocument["type"] })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold bg-white text-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="nic_front">National Identity Card (Front)</option>
                   <option value="nic_back">National Identity Card (Back)</option>
-                  <option value="salary_slip">Salary Slip / Income Proof</option>
-                  <option value="business_reg">Business Registration Certificate</option>
-                  <option value="utility_bill">Residential Utility Bill</option>
-                  <option value="promissory_note">Promissory Note / Guarantee</option>
-                  <option value="other">Other Supporting Verification</option>
+                  <option value="income_proof">Proof of Income / Salary Slip</option>
+                  <option value="billing_proof">Utility Bill / Address Proof</option>
+                  <option value="bank_statement">Bank Statement</option>
+                  <option value="signed_agreement">Promissory Note / Loan Agreement</option>
                 </select>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Document Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. NIC Copy - Verified Original"
+                  value={docForm.title}
+                  onChange={(e) => setDocForm({ ...docForm, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowDocUploadModal(false)}
-                  className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold"
+                  className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-xs"
+                  className="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs transition cursor-pointer"
                 >
-                  Upload &amp; Verify
+                  Upload &amp; Attach
                 </button>
               </div>
             </form>
@@ -1856,14 +1549,100 @@ export function StaffDashboard() {
         </div>
       )}
 
-      {/* 4. Official Receipt Modal Preview */}
+      {/* 3. NEW STAFF USER MODAL */}
+      {showAddStaffModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-black text-slate-900">Add Staff Member</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddStaffModal(false)}
+                className="text-slate-400 hover:text-slate-700 font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStaff} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Sunil Perera"
+                  value={newStaff.name}
+                  onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Email Address *</label>
+                <input
+                  type="email"
+                  placeholder="e.g. sunil@psi.lk"
+                  value={newStaff.email}
+                  onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">Designation</label>
+                  <select
+                    value={newStaff.role}
+                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value as StaffUser["role"] })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none"
+                  >
+                    <option value="Loan Officer">Loan Officer</option>
+                    <option value="Collection Agent">Collection Agent</option>
+                    <option value="Auditor">Auditor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">Branch</label>
+                  <input
+                    type="text"
+                    value={newStaff.branch}
+                    onChange={(e) => setNewStaff({ ...newStaff, branch: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddStaffModal(false)}
+                  className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs transition cursor-pointer"
+                >
+                  Save Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. OFFICIAL RECEIPT MODAL */}
       {selectedReceiptPayment && (
         <ReceiptModal
           payment={selectedReceiptPayment}
+          customer={customers.find((c) => c.id === selectedReceiptPayment.customerId)}
+          loan={loans.find((l) => l.id === selectedReceiptPayment.loanId)}
           onClose={() => setSelectedReceiptPayment(null)}
         />
       )}
     </div>
   );
 }
-
