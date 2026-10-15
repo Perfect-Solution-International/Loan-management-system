@@ -7,13 +7,12 @@ import {
   Search,
   CheckCircle2,
   Receipt,
-  Printer,
-  X,
   CreditCard,
   ArrowRight,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Customer, Loan, Payment } from "@/types";
 
 export default function RepaymentsCollectionsPage() {
@@ -642,92 +641,12 @@ export default function RepaymentsCollectionsPage() {
 
       {/* OFFICIAL RECEIPT POPUP MODAL */}
       {activeReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-up border border-slate-200">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                  PSI
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-slate-900">
-                    Official Repayment Receipt
-                  </h3>
-                  <p className="text-xs text-slate-600 font-bold">PSI ONE Microfinance</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveReceipt(null)}
-                className="p-1 text-slate-500 hover:text-slate-900 rounded-full hover:bg-slate-100"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Printable Receipt Card Body */}
-            <div className="p-4 bg-slate-50 rounded-xl space-y-3 text-xs border-2 border-slate-200 font-mono">
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-700 font-bold">RECEIPT NO</span>
-                <span className="font-black text-slate-900">
-                  {activeReceipt.receiptNo || activeReceipt.id}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-700 font-bold">DATE & TIME</span>
-                <span className="font-bold text-slate-900">{activeReceipt.date}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-700 font-bold">BORROWER</span>
-                <span className="font-black text-slate-900">
-                  {customers.find((c) => c.id === activeReceipt.customerId)?.name ||
-                    "Customer"}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-700 font-bold">LOAN REFERENCE</span>
-                <span className="font-bold text-slate-900">
-                  {loans.find((l) => l.id === activeReceipt.loanId)?.loanNo ||
-                    activeReceipt.loanId}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-700 font-bold">PAYMENT TYPE</span>
-                <span className="font-black text-red-600">{activeReceipt.type}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-700 font-bold">PAYMENT METHOD</span>
-                <span className="font-bold text-slate-900">{activeReceipt.method || "Cash"}</span>
-              </div>
-              <div className="flex justify-between py-1 text-sm font-bold text-slate-900">
-                <span className="text-slate-800 font-bold">AMOUNT RECEIVED</span>
-                <span className="text-emerald-700 font-black text-base">
-                  {MONEY(activeReceipt.amount)}
-                </span>
-              </div>
-              <div className="text-xs text-slate-600 font-bold pt-2 border-t border-slate-200 text-center">
-                Collected by {activeReceipt.collectedBy || "Authorized Officer"}
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex justify-between items-center pt-2">
-              <button
-                type="button"
-                onClick={handlePrintReceipt}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-md"
-              >
-                <Printer size={14} /> Print Receipt
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveReceipt(null)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReceiptModal
+          payment={activeReceipt}
+          onClose={() => setActiveReceipt(null)}
+          customer={selectedCustomer}
+          loan={selectedLoan}
+        />
       )}
     </div>
   );

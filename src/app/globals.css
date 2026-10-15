@@ -1377,3 +1377,34 @@ select option {
     font-size: 20px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OFFICIAL PAYMENT RECEIPT PRINT STYLING (Card 20)
+   ══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-receipt-card,
+  .printable-receipt-card * {
+    visibility: visible;
+  }
+  .printable-receipt-card {
+    position: fixed;
+    left: 50%;
+    top: 30px;
+    transform: translateX(-50%);
+    width: 380px !important;
+    max-width: 95vw !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 2px solid #0f172a !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    box-shadow: none !important;
+    z-index: 999999 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

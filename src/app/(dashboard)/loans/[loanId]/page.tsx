@@ -19,10 +19,12 @@ import {
   X,
   ExternalLink,
   BadgeCheck,
+  Receipt,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { parseDateString, formatDateToYMD } from "@/lib/collection-schedule";
+import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Loan, Customer, Payment } from "@/types";
 
 interface ScheduleRow {
@@ -51,6 +53,7 @@ function LoanDetailsContent() {
 
   // Tab view: "schedule" | "ledger"
   const [activeTab, setActiveTab] = useState<"schedule" | "ledger">("schedule");
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
 
   // Calculate Amortization Schedule
   const scheduleRows: ScheduleRow[] = useMemo(() => {
@@ -616,6 +619,7 @@ function LoanDetailsContent() {
                   <th className="py-3 px-5">Allocation Type</th>
                   <th className="py-3 px-5">Payment Method</th>
                   <th className="py-3 px-5 text-right">Amount (LKR)</th>
+                  <th className="py-3 px-5 text-right">Official Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -634,6 +638,16 @@ function LoanDetailsContent() {
                     <td className="py-3.5 px-5 text-right font-mono font-black text-emerald-800">
                       {MONEY(p.amount)}
                     </td>
+                    <td className="py-3.5 px-5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReceiptPayment(p)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-600 hover:text-white text-slate-800 border-2 border-slate-300 hover:border-red-600 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
+                      >
+                        <Receipt size={13} />
+                        <span>Receipt</span>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -647,6 +661,16 @@ function LoanDetailsContent() {
           </div>
         )}
       </section>
+
+      {/* Official Receipt Modal */}
+      {selectedReceiptPayment && (
+        <ReceiptModal
+          payment={selectedReceiptPayment}
+          onClose={() => setSelectedReceiptPayment(null)}
+          customer={customer}
+          loan={loan}
+        />
+      )}
     </div>
   );
 }

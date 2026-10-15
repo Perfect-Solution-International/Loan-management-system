@@ -6,9 +6,12 @@ import {
   DollarSign,
   PieChart,
   Layers,
+  Receipt,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { ReceiptModal } from "@/components/modals/ReceiptModal";
+import type { Payment } from "@/types";
 
 export default function FinancialReportsPage() {
   const { customers, loans, payments } = useData();
@@ -17,6 +20,7 @@ export default function FinancialReportsPage() {
   const [reportTab, setReportTab] = useState<"collections" | "portfolio">("collections");
   const [timePeriod, setTimePeriod] = useState<"daily" | "weekly" | "monthly" | "all">("monthly");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
 
   // Date boundaries for filtering
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -376,6 +380,7 @@ export default function FinancialReportsPage() {
                   <th className="py-3 px-4">Method</th>
                   <th className="py-3 px-4">Collector</th>
                   <th className="py-3 px-4 text-right">Amount Received</th>
+                  <th className="py-3 px-4 text-right">Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
@@ -411,6 +416,16 @@ export default function FinancialReportsPage() {
                       <td className="py-3 px-4 text-slate-700 font-medium">{p.collectedBy || "Admin"}</td>
                       <td className="py-3 px-4 text-right font-black text-slate-900">
                         {MONEY(p.amount)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReceiptPayment(p)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-red-600 hover:text-white text-slate-800 border-2 border-slate-300 hover:border-red-600 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
+                        >
+                          <Receipt size={12} />
+                          <span>Receipt</span>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -502,6 +517,14 @@ export default function FinancialReportsPage() {
           </div>
         )}
       </div>
+
+      {/* Official Receipt Modal */}
+      {selectedReceiptPayment && (
+        <ReceiptModal
+          payment={selectedReceiptPayment}
+          onClose={() => setSelectedReceiptPayment(null)}
+        />
+      )}
     </div>
   );
 }

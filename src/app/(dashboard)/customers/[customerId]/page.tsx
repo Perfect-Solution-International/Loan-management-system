@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
 
 function createDocId(): string {
@@ -51,6 +52,7 @@ function CustomerDetailsContent() {
   const [selectedFileType, setSelectedFileType] = useState("image/jpeg");
   const [selectedFileSize, setSelectedFileSize] = useState("1.1 MB");
   const [notificationMsg, setNotificationMsg] = useState("");
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
 
   // Loans linked to this customer
   const customerLoans = useMemo(
@@ -560,6 +562,7 @@ function CustomerDetailsContent() {
                     <th className="py-2.5 px-4">Classification</th>
                     <th className="py-2.5 px-4">Amount Paid</th>
                     <th className="py-2.5 px-4">Method / Notes</th>
+                    <th className="py-2.5 px-4 text-right">Official Receipt</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -597,6 +600,16 @@ function CustomerDetailsContent() {
                             {payment.notes}
                           </span>
                         )}
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReceiptPayment(payment)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-red-600 hover:text-white text-slate-800 border-2 border-slate-300 hover:border-red-600 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
+                        >
+                          <Receipt size={12} />
+                          <span>Receipt</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -883,6 +896,15 @@ function CustomerDetailsContent() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Official Receipt Modal */}
+      {selectedReceiptPayment && (
+        <ReceiptModal
+          payment={selectedReceiptPayment}
+          onClose={() => setSelectedReceiptPayment(null)}
+          customer={customer}
+        />
       )}
     </div>
   );

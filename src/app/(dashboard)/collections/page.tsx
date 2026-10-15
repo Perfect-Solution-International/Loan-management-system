@@ -16,9 +16,11 @@ import {
   X,
   CreditCard,
   Building,
+  Receipt,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import {
   getDailyCollections,
   formatFriendlyDate,
@@ -47,6 +49,7 @@ export default function CollectionsPage() {
   const [collectorName, setCollectorName] = useState<string>("Ajith Wickramasinghe");
   const [paymentNotes, setPaymentNotes] = useState<string>("");
   const [notification, setNotification] = useState<string>("");
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
 
   // Compute daily collection items and summary for the selected date
   const collectionData = useMemo(() => {
@@ -654,8 +657,20 @@ export default function CollectionsPage() {
                     {/* Field Action */}
                     <td className="py-3.5 px-4 text-center">
                       {item.isCollectedToday ? (
-                        <div className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                          <Check size={14} /> Settled
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-bold">
+                            <Check size={13} /> Settled
+                          </span>
+                          {item.todaysPayment && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedReceiptPayment(item.todaysPayment || null)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-red-600 hover:text-white text-slate-800 border-2 border-slate-300 hover:border-red-600 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
+                            >
+                              <Receipt size={12} />
+                              <span>Receipt</span>
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <button
@@ -824,6 +839,14 @@ export default function CollectionsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Official Receipt Modal */}
+      {selectedReceiptPayment && (
+        <ReceiptModal
+          payment={selectedReceiptPayment}
+          onClose={() => setSelectedReceiptPayment(null)}
+        />
       )}
     </div>
   );

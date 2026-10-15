@@ -9,59 +9,23 @@ import {
   Clock,
   Download,
   Printer,
-  Plus,
-  Trash2,
-  Building,
   CheckCircle2,
   FileText,
   ArrowLeft,
-  Wallet,
   Receipt,
   X,
-  ShieldCheck,
-  Building2,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { BrandLogo } from "@/components/brand-logo";
 import type { Payment } from "@/types";
 
-interface BankAccount {
-  id: string;
-  bankName: string;
-  branchName: string;
-  accountHolder: string;
-  accountNumber: string;
-  accountType: "Savings" | "Current";
-  isPrimary: boolean;
-}
-
-const SRI_LANKA_BANKS = [
-  "Commercial Bank of Ceylon",
-  "Bank of Ceylon (BOC)",
-  "People's Bank",
-  "Hatton National Bank (HNB)",
-  "Sampath Bank",
-  "Seylan Bank",
-  "Nations Trust Bank (NTB)",
-  "DFCC Bank",
-  "National Development Bank (NDB)",
-  "Pan Asia Banking Corporation",
-  "Union Bank of Colombo",
-];
-
 export default function CustomerDashboardPage() {
   const { customers, loans, repayments } = useData();
 
-  // Active customer state (defaults to first customer or CUS-001)
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(() => {
-    return customers[0]?.id || "CUS-001";
-  });
-
-  // Current customer record
+  // Current customer record (authenticated borrower)
   const currentCustomer = useMemo(() => {
     return (
-      customers.find((c) => c.id === selectedCustomerId) ||
       customers[0] || {
         id: "CUS-001",
         name: "Kasun Madushanka Perera",
@@ -75,7 +39,7 @@ export default function CustomerDashboardPage() {
         status: "Active",
       }
     );
-  }, [customers, selectedCustomerId]);
+  }, [customers]);
 
   // Loans belonging to current customer
   const customerLoans = useMemo(() => {
@@ -121,93 +85,9 @@ export default function CustomerDashboardPage() {
   const nextInstallmentAmount = currentLoan?.installment || Math.ceil(totalPayable / (currentLoan?.duration || 12));
   const nextDueDate = currentLoan?.firstPaymentDate || "2026-10-25";
 
-  // Bank accounts state (with persistent initial demo accounts)
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([
-    {
-      id: "BANK-01",
-      bankName: "Commercial Bank of Ceylon",
-      branchName: "Maharagama Branch",
-      accountHolder: currentCustomer.fullName || currentCustomer.name,
-      accountNumber: "8002938471",
-      accountType: "Savings",
-      isPrimary: true,
-    },
-    {
-      id: "BANK-02",
-      bankName: "Bank of Ceylon (BOC)",
-      branchName: "Nugegoda City Branch",
-      accountHolder: currentCustomer.fullName || currentCustomer.name,
-      accountNumber: "0012938401",
-      accountType: "Savings",
-      isPrimary: false,
-    },
-  ]);
-
-  // Add Bank Modal State
-  const [isAddBankOpen, setIsAddBankOpen] = useState(false);
-  const [newBank, setNewBank] = useState({
-    bankName: SRI_LANKA_BANKS[0],
-    branchName: "",
-    accountHolder: currentCustomer.fullName || currentCustomer.name,
-    accountNumber: "",
-    accountType: "Savings" as "Savings" | "Current",
-    isPrimary: false,
-  });
-
-  // Receipt Modal State
+  // Receipt & Statement Modal States
   const [receiptToPrint, setReceiptToPrint] = useState<Payment | null>(null);
   const [isStatementOpen, setIsStatementOpen] = useState(false);
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-
-  const handleAddBank = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBank.accountNumber.trim() || !newBank.branchName.trim()) {
-      alert("Please fill in account number and branch name");
-      return;
-    }
-
-    const created: BankAccount = {
-      id: `BANK-${Date.now()}`,
-      bankName: newBank.bankName,
-      branchName: newBank.branchName.trim(),
-      accountHolder: newBank.accountHolder.trim(),
-      accountNumber: newBank.accountNumber.trim(),
-      accountType: newBank.accountType,
-      isPrimary: newBank.isPrimary,
-    };
-
-    setBankAccounts((prev) => {
-      if (created.isPrimary) {
-        return [created, ...prev.map((b) => ({ ...b, isPrimary: false }))];
-      }
-      return [...prev, created];
-    });
-
-    setNewBank({
-      bankName: SRI_LANKA_BANKS[0],
-      branchName: "",
-      accountHolder: currentCustomer.fullName || currentCustomer.name,
-      accountNumber: "",
-      accountType: "Savings",
-      isPrimary: false,
-    });
-    setIsAddBankOpen(false);
-  };
-
-  const handleDeleteBank = (id: string) => {
-    if (confirm("Are you sure you want to remove this bank account?")) {
-      setBankAccounts((prev) => prev.filter((b) => b.id !== id));
-    }
-  };
-
-  const handleSetPrimaryBank = (id: string) => {
-    setBankAccounts((prev) =>
-      prev.map((b) => ({
-        ...b,
-        isPrimary: b.id === id,
-      }))
-    );
-  };
 
   return (
     <div className="min-h-screen bg-slate-100/90 text-slate-800 font-sans selection:bg-red-600 selection:text-white">
@@ -224,28 +104,10 @@ export default function CustomerDashboardPage() {
             </span>
           </div>
 
-          {/* Right Customer Info & Navigation */}
+          {/* Right Customer Info & Navigation (Dropdown removed as requested) */}
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Quick Switcher dropdown for multi-customer demo viewing */}
-            {customers.length > 1 && (
-              <div className="hidden lg:flex items-center gap-2 text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-                <span className="text-slate-400 font-medium">Viewing as:</span>
-                <select
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer"
-                >
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.fullName || c.name} ({c.id})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             {/* Customer Avatar & ID */}
-            <div className="flex items-center gap-3 pl-2 sm:border-l sm:border-slate-200">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-red-600/20 overflow-hidden shrink-0">
                 {currentCustomer.photoUrl ? (
                   <img
@@ -298,28 +160,19 @@ export default function CustomerDashboardPage() {
                 Welcome back, {currentCustomer.name}
               </h1>
               <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-                Review your active loan balances, download settlement receipts, view repayment milestones, and manage your disbursement bank accounts.
+                Review your active loan balances, check installment due dates, view repayment milestones, and download official settlement receipts.
               </p>
             </div>
 
-            {/* Quick Action Buttons */}
+            {/* Quick Action Button */}
             <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center">
               <button
                 type="button"
                 onClick={() => setIsStatementOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-semibold rounded-xl transition shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-red-600/30 cursor-pointer"
               >
                 <Printer size={15} />
                 Statement of Account
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsPayModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/30 transition cursor-pointer"
-              >
-                <Wallet size={15} />
-                Make a Payment
               </button>
             </div>
           </div>
@@ -328,8 +181,8 @@ export default function CustomerDashboardPage() {
 
       {/* ── 3. Main Dashboard Content Grid ──────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* KPI Financial Overview Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* KPI Financial Overview Cards (3 Cards) */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Card 1: Outstanding Balance */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs">
             <div className="flex items-center justify-between text-slate-500 mb-3">
@@ -392,28 +245,6 @@ export default function CustomerDashboardPage() {
             <p className="text-xs text-slate-500 mt-2">
               Across {customerPayments.length} recorded payments
             </p>
-          </div>
-
-          {/* Card 4: Registered Bank Accounts */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Bank Accounts
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                <Building size={18} />
-              </div>
-            </div>
-            <p className="text-2xl font-black text-slate-900 tracking-tight">
-              {bankAccounts.length} Verified
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsAddBankOpen(true)}
-              className="text-xs font-bold text-red-600 hover:text-red-700 mt-2 flex items-center gap-1 transition cursor-pointer"
-            >
-              <Plus size={14} /> Add new bank account
-            </button>
           </div>
         </section>
 
@@ -499,382 +330,87 @@ export default function CustomerDashboardPage() {
           </div>
         </section>
 
-        {/* ── Two-Column Layout: Repayment Ledger (Left 8 cols) & Bank Details (Right 4 cols) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left 8 Cols: Repayment History & Download Receipts */}
-          <section className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Repayment History & Receipts
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Official payment entries credited towards this facility.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsStatementOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition self-start sm:self-auto"
-              >
-                <FileText size={14} />
-                Full Ledger Statement
-              </button>
-            </div>
-
-            {customerPayments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-200/70">
-                    <tr>
-                      <th className="py-3 px-4">Receipt No</th>
-                      <th className="py-3 px-4">Payment Date</th>
-                      <th className="py-3 px-4">Method</th>
-                      <th className="py-3 px-4">Amount Paid</th>
-                      <th className="py-3 px-4">Collector</th>
-                      <th className="py-3 px-4 text-right">Receipt</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
-                    {customerPayments.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/50 transition">
-                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                          {p.receiptNo || p.id}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-600">{p.date}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px]">
-                            {p.method || "Cash"}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
-                          {MONEY(p.amount)}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-500">
-                          {p.collectedBy || "Authorized Field Officer"}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setReceiptToPrint(p)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs transition"
-                          >
-                            <Download size={13} />
-                            Receipt
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-10 text-center text-slate-400">
-                <Receipt size={36} className="mx-auto text-slate-300 mb-2" />
-                <p className="text-sm font-semibold text-slate-600">No payment receipts yet</p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Your payments will appear here once credited by our cashiers or verified via bank transfer.
-                </p>
-              </div>
-            )}
-          </section>
-
-          {/* Right 4 Cols: Bank Details Management */}
-          <section className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Bank Accounts</h3>
-                <p className="text-xs text-slate-500">Settlement & standing orders</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAddBankOpen(true)}
-                className="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition cursor-pointer"
-                title="Add Bank Account"
-              >
-                <Plus size={18} />
-              </button>
-            </div>
-
-            {/* Bank Accounts List */}
-            <div className="space-y-3">
-              {bankAccounts.map((account) => (
-                <div
-                  key={account.id}
-                  className={`p-4 rounded-xl border transition ${
-                    account.isPrimary
-                      ? "border-red-300 bg-red-50/40"
-                      : "border-slate-200 bg-slate-50/50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-red-600 flex items-center justify-center shrink-0">
-                        <Building2 size={16} />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                          {account.bankName}
-                        </h4>
-                        <p className="text-[11px] text-slate-500">{account.branchName}</p>
-                      </div>
-                    </div>
-
-                    {account.isPrimary ? (
-                      <span className="px-2 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded-full">
-                        Primary
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleSetPrimaryBank(account.id)}
-                        className="text-[10px] font-semibold text-slate-400 hover:text-red-600 transition cursor-pointer"
-                      >
-                        Set Primary
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-mono font-bold text-slate-800 tracking-wider">
-                        •••• {account.accountNumber.slice(-4)}
-                      </span>
-                      <span className="text-[10px] text-slate-400 ml-1.5">
-                        ({account.accountType})
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteBank(account.id)}
-                      className="text-slate-400 hover:text-rose-600 p-1 transition"
-                      title="Remove Account"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+        {/* ── Repayment History & Download Receipts (Full Width) ─────────────── */}
+        <section className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Repayment History & Receipts
+              </h3>
+              <p className="text-xs text-slate-500">
+                Official payment entries credited towards this facility.
+              </p>
             </div>
 
             <button
               type="button"
-              onClick={() => setIsAddBankOpen(true)}
-              className="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5"
+              onClick={() => setIsStatementOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition self-start sm:self-auto cursor-pointer"
             >
-              <Plus size={15} /> Add Another Bank Account
+              <FileText size={14} />
+              Full Ledger Statement
             </button>
+          </div>
 
-            {/* Security Assurance */}
-            <div className="pt-2">
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-xs text-slate-500">
-                <ShieldCheck size={18} className="text-emerald-600 shrink-0 mt-0.5" />
-                <p className="text-[11px] leading-relaxed">
-                  Bank accounts are encrypted and verified under CBSL electronic fund transfer compliance.
-                </p>
-              </div>
+          {customerPayments.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-200/70">
+                  <tr>
+                    <th className="py-3 px-4">Receipt No</th>
+                    <th className="py-3 px-4">Payment Date</th>
+                    <th className="py-3 px-4">Method</th>
+                    <th className="py-3 px-4">Amount Paid</th>
+                    <th className="py-3 px-4">Collector</th>
+                    <th className="py-3 px-4 text-right">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {customerPayments.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                        {p.receiptNo || p.id}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600">{p.date}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                          {p.method || "Cash"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
+                        {MONEY(p.amount)}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500">
+                        {p.collectedBy || "Authorized Field Officer"}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setReceiptToPrint(p)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs transition cursor-pointer"
+                        >
+                          <Download size={13} />
+                          Receipt
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </section>
-
-        </div>
+          ) : (
+            <div className="p-10 text-center text-slate-400">
+              <Receipt size={36} className="mx-auto text-slate-300 mb-2" />
+              <p className="text-sm font-semibold text-slate-600">No payment receipts yet</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Your payments will appear here once credited by our cashiers or recorded by field officers.
+              </p>
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* ── 4. Add Bank Details Modal ───────────────────────────────────────── */}
-      {isAddBankOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                  <Building2 size={18} />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Add Bank Account</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAddBankOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddBank} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Bank Name
-                </label>
-                <select
-                  value={newBank.bankName}
-                  onChange={(e) => setNewBank({ ...newBank, bankName: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
-                >
-                  {SRI_LANKA_BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Branch Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Maharagama Branch"
-                  value={newBank.branchName}
-                  onChange={(e) => setNewBank({ ...newBank, branchName: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Account Holder Name
-                </label>
-                <input
-                  type="text"
-                  value={newBank.accountHolder}
-                  onChange={(e) => setNewBank({ ...newBank, accountHolder: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Account Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 800291827"
-                    value={newBank.accountNumber}
-                    onChange={(e) => setNewBank({ ...newBank, accountNumber: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 focus:outline-none focus:border-red-600"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Account Type
-                  </label>
-                  <select
-                    value={newBank.accountType}
-                    onChange={(e) => setNewBank({ ...newBank, accountType: e.target.value as "Savings" | "Current" })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-red-600"
-                  >
-                    <option value="Savings">Savings Account</option>
-                    <option value="Current">Current Account</option>
-                  </select>
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 pt-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={newBank.isPrimary}
-                  onChange={(e) => setNewBank({ ...newBank, isPrimary: e.target.checked })}
-                  className="w-4 h-4 rounded text-red-600 accent-red-600"
-                />
-                <span className="font-semibold text-slate-700">Set as primary settlement account</span>
-              </label>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddBankOpen(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-md shadow-red-600/30 cursor-pointer"
-                >
-                  Save Bank Account
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── 5. Payment Instructions Modal ───────────────────────────────────── */}
-      {isPayModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Wallet size={18} />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Make an Installment Payment</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPayModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs text-slate-600">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-slate-400 font-medium">Installment Amount Due</span>
-                  <span className="font-mono text-base font-bold text-red-600">
-                    {MONEY(nextInstallmentAmount)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-slate-400 font-medium">Due Date</span>
-                  <span className="font-semibold text-slate-800">{nextDueDate}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                  Bank Transfer / Cash Deposit Options
-                </h4>
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1.5 font-mono text-[11px]">
-                  <p><strong>Bank:</strong> Commercial Bank of Ceylon</p>
-                  <p><strong>Account Name:</strong> PSI One Loan Management Operations Ltd</p>
-                  <p><strong>Account Number:</strong> 1000 4892 0184</p>
-                  <p><strong>Branch:</strong> Head Office Branch (Code: 001)</p>
-                  <p className="text-red-600 font-bold pt-1">
-                    <strong>Reference:</strong> {currentCustomer.id} - {currentLoan?.loanNo || "LN"}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-slate-500 italic">
-                * Please include your Customer ID ({currentCustomer.id}) as the bank transfer reference. Receipts are credited within 2 business hours.
-              </p>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsPayModalOpen(false)}
-                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition cursor-pointer shadow-md shadow-red-600/25"
-                >
-                  Understood & Done
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── 6. Single Payment Printable Receipt Modal ───────────────────────── */}
+      {/* ── 4. Single Payment Printable Receipt Modal ───────────────────────── */}
       {receiptToPrint && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
@@ -883,7 +419,7 @@ export default function CustomerDashboardPage() {
               <button
                 type="button"
                 onClick={() => setReceiptToPrint(null)}
-                className="text-slate-400 hover:text-slate-700 p-1"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -947,7 +483,7 @@ export default function CustomerDashboardPage() {
         </div>
       )}
 
-      {/* ── 7. Full Statement Modal ────────────────────────────────────────── */}
+      {/* ── 5. Full Statement Modal ────────────────────────────────────────── */}
       {isStatementOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col">
@@ -1028,7 +564,7 @@ export default function CustomerDashboardPage() {
         </div>
       )}
 
-      {/* ── 8. Minimal Portal Footer ───────────────────────────────────────── */}
+      {/* ── 6. Minimal Portal Footer ───────────────────────────────────────── */}
       <footer className="border-t border-slate-200 bg-white py-6 text-xs text-slate-400 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -1046,4 +582,3 @@ export default function CustomerDashboardPage() {
     </div>
   );
 }
-
