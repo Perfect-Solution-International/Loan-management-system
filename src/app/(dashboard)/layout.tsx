@@ -5,7 +5,7 @@ import React, { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Bell, BellRing, CheckCircle2, ArrowRight } from "lucide-react";
-import { DataProvider, useData } from "@/providers/data-provider";
+import { useData } from "@/providers/data-provider";
 import Sidebar from "@/components/layout/Sidebar";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -203,10 +203,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <DataProvider>
-      <Suspense fallback={null}>
-        <DashboardShell>{children}</DashboardShell>
-      </Suspense>
-    </DataProvider>
+    <Suspense fallback={null}>
+      <DashboardShell>{children}</DashboardShell>
+    </Suspense>
   );
 }

@@ -69,7 +69,22 @@ export function getDailyCollections(
   const items: ScheduledCollectionItem[] = [];
 
   const customerMap = new Map<string, Customer>();
-  customers.forEach((c) => customerMap.set(c.id, c));
+  customers.forEach((c) => {
+    customerMap.set(c.id, c);
+    customerMap.set(String(c.id).trim().toLowerCase(), c);
+  });
+
+  // Pre-index payments by loanId for fast O(1) lookups
+  const paymentsByLoanId = new Map<string, Payment[]>();
+  for (const p of payments) {
+    const key = p.loanId || "";
+    let list = paymentsByLoanId.get(key);
+    if (!list) {
+      list = [];
+      paymentsByLoanId.set(key, list);
+    }
+    list.push(p);
+  }
 
   for (const loan of loans) {
     const statusUpper = (loan.status || "").toUpperCase();
@@ -77,8 +92,26 @@ export function getDailyCollections(
       continue;
     }
 
-    const customer = customerMap.get(loan.customerId);
-    const loanPayments = payments.filter((p) => p.loanId === loan.id);
+    let customer =
+      customerMap.get(loan.customerId) ||
+      customerMap.get(String(loan.customerId).trim().toLowerCase());
+
+    if (!customer && loan.customerName) {
+      customer = {
+        id: loan.customerId || `CUS-${loan.id}`,
+        name: loan.customerName,
+        fullName: loan.customerName,
+        nic: "",
+        phone: "",
+        address: "",
+        village: "",
+        town: "",
+        district: "",
+        monthlyIncome: 0,
+        status: "ACTIVE",
+      };
+    }
+    const loanPayments = paymentsByLoanId.get(loan.id) || [];
     const totalPaid = loanPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     const totalRepayment =
       loan.totalRepayment || (loan.principal || loan.amount || 0) + (loan.interest || 0);

@@ -271,15 +271,19 @@ export default function RepaymentsCollectionsPage() {
                     onChange={(e) => setSelectedLoanId(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
                   >
-                    {loans.map((l) => {
-                      const c = customers.find((cust) => cust.id === l.customerId);
-                      return (
-                        <option key={l.id} value={l.id}>
-                          {l.loanNo || l.id} — {c?.name || l.customerName || "Customer"} (
-                          {l.status} · Principal: {MONEY(l.principal || l.amount || 0)})
-                        </option>
-                      );
-                    })}
+                    {loans.length === 0 ? (
+                      <option value="">No loan contracts available</option>
+                    ) : (
+                      loans.map((l) => {
+                        const c = customers.find((cust) => cust.id === l.customerId);
+                        return (
+                          <option key={l.id} value={l.id}>
+                            {l.loanNo || l.id} — {c?.name || l.customerName || "Customer"} (
+                            {l.status} · Principal: {MONEY(l.principal || l.amount || 0)})
+                          </option>
+                        );
+                      })
+                    )}
                   </select>
                 </div>
 

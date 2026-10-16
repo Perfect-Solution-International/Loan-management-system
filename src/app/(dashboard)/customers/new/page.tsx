@@ -31,6 +31,7 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Customer, CustomerStatus, CustomerDocument, Loan, Payment } from "@/types";
+import { isValidSriLankanNIC, isValidSriLankanPhone } from "@/lib/validation";
 
 interface AttachedDoc {
   id: string;
@@ -359,13 +360,13 @@ export default function NewCustomerPage() {
       setCurrentStep(1);
       return;
     }
-    if (!form.nic.trim()) {
-      setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
+    if (!isValidSriLankanNIC(form.nic)) {
+      setErrorMsg("Please enter a valid Sri Lankan NIC number (e.g. 852341234V or 199512345678).");
       setCurrentStep(1);
       return;
     }
-    if (!form.phone.trim()) {
-      setErrorMsg("Please enter a primary contact phone number.");
+    if (!isValidSriLankanPhone(form.phone)) {
+      setErrorMsg("Please enter a valid Sri Lankan phone number (10 digits starting with 07, e.g. 0771234567).");
       setCurrentStep(1);
       return;
     }

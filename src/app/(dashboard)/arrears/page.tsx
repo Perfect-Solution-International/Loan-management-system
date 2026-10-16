@@ -53,8 +53,23 @@ export default function ArrearsPage() {
     return map;
   }, [customers]);
 
+  // Dynamic live date state
+  const [todayDateStr, setTodayDateStr] = useState<string>("2026-10-15");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setTodayDateStr(new Date().toISOString().slice(0, 10));
+    }
+  }, []);
+
   // Calculate financials for all loans as of current date
-  const asOfDate = useMemo(() => new Date(2026, 9, 14), []);
+  const asOfDate = useMemo(() => {
+    const parts = todayDateStr.split("-").map(Number);
+    if (parts.length === 3) {
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    return new Date();
+  }, [todayDateStr]);
 
   const delinquentList = useMemo(() => {
     const list: Array<{

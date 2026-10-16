@@ -77,33 +77,58 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Load from localStorage ONCE after mount (client-only)
   React.useEffect(() => {
     try {
+      const DEMO_PURGE_FLAG = "psi_demo_purged_v1";
+      const isPurged = localStorage.getItem(DEMO_PURGE_FLAG);
+      const demoCustomerIds = new Set(["CUS-001", "CUS-002", "CUS-003", "CUS-004", "CUS-005", "CUS-006"]);
+      const demoLoanIds = new Set(["LN-001", "LN-002", "LN-003", "LN-004", "LN-005", "LN-006"]);
+      const demoPaymentIds = new Set([
+        "PAY-001", "PAY-002", "PAY-003", "PAY-004", "PAY-005",
+        "PAY-006", "PAY-007", "PAY-008", "PAY-009", "PAY-010",
+        "PAY-011", "PAY-012", "PAY-013", "PAY-014", "PAY-015",
+      ]);
+
       const storedCustomers = localStorage.getItem("psi_customers");
       if (storedCustomers) {
         const parsed: Customer[] = JSON.parse(storedCustomers);
-        const ids = new Set(parsed.map((c) => c.id));
-        const missing = initialCustomers.filter((c) => !ids.has(c.id));
-        setCustomers(missing.length > 0 ? [...parsed, ...missing] : parsed);
+        const filtered = parsed.filter((c) => !demoCustomerIds.has(c.id));
+        setCustomers(filtered);
+        if (!isPurged) {
+          localStorage.setItem("psi_customers", JSON.stringify(filtered));
+        }
       }
 
       const storedLoans = localStorage.getItem("psi_loans");
       if (storedLoans) {
         const parsed: Loan[] = JSON.parse(storedLoans);
-        const ids = new Set(parsed.map((l) => l.id));
-        const missing = initialLoans.filter((l) => !ids.has(l.id));
-        setLoans(missing.length > 0 ? [...parsed, ...missing] : parsed);
+        const filtered = parsed.filter((l) => !demoLoanIds.has(l.id));
+        setLoans(filtered);
+        if (!isPurged) {
+          localStorage.setItem("psi_loans", JSON.stringify(filtered));
+        }
       }
 
       const storedPayments = localStorage.getItem("psi_payments");
       if (storedPayments) {
         const parsed: Payment[] = JSON.parse(storedPayments);
-        const ids = new Set(parsed.map((p) => p.id));
-        const missing = initialPayments.filter((p) => !ids.has(p.id));
-        setPayments(missing.length > 0 ? [...parsed, ...missing] : parsed);
+        const filtered = parsed.filter((p) => !demoPaymentIds.has(p.id));
+        setPayments(filtered);
+        if (!isPurged) {
+          localStorage.setItem("psi_payments", JSON.stringify(filtered));
+        }
       }
 
       const storedDocs = localStorage.getItem("psi_documents");
       if (storedDocs) {
-        setDocuments(JSON.parse(storedDocs));
+        const parsed: CustomerDocument[] = JSON.parse(storedDocs);
+        const filtered = parsed.filter((d) => !demoCustomerIds.has(d.customerId));
+        setDocuments(filtered);
+        if (!isPurged) {
+          localStorage.setItem("psi_documents", JSON.stringify(filtered));
+        }
+      }
+
+      if (!isPurged) {
+        localStorage.setItem(DEMO_PURGE_FLAG, "true");
       }
 
       const storedSettings = localStorage.getItem("psi_settings");
@@ -177,11 +202,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [staffUsers, isHydrated]);
 
-  const addCustomer = (customer: Customer) => {
+  const addCustomer = React.useCallback((customer: Customer) => {
     setCustomers((prev) => [customer, ...prev]);
-  };
+  }, []);
 
-  const updateCustomer = (id: string | number, updated: Partial<Customer>) => {
+  const updateCustomer = React.useCallback((id: string | number, updated: Partial<Customer>) => {
     setCustomers((prev) =>
       prev.map((item: Customer) =>
         item.id === id || String(item.id) === String(id)
@@ -189,13 +214,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
           : item
       )
     );
-  };
+  }, []);
 
-  const addLoan = (loan: Loan) => {
+  const addLoan = React.useCallback((loan: Loan) => {
     setLoans((prev) => [loan, ...prev]);
-  };
+  }, []);
 
-  const updateLoan = (id: string | number, updated: Partial<Loan>) => {
+  const updateLoan = React.useCallback((id: string | number, updated: Partial<Loan>) => {
     setLoans((prev) =>
       prev.map((item: Loan) =>
         item.id === id || String(item.id) === String(id)
@@ -203,75 +228,94 @@ export function DataProvider({ children }: { children: ReactNode }) {
           : item
       )
     );
-  };
+  }, []);
 
-  const addPayment = (payment: Payment) => {
+  const addPayment = React.useCallback((payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
 
     // Check if the loan balance is now settled in full
     setLoans((prevLoans) =>
       prevLoans.map((l) => {
         if (l.id === payment.loanId || String(l.id) === String(payment.loanId)) {
-          // Calculate all payments for this loan including the newly added payment
           const existingPaid = payments
             .filter((p) => p.loanId === l.id)
             .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
           const totalPaidAfter = existingPaid + (Number(payment.amount) || 0);
 
-          if (totalPaidAfter >= l.totalRepayment && l.status !== "Completed") {
+          if (totalPaidAfter >= (l.totalRepayment || 0) && l.status !== "Completed") {
             return { ...l, status: "Completed" };
           }
         }
         return l;
       })
     );
-  };
+  }, [payments]);
 
-  const addDocument = (doc: CustomerDocument) => {
+  const addDocument = React.useCallback((doc: CustomerDocument) => {
     setDocuments((prev) => [doc, ...prev]);
-  };
+  }, []);
 
-  const deleteDocument = (id: string) => {
+  const deleteDocument = React.useCallback((id: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== id));
-  };
+  }, []);
 
-  const updateSettings = (newSettings: Partial<SystemSettings>) => {
+  const updateSettings = React.useCallback((newSettings: Partial<SystemSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
-  };
+  }, []);
 
-  const addStaffUser = (user: StaffUser) => {
+  const addStaffUser = React.useCallback((user: StaffUser) => {
     setStaffUsers((prev) => [...prev, user]);
-  };
+  }, []);
 
-  const updateStaffUser = (id: string, updated: Partial<StaffUser>) => {
+  const updateStaffUser = React.useCallback((id: string, updated: Partial<StaffUser>) => {
     setStaffUsers((prev) =>
       prev.map((u) => (u.id === id ? { ...u, ...updated } : u))
     );
-  };
+  }, []);
+
+  const contextValue = React.useMemo<DataContextValue>(
+    () => ({
+      customers,
+      loans,
+      payments,
+      repayments: payments,
+      documents,
+      settings,
+      staffUsers,
+      addCustomer,
+      updateCustomer,
+      addLoan,
+      updateLoan,
+      addPayment,
+      addRepayment: addPayment,
+      addDocument,
+      deleteDocument,
+      updateSettings,
+      addStaffUser,
+      updateStaffUser,
+    }),
+    [
+      customers,
+      loans,
+      payments,
+      documents,
+      settings,
+      staffUsers,
+      addCustomer,
+      updateCustomer,
+      addLoan,
+      updateLoan,
+      addPayment,
+      addDocument,
+      deleteDocument,
+      updateSettings,
+      addStaffUser,
+      updateStaffUser,
+    ]
+  );
 
   return (
-    <DataContext.Provider
-      value={{
-        customers,
-        loans,
-        payments,
-        repayments: payments,
-        documents,
-        settings,
-        staffUsers,
-        addCustomer,
-        updateCustomer,
-        addLoan,
-        updateLoan,
-        addPayment,
-        addRepayment: addPayment,
-        addDocument,
-        deleteDocument,
-        updateSettings,
-        addStaffUser,
-        updateStaffUser,
-      }}
-    >
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );
