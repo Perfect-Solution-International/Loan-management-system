@@ -34,6 +34,28 @@ interface NewLoanFormProps {
   isModal?: boolean;
 }
 
+function getNextRepaymentDate(dateStr: string, freq: "Monthly" | "Weekly" | "Daily"): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return "";
+  const [year, month, day] = parts;
+  const d = new Date(year, month - 1, day);
+  if (isNaN(d.getTime())) return "";
+
+  if (freq === "Daily") {
+    d.setDate(d.getDate() + 1);
+  } else if (freq === "Weekly") {
+    d.setDate(d.getDate() + 7);
+  } else if (freq === "Monthly") {
+    d.setMonth(d.getMonth() + 1);
+  }
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dt = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dt}`;
+}
+
 export function NewLoanForm({
   initialCustomerId = "",
   onSuccess,
@@ -67,6 +89,20 @@ export function NewLoanForm({
   const [issueDate, setIssueDate] = useState<string>(todayStr);
   const [firstPaymentDate, setFirstPaymentDate] = useState<string>(defaultFirstPaymentStr);
   const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
+
+  const handleIssueDateChange = (val: string) => {
+    setIssueDate(val);
+    if (val) {
+      setFirstPaymentDate(getNextRepaymentDate(val, frequency));
+    }
+  };
+
+  const handleFrequencyChange = (newFreq: "Monthly" | "Weekly" | "Daily") => {
+    setFrequency(newFreq);
+    if (issueDate) {
+      setFirstPaymentDate(getNextRepaymentDate(issueDate, newFreq));
+    }
+  };
 
   // ── Upfront Deductions & Fees (Completely blank initial values) ────────────
   const [capitalDeduction, setCapitalDeduction] = useState<string>("");
@@ -1070,7 +1106,7 @@ export function NewLoanForm({
                     <label className="text-xs font-bold text-slate-700">Repayment Frequency</label>
                     <select
                       value={frequency}
-                      onChange={(e) => setFrequency(e.target.value as "Monthly" | "Weekly" | "Daily")}
+                      onChange={(e) => handleFrequencyChange(e.target.value as "Monthly" | "Weekly" | "Daily")}
                       className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                     >
                       <option value="">-- Select Frequency --</option>
@@ -1116,7 +1152,7 @@ export function NewLoanForm({
                       required
                       autoComplete="off"
                       value={issueDate}
-                      onChange={(e) => setIssueDate(e.target.value)}
+                      onChange={(e) => handleIssueDateChange(e.target.value)}
                       className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                     />
                   </div>
