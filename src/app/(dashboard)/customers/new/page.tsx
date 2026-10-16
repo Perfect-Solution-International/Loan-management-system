@@ -1344,88 +1344,185 @@ export default function NewCustomerPage() {
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-                {/* Profile card preview */}
-                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl flex items-center gap-4">
-                  {form.photoUrl ? (
-                    <img
-                      src={form.photoUrl}
-                      alt=""
-                      className="w-14 h-14 rounded-2xl object-cover border-2 border-red-500 shadow-xs"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-700 font-black text-lg flex items-center justify-center shrink-0">
-                      {(form.fullName || "C").charAt(0).toUpperCase()}
+              <div className="space-y-4 pt-1">
+                {/* 1. Customer Profile Overview */}
+                <div className="p-4 sm:p-5 bg-slate-50/80 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    {form.photoUrl ? (
+                      <img
+                        src={form.photoUrl}
+                        alt={form.fullName}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-red-500 shadow-sm shrink-0"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-700 font-black text-xl flex items-center justify-center shrink-0">
+                        {(form.fullName || "C").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-500">Customer ID:</span>
+                        <span className="font-mono text-xs font-black text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-lg">
+                          {customerId}
+                        </span>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-black text-slate-900">
+                        {form.fullName || "No Name Entered"}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
+                        <span>
+                          <strong className="text-slate-700">NIC:</strong> {form.nic || "—"}
+                        </span>
+                        {form.gender && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              <strong className="text-slate-700">Gender:</strong> {form.gender}
+                            </span>
+                          </>
+                        )}
+                        {form.dob && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              <strong className="text-slate-700">DOB:</strong> {form.dob}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-bold text-slate-500">Customer ID:</span>
-                      <span className="font-mono text-xs font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg">
-                        {customerId}
+                  </div>
+                </div>
+
+                {/* 2. Contact & Address Details (Full Width Downwards) */}
+                <div className="p-4 sm:p-5 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-3">
+                  <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Contact &amp; Location
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
+                    <div>
+                      <span className="text-slate-500 block font-medium">Contact Number</span>
+                      <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+                        {form.phone || "Not provided"}
                       </span>
                     </div>
-                    <h4 className="text-xs font-black text-slate-900 truncate">
-                      {form.fullName || "No Name Entered"}
-                    </h4>
-                    <p className="text-[11px] font-mono font-bold text-slate-700">
-                      NIC: {form.nic || "Pending"}
-                    </p>
+
+                    <div>
+                      <span className="text-slate-500 block font-medium">Email Address</span>
+                      <span className="font-semibold text-slate-800 mt-0.5 block">
+                        {form.email || "Not provided"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 block font-medium">Emergency Contact</span>
+                      <span className="font-semibold text-slate-800 mt-0.5 block">
+                        {form.emergencyContactName ? (
+                          <>
+                            {form.emergencyContactName} (
+                            {form.emergencyContactRelationship === "Other"
+                              ? form.emergencyContactRelationshipCustom.trim() || "Other"
+                              : form.emergencyContactRelationship || "Contact"}
+                            )
+                            {form.emergencyContactPhone && ` • ${form.emergencyContactPhone}`}
+                          </>
+                        ) : (
+                          "Not provided"
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="sm:col-span-2 md:col-span-3 pt-2 border-t border-slate-200/70">
+                      <span className="text-slate-500 block font-medium">Residential Address</span>
+                      <span className="font-semibold text-slate-800 mt-0.5 block break-words">
+                        {[form.address, form.village, form.town, form.district].filter(Boolean).join(", ") ||
+                          "Main Road, Colombo"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Location & Contact info */}
-                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-1 text-xs">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Contact &amp; Location
-                  </p>
-                  <p className="font-bold text-slate-900">Phone: {form.phone || "Not provided"}</p>
-                  <p className="text-slate-600 truncate">
-                    Address: {[form.address, form.village, form.town, form.district].filter(Boolean).join(", ") || "Main Road, Colombo"}
-                  </p>
-                  {form.emergencyContactName && (
-                    <p className="text-[11px] text-slate-500 truncate">
-                      Emergency: {form.emergencyContactName} (
-                      {form.emergencyContactRelationship === "Other"
-                        ? form.emergencyContactRelationshipCustom.trim() || "Other"
-                        : form.emergencyContactRelationship || "Contact"}
-                      )
-                    </p>
-                  )}
-                </div>
-
-                {/* Document and Loan status */}
-                <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                {/* 3. Identity Verification & Documents Status */}
+                <div className="p-4 sm:p-5 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-3">
+                  <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     Verification &amp; Records
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-600">NIC Images:</span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        nicFrontUrl && nicBackUrl
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : nicFrontUrl || nicBackUrl
-                          ? "bg-amber-50 text-amber-700 border border-amber-200"
-                          : "bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {nicFrontUrl && nicBackUrl ? "Front & Back Uploaded" : nicFrontUrl ? "Front Only" : nicBackUrl ? "Back Only" : "Not Uploaded"}
-                    </span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+                    <div>
+                      <span className="text-slate-500 block font-medium">Customer Photograph</span>
+                      <span className="mt-1 inline-block">
+                        {form.photoUrl ? (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            ✓ Photo Uploaded
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-2.5 py-0.5 rounded-full">
+                            Not Uploaded
+                          </span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 block font-medium">NIC Images</span>
+                      <span className="mt-1 inline-block">
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                            nicFrontUrl && nicBackUrl
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : nicFrontUrl || nicBackUrl
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {nicFrontUrl && nicBackUrl
+                            ? "✓ Front & Back Uploaded"
+                            : nicFrontUrl
+                            ? "Front Only"
+                            : nicBackUrl
+                            ? "Back Only"
+                            : "Not Uploaded"}
+                        </span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 block font-medium">Supporting Documents</span>
+                      <span className="font-bold text-slate-800 mt-1 block">
+                        {attachedDocs.length} attached
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-600">Other Documents:</span>
-                    <span className="font-bold text-slate-800">
-                      {attachedDocs.length} attached
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-600">Prior Loan:</span>
-                    <span className="font-bold text-slate-800">
-                      {form.hasExistingLoan
-                        ? `Yes (${form.existingLoanNo || "Prior"} · ${MONEY(computedLoanCalculations?.outstanding || 0)})`
-                        : "None (New Borrower)"}
-                    </span>
+                </div>
+
+                {/* 4. Prior Loan Details */}
+                <div className="p-4 sm:p-5 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-2">
+                  <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Prior Loan Record
+                  </h4>
+                  <div className="text-xs">
+                    {form.hasExistingLoan ? (
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span className="font-bold text-slate-900">
+                          Loan No: {form.existingLoanNo || "Prior Loan"}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-700">
+                          Outstanding:{" "}
+                          <strong className="text-red-600 font-mono font-bold">
+                            {MONEY(computedLoanCalculations?.outstanding || 0)}
+                          </strong>
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-700">
+                          Installments Paid: {form.previousInstallmentsPaid || 0}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="font-semibold text-slate-700">
+                        None (New Borrower)
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
