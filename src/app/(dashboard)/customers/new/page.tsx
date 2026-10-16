@@ -594,7 +594,7 @@ export default function NewCustomerPage() {
         {/* ── STEP 1: PHOTO & BIOMETRIC VERIFICATION ── */}
         {currentStep === 1 && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-xs space-y-6">
               {/* Card Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
@@ -605,191 +605,70 @@ export default function NewCustomerPage() {
                     Customer Photograph
                   </h2>
                 </div>
-                {form.photoUrl ? (
+                {form.photoUrl && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                     <CheckCircle2 size={13} /> Photo Uploaded
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
-                    <Sparkles size={13} /> Portrait Studio
                   </span>
                 )}
               </div>
 
-              {/* 2-Column Responsive Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                {/* Left: Viewfinder & Upload Box */}
-                <div className="lg:col-span-7 flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-slate-50/70 via-white to-slate-50/40 border border-slate-200/80 shadow-2xs space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                        <Camera size={14} className="text-red-600" />
-                        Biometric Viewfinder
-                      </span>
-                      <span className="text-[11px] font-bold text-slate-500">
-                        Max 5MB (JPG, PNG, WEBP)
-                      </span>
+              {/* Centered Modern Photo Uploader */}
+              <div className="max-w-md mx-auto py-6 sm:py-8 flex flex-col items-center justify-center text-center space-y-5">
+                {form.photoUrl ? (
+                  <div className="relative group flex flex-col items-center space-y-4">
+                    <div className="relative">
+                      <img
+                        src={form.photoUrl}
+                        alt="Customer Portrait Preview"
+                        className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-red-500/20 transition-transform group-hover:scale-[1.02]"
+                      />
                     </div>
-
-                    {/* Viewfinder frame */}
-                    <div className="relative group w-full py-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 hover:border-red-400 bg-white/80 transition-all">
-                      {form.photoUrl ? (
-                        <div className="relative flex flex-col items-center">
-                          <img
-                            src={form.photoUrl}
-                            alt="Customer Portrait Preview"
-                            className="w-40 h-40 sm:w-48 sm:h-48 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-red-500/20"
-                          />
-                          <div className="flex items-center gap-2 mt-4">
-                            <label className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
-                              <Upload size={14} />
-                              <span>Change Photo</span>
-                              <input
-                                type="file"
-                                accept="image/png, image/jpeg, image/webp"
-                                onChange={handlePhotoUpload}
-                                className="hidden"
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-xl transition cursor-pointer"
-                            >
-                              <Trash2 size={13} />
-                              <span>Remove</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center text-center px-4 py-4 space-y-3">
-                          {/* Corner Focus Brackets Visual */}
-                          <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shadow-inner group-hover:scale-105 group-hover:border-red-300 transition-all">
-                            <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-red-500 rounded-tl-sm" />
-                            <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-red-500 rounded-tr-sm" />
-                            <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-red-500 rounded-bl-sm" />
-                            <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-red-500 rounded-br-sm" />
-                            <Camera size={40} className="text-slate-400 group-hover:text-red-500 transition-colors" />
-                          </div>
-
-                          <div className="space-y-1">
-                            <p className="text-xs font-bold text-slate-800">
-                              Attach Recent Borrower Portrait
-                            </p>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                              Click the button below to upload photograph
-                            </p>
-                          </div>
-
-                          <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition cursor-pointer">
-                            <Upload size={14} />
-                            <span>Upload Customer Photo</span>
-                            <input
-                              type="file"
-                              accept="image/png, image/jpeg, image/webp"
-                              onChange={handlePhotoUpload}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200/60 font-medium">
-                    <span>Facial Verification Dossier</span>
-                    <span className="font-semibold text-slate-700">PNG, JPG or WEBP</span>
-                  </div>
-                </div>
-
-                {/* Right: Digital Member Card Mockup & Quality Tips */}
-                <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
-                  {/* Digital Dossier Badge Mockup */}
-                  <div className="p-5 rounded-3xl bg-slate-900 text-white shadow-md relative overflow-hidden space-y-4">
-                    {/* Background geometric flare */}
-                    <div className="absolute -right-8 -top-8 w-28 h-28 bg-red-600/20 rounded-full blur-xl pointer-events-none" />
-
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div className="flex items-center gap-2">
-                        <Shield size={16} className="text-red-500" />
-                        <span className="text-[11px] font-black tracking-wider uppercase text-slate-300">
-                          Borrower Dossier
-                        </span>
-                      </div>
-                      <span className="font-mono text-[10px] font-bold text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-800/40">
-                        {customerId}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {form.photoUrl ? (
-                        <img
-                          src={form.photoUrl}
-                          alt=""
-                          className="w-16 h-16 rounded-2xl object-cover border-2 border-red-500 shadow-md shrink-0"
+                    <div className="flex items-center gap-2">
+                      <label className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
+                        <Upload size={14} />
+                        <span>Change Photograph</span>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/webp"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
                         />
-                      ) : (
-                        <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 shrink-0">
-                          <Camera size={22} className="text-slate-400" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <p className="text-[10px] uppercase font-bold text-slate-400">
-                          Profile Preview
-                        </p>
-                        <h4 className="text-xs font-black text-white truncate">
-                          {form.fullName || "New Customer"}
-                        </h4>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/50">
-                          {form.photoUrl ? "Photo Attached" : "Pending Photo"}
-                        </span>
-                      </div>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-xl transition cursor-pointer"
+                      >
+                        <Trash2 size={13} />
+                        <span>Remove</span>
+                      </button>
                     </div>
                   </div>
+                ) : (
+                  <div className="w-full flex flex-col items-center space-y-4">
+                    <label className="w-full max-w-sm py-10 px-6 rounded-3xl border-2 border-dashed border-slate-300 hover:border-red-500 bg-slate-50/60 hover:bg-red-50/20 flex flex-col items-center justify-center cursor-pointer transition-all group shadow-inner">
+                      <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-red-600 group-hover:scale-105 group-hover:border-red-300 shadow-sm transition-all mb-3">
+                        <Camera size={36} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-800 group-hover:text-red-600 transition-colors">
+                        Upload Customer Photograph
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium mt-1">
+                        Click to browse image from your device
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
 
-                  {/* Photo Quality Guidelines (3 Cards) */}
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 px-1">
-                      Photograph Guidelines
-                    </p>
-
-                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3 shadow-2xs">
-                      <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                        <Eye size={16} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">Clear &amp; Front-Facing</p>
-                        <p className="text-[10px] text-slate-500 font-medium">
-                          Look directly at the camera with full face visible.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3 shadow-2xs">
-                      <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                        <Sun size={16} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">Even Lighting</p>
-                        <p className="text-[10px] text-slate-500 font-medium">
-                          Ensure bright, uniform light with no harsh shadows.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3 shadow-2xs">
-                      <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                        <Shield size={16} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">No Face Coverings</p>
-                        <p className="text-[10px] text-slate-500 font-medium">
-                          Remove tinted glasses or caps that obscure features.
-                        </p>
-                      </div>
-                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      Supported formats: JPG, PNG, WEBP (Max 5MB)
+                    </span>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Step 1 Navigation Bar */}
