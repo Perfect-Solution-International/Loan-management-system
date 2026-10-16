@@ -524,24 +524,17 @@ export default function NewCustomerPage() {
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
-            PORTFOLIO / REGISTRATION
-          </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-            Advanced Customer Registration
-          </h1>
-          <p className="text-xs text-slate-500">
-            Comprehensive borrower profile onboarding with photograph, identity verification, existing loans, and repayment history.
-          </p>
-        </div>
+      <div className="space-y-3">
         <Link
           href="/customers"
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-xs transition"
+          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-red-600 hover:bg-slate-50 shadow-xs transition"
+          title="Back"
         >
-          <ArrowLeft size={14} /> Back to Directory
+          <ArrowLeft size={18} />
         </Link>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          Customer Registration
+        </h1>
       </div>
 
       {submitted && (
@@ -560,55 +553,34 @@ export default function NewCustomerPage() {
       )}
 
       {/* ── MULTI-STEP PROGRESS STEPPER ── */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-3 sm:p-4 shadow-xs">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {STEPS.map((s) => {
-            const isActive = currentStep === s.number;
-            const isCompleted = currentStep > s.number;
+      <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+        <div className="flex items-center justify-between max-w-md mx-auto">
+          {[1, 2, 3, 4].map((stepNum, idx) => {
+            const isActive = currentStep === stepNum;
+            const isCompleted = currentStep > stepNum;
             return (
-              <button
-                key={s.number}
-                type="button"
-                onClick={() => goToStep(s.number)}
-                className={`flex items-center gap-3 p-3 rounded-2xl text-left transition cursor-pointer ${
-                  isActive
-                    ? "bg-red-50 border border-red-200 text-red-950 shadow-2xs ring-1 ring-red-500/20"
-                    : isCompleted
-                    ? "bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200"
-                    : "text-slate-600 hover:bg-slate-50/70 border border-transparent"
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+              <React.Fragment key={stepNum}>
+                {idx > 0 && (
+                  <div
+                    className={`flex-1 h-0.5 mx-2 rounded-full transition-colors ${
+                      isCompleted ? "bg-red-600" : "bg-slate-200"
+                    }`}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => goToStep(stepNum)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-all cursor-pointer ${
                     isActive
-                      ? "bg-red-600 text-white shadow-xs"
+                      ? "bg-red-600 text-white shadow-md shadow-red-600/20 ring-4 ring-red-100"
                       : isCompleted
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-200 text-slate-700"
+                      ? "bg-slate-900 text-white"
+                      : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
                   }`}
                 >
-                  {isCompleted ? <Check size={16} /> : s.number}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                      Step {s.number}
-                    </span>
-                    {isCompleted && (
-                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
-                        Done
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className={`text-xs font-black truncate ${
-                      isActive ? "text-red-950" : isCompleted ? "text-slate-900" : "text-slate-600"
-                    }`}
-                  >
-                    {s.title}
-                  </p>
-                </div>
-              </button>
+                  {stepNum}
+                </button>
+              </React.Fragment>
             );
           })}
         </div>
@@ -620,65 +592,29 @@ export default function NewCustomerPage() {
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 1: PHOTOGRAPH & SYSTEM ID */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
+              <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-red-50 text-red-600 rounded-xl">
                     <Camera size={20} />
                   </div>
-                  <div>
-                    <h2 className="text-base font-black text-slate-900">
-                      Step 1: Customer Photograph &amp; ID
-                    </h2>
-                    <p className="text-xs text-slate-600 font-medium">
-                      Upload the borrower&apos;s portrait photograph for identity verification.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">Account Standing:</span>
-                  <select
-                    name="status"
-                    value={form.status}
-                    onChange={handleChange}
-                    className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer shadow-2xs"
-                  >
-                    <option value="Active">Active (Eligible)</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
+                  <h2 className="text-base font-black text-slate-900">
+                    Customer Photograph
+                  </h2>
                 </div>
               </div>
 
-              {/* Single Consolidated Customer Photograph Card with Compact ID */}
+              {/* Single Consolidated Customer Photograph Card */}
               <div className="p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
                   <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <Camera size={14} className="text-red-600" />
-                    Customer Photograph
+                    Portrait Photo
                   </span>
-
-                  {/* Compact Auto-Generated Customer ID embedded right inside photo section */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
-                      <Lock size={12} className="text-slate-400" />
-                      Customer ID:
+                  {form.photoUrl && (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle2 size={11} /> Photo Uploaded
                     </span>
-                    <input
-                      type="text"
-                      value={customerId}
-                      readOnly
-                      className="px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white font-mono font-bold text-slate-900 w-28 cursor-not-allowed select-all shadow-2xs"
-                    />
-                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                      Auto-Generated
-                    </span>
-                    {form.photoUrl && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                        <CheckCircle2 size={11} /> Photo Uploaded
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -708,7 +644,7 @@ export default function NewCustomerPage() {
                     )}
                   </div>
 
-                  {/* Upload button & guidance */}
+                  {/* Upload button */}
                   <div className="space-y-3 flex-1 text-center sm:text-left">
                     <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
                       <Upload size={14} />
@@ -720,12 +656,6 @@ export default function NewCustomerPage() {
                         className="hidden"
                       />
                     </label>
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                      Attach a clear, recent portrait photograph of the customer for facial verification and dossier identification.
-                    </p>
-                    <span className="text-[11px] text-slate-500 font-mono block">
-                      Supported: JPG, PNG, WEBP (Max 5MB)
-                    </span>
                   </div>
                 </div>
               </div>
@@ -743,7 +673,7 @@ export default function NewCustomerPage() {
                   onClick={handleNextStep}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
                 >
-                  <span>Next: Customer Details</span>
+                  <span>Next</span>
                   <ArrowRight size={15} />
                 </button>
               </div>
@@ -764,9 +694,6 @@ export default function NewCustomerPage() {
                   <h2 className="text-sm font-bold text-slate-900">
                     Personal Details
                   </h2>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Legal full name, National Identity Card, gender, date of birth, contact details, and address.
-                  </p>
                 </div>
               </div>
 
@@ -881,9 +808,6 @@ export default function NewCustomerPage() {
                   <h2 className="text-sm font-bold text-slate-900">
                     Emergency Contact
                   </h2>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Emergency contact person details and relationship to borrower.
-                  </p>
                 </div>
               </div>
 
@@ -940,14 +864,14 @@ export default function NewCustomerPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
                 <ArrowLeft size={15} />
-                <span>Back: Photo &amp; Customer ID</span>
+                <span>Back</span>
               </button>
               <button
                 type="button"
                 onClick={handleNextStep}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
-                <span>Next: Document Uploads</span>
+                <span>Next</span>
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -959,257 +883,244 @@ export default function NewCustomerPage() {
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-              <CreditCard size={18} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                National Identity Card (NIC) Images
-              </h2>
-              <p className="text-[11px] text-slate-600">
-                Dedicated upload slots for clear scanned images or photos of borrower&apos;s NIC (Front &amp; Back).
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* NIC Front */}
-            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-600" />
-                  NIC Front Image
-                </span>
-                {nicFrontUrl && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    ✓ Uploaded
-                  </span>
-                )}
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                  <CreditCard size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    National Identity Card (NIC) Images
+                  </h2>
+                </div>
               </div>
 
-              {nicFrontUrl ? (
-                <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
-                  <img
-                    src={nicFrontUrl}
-                    alt="NIC Front Preview"
-                    className="w-full h-40 object-cover bg-slate-100"
-                  />
-                  <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
-                    <div className="truncate pr-2">
-                      <p className="text-[11px] font-bold text-slate-800 truncate">
-                        {nicFrontFileName || "nic_front.jpg"}
-                      </p>
-                      <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* NIC Front */}
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-600" />
+                      NIC Front Image
+                    </span>
+                    {nicFrontUrl && (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        ✓ Uploaded
+                      </span>
+                    )}
+                  </div>
+
+                  {nicFrontUrl ? (
+                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                      <img
+                        src={nicFrontUrl}
+                        alt="NIC Front Preview"
+                        className="w-full h-40 object-cover bg-slate-100"
+                      />
+                      <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                        <div className="truncate pr-2">
+                          <p className="text-[11px] font-bold text-slate-800 truncate">
+                            {nicFrontFileName || "nic_front.jpg"}
+                          </p>
+                          <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNicFrontUrl("");
+                            setNicFrontFileName("");
+                            setNicFrontFileSize("");
+                          }}
+                          className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNicFrontUrl("");
-                        setNicFrontFileName("");
-                        setNicFrontFileSize("");
-                      }}
-                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
-                    >
-                      Remove
-                    </button>
+                  ) : (
+                    <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
+                      <Upload size={22} className="text-slate-400 mb-2" />
+                      <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={handleNicFrontUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* NIC Back */}
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-600" />
+                      NIC Back Image
+                    </span>
+                    {nicBackUrl && (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        ✓ Uploaded
+                      </span>
+                    )}
+                  </div>
+
+                  {nicBackUrl ? (
+                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                      <img
+                        src={nicBackUrl}
+                        alt="NIC Back Preview"
+                        className="w-full h-40 object-cover bg-slate-100"
+                      />
+                      <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                        <div className="truncate pr-2">
+                          <p className="text-[11px] font-bold text-slate-800 truncate">
+                            {nicBackFileName || "nic_back.jpg"}
+                          </p>
+                          <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNicBackUrl("");
+                            setNicBackFileName("");
+                            setNicBackFileSize("");
+                          }}
+                          className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
+                      <Upload size={22} className="text-slate-400 mb-2" />
+                      <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={handleNicBackUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 6: OTHER DOCS & SUPPORTING DOCUMENTS */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-900">
+                      Supporting Documents ({attachedDocs.length})
+                    </h2>
                   </div>
                 </div>
-              ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
-                  <Upload size={22} className="text-slate-400 mb-2" />
-                  <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    Click to browse PNG, JPG or PDF
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={handleNicFrontUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-
-            {/* NIC Back */}
-            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-600" />
-                  NIC Back Image
-                </span>
-                {nicBackUrl && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    ✓ Uploaded
-                  </span>
-                )}
               </div>
 
-              {nicBackUrl ? (
-                <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
-                  <img
-                    src={nicBackUrl}
-                    alt="NIC Back Preview"
-                    className="w-full h-40 object-cover bg-slate-100"
-                  />
-                  <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
-                    <div className="truncate pr-2">
-                      <p className="text-[11px] font-bold text-slate-800 truncate">
-                        {nicBackFileName || "nic_back.jpg"}
-                      </p>
-                      <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNicBackUrl("");
-                        setNicBackFileName("");
-                        setNicBackFileSize("");
-                      }}
-                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+              {/* Current Attached Documents List */}
+              {attachedDocs.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {attachedDocs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
                     >
-                      Remove
-                    </button>
-                  </div>
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-800 truncate">{doc.title}</p>
+                          <p className="text-[10px] text-slate-600">
+                            {doc.type.replace(/_/g, " ")} · {doc.fileSize} · {doc.fileName}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDoc(doc.id)}
+                        className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition shrink-0 cursor-pointer"
+                        title="Remove document"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
-                  <Upload size={22} className="text-slate-400 mb-2" />
-                  <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    Click to browse PNG, JPG or PDF
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={handleNicBackUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* SECTION 6: OTHER DOCS & SUPPORTING DOCUMENTS */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
-                <FileText size={18} />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Other Docs &amp; Supporting Documents ({attachedDocs.length})
-                </h2>
-                <p className="text-[11px] text-slate-600">
-                  Upload multiple supporting documents (utility bills, salary slips, signed lease/loan agreements, or other proofs).
+                <p className="text-xs text-slate-400 italic py-1">
+                  No documents attached.
                 </p>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* Current Attached Documents List */}
-          {attachedDocs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {attachedDocs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
-                      <FileText size={16} />
-                    </div>
-                    <div className="truncate">
-                      <p className="text-xs font-bold text-slate-800 truncate">{doc.title}</p>
-                      <p className="text-[10px] text-slate-600">
-                        {doc.type.replace(/_/g, " ")} · {doc.fileSize} · {doc.fileName}
-                      </p>
+              {/* Add Supporting Documents Inline Form */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-700">Attach Supporting Document:</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                      Document Title
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      value={newDocTitle}
+                      onChange={(e) => setNewDocTitle(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={newDocType}
+                      onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="other">Other Supporting Document</option>
+                      <option value="utility_bill">Utility Bill / Address Proof</option>
+                      <option value="salary_slip">Salary Slip / Income Proof</option>
+                      <option value="agreement">Signed Loan Agreement</option>
+                      <option value="photo">Photograph / Portrait</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                      Upload Files (JPG, PNG, PDF)
+                    </label>
+                    <div className="flex gap-2">
+                      <label className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-50">
+                        <Upload size={13} /> {newDocFileName ? newDocFileName.slice(0, 15) : "Browse (Multiple)"}
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={handleDocFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAddDocumentToForm}
+                        className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                      >
+                        Attach
+                      </button>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDoc(doc.id)}
-                    className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition shrink-0 cursor-pointer"
-                    title="Remove document"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-500 italic py-1">
-              No additional supporting documents attached yet. Use the upload box below to attach files.
-            </p>
-          )}
-
-          {/* Add Supporting Documents Inline Form */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-700">Attach Supporting Document:</p>
-              <span className="text-[10px] text-slate-500">Supports selecting multiple files at once</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
-                  Document Title
-                </label>
-                <input
-                  type="text"
-                  autoComplete="off"
-                  value={newDocTitle}
-                  onChange={(e) => setNewDocTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Category
-                </label>
-                <select
-                  value={newDocType}
-                  onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="other">Other Supporting Document</option>
-                  <option value="utility_bill">Utility Bill / Address Proof</option>
-                  <option value="salary_slip">Salary Slip / Income Proof</option>
-                  <option value="agreement">Signed Loan Agreement</option>
-                  <option value="photo">Photograph / Portrait</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
-                  Upload Files (JPG, PNG, PDF)
-                </label>
-                <div className="flex gap-2">
-                  <label className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-50">
-                    <Upload size={13} /> {newDocFileName ? newDocFileName.slice(0, 15) : "Browse (Multiple)"}
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.png,.jpg,.jpeg"
-                      onChange={handleDocFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAddDocumentToForm}
-                    className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
-                  >
-                    Attach
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
             {/* Step 3 Navigation Bar */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
@@ -1219,14 +1130,14 @@ export default function NewCustomerPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
                 <ArrowLeft size={15} />
-                <span>Back: Customer Details</span>
+                <span>Back</span>
               </button>
               <button
                 type="button"
                 onClick={handleNextStep}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
-                <span>Next: Prior Loan &amp; Review</span>
+                <span>Next</span>
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -1238,187 +1149,173 @@ export default function NewCustomerPage() {
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-                <CreditCard size={18} />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Existing Loans & Previous Repayment History
-                </h2>
-                <p className="text-[11px] text-slate-600">
-                  Record previous loan contracts, outstanding balances, and repayment track records.
-                </p>
-              </div>
-            </div>
-
-            {/* Toggle Switch */}
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-              <input
-                type="checkbox"
-                name="hasExistingLoan"
-                checked={form.hasExistingLoan}
-                onChange={handleChange}
-                className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
-              />
-              <span>Has Existing / Prior Loan Record</span>
-            </label>
-          </div>
-
-          {form.hasExistingLoan ? (
-            <div className="space-y-5 animate-in fade-in duration-200">
-              {/* Existing Loan Terms */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Existing Loan ID / No.</label>
-                  <input
-                    type="text"
-                    name="existingLoanNo"
-                    autoComplete="off"
-                    value={form.existingLoanNo}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold"
-                  />
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                    <CreditCard size={18} />
+                  </div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Existing Loans &amp; Previous Repayment History
+                  </h2>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Principal Borrowed (LKR)</label>
+                {/* Toggle Switch */}
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
                   <input
-                    type="number"
-                    name="existingLoanPrincipal"
-                    autoComplete="off"
-                    step="5000"
-                    value={form.existingLoanPrincipal}
+                    type="checkbox"
+                    name="hasExistingLoan"
+                    checked={form.hasExistingLoan}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Interest Rate (%)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    name="existingInterestRate"
-                    autoComplete="off"
-                    value={form.existingInterestRate}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Duration (Months)</label>
-                  <input
-                    type="number"
-                    name="existingDuration"
-                    autoComplete="off"
-                    min="1"
-                    value={form.existingDuration}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
+                  <span>Has Existing / Prior Loan Record</span>
+                </label>
               </div>
 
-              {/* Outstanding Balance & Previous Repayments */}
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-                <div className="flex items-center gap-2">
-                  <History size={16} className="text-red-600" />
-                  <h3 className="text-xs font-bold text-slate-900">
-                    Repayment History Ledger & Current Outstanding Balance Due
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Total Amount Previously Paid (LKR)
-                    </label>
-                    <input
-                      type="number"
-                      name="previousAmountPaid"
-                      autoComplete="off"
-                      step="1000"
-                      value={form.previousAmountPaid}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                    />
-                    <p className="text-[10px] text-slate-600">Sum of prior installments settled.</p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Installments Settled Count
-                    </label>
-                    <input
-                      type="number"
-                      name="previousInstallmentsPaid"
-                      autoComplete="off"
-                      value={form.previousInstallmentsPaid}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Payment Mode
-                    </label>
-                    <select
-                      name="previousPaymentMethod"
-                      value={form.previousPaymentMethod}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                    >
-                      <option value="Cash">Cash</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Cheque">Cheque</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Outstanding Balance Banner */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Previous Repayment History Notes
-                    </label>
-                    <textarea
-                      name="previousRepaymentNotes"
-                      autoComplete="off"
-                      rows={2}
-                      value={form.previousRepaymentNotes}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold resize-none"
-                    />
-                  </div>
-
-                  {/* Calculated Balance Callout */}
-                  <div className="p-3.5 bg-red-50/80 border border-red-200 rounded-xl flex flex-col justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-                        Current Outstanding Balance Due
-                      </p>
-                      <p className="text-xl font-black font-mono text-red-900 mt-0.5">
-                        {MONEY(computedLoanCalculations?.outstanding || 0)}
-                      </p>
+              {form.hasExistingLoan && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  {/* Existing Loan Terms */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">Existing Loan ID / No.</label>
+                      <input
+                        type="text"
+                        name="existingLoanNo"
+                        autoComplete="off"
+                        value={form.existingLoanNo}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold"
+                      />
                     </div>
-                    <p className="text-[10px] text-slate-500">
-                      Total Repayable: {MONEY(computedLoanCalculations?.totalRepayment || 0)} · Paid:{" "}
-                      {MONEY(computedLoanCalculations?.paid || 0)}
-                    </p>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">Principal Borrowed (LKR)</label>
+                      <input
+                        type="number"
+                        name="existingLoanPrincipal"
+                        autoComplete="off"
+                        step="5000"
+                        value={form.existingLoanPrincipal}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">Interest Rate (%)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        name="existingInterestRate"
+                        autoComplete="off"
+                        value={form.existingInterestRate}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">Duration (Months)</label>
+                      <input
+                        type="number"
+                        name="existingDuration"
+                        autoComplete="off"
+                        min="1"
+                        value={form.existingDuration}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Outstanding Balance & Previous Repayments */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                    <div className="flex items-center gap-2">
+                      <History size={16} className="text-red-600" />
+                      <h3 className="text-xs font-bold text-slate-900">
+                        Repayment History Ledger &amp; Current Outstanding Balance Due
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700">
+                          Total Amount Previously Paid (LKR)
+                        </label>
+                        <input
+                          type="number"
+                          name="previousAmountPaid"
+                          autoComplete="off"
+                          step="1000"
+                          value={form.previousAmountPaid}
+                          onChange={handleChange}
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700">
+                          Installments Settled Count
+                        </label>
+                        <input
+                          type="number"
+                          name="previousInstallmentsPaid"
+                          autoComplete="off"
+                          value={form.previousInstallmentsPaid}
+                          onChange={handleChange}
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700">
+                          Payment Mode
+                        </label>
+                        <select
+                          name="previousPaymentMethod"
+                          value={form.previousPaymentMethod}
+                          onChange={handleChange}
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
+                        >
+                          <option value="Cash">Cash</option>
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Cheque">Cheque</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Outstanding Balance Banner */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700">
+                          Previous Repayment History Notes
+                        </label>
+                        <textarea
+                          name="previousRepaymentNotes"
+                          autoComplete="off"
+                          rows={2}
+                          value={form.previousRepaymentNotes}
+                          onChange={handleChange}
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold resize-none"
+                        />
+                      </div>
+
+                      {/* Calculated Balance Callout */}
+                      <div className="p-3.5 bg-red-50/80 border border-red-200 rounded-xl flex flex-col justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
+                            Current Outstanding Balance Due
+                          </p>
+                          <p className="text-xl font-black font-mono text-red-900 mt-0.5">
+                            {MONEY(computedLoanCalculations?.outstanding || 0)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          ) : (
-            <p className="text-xs text-slate-600 py-2">
-              No prior loan records marked for this customer. Leave unchecked for first-time borrowers.
-            </p>
-          )}
-        </div>
 
             {/* SECTION 8: FINAL BORROWER DOSSIER REVIEW */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
@@ -1426,14 +1323,9 @@ export default function NewCustomerPage() {
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
                   <CheckCircle2 size={18} />
                 </div>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900">
-                    Step 4 Review: New Borrower Dossier Summary
-                  </h2>
-                  <p className="text-[11px] text-slate-600">
-                    Please verify all onboarded information before finalizing customer registration.
-                  </p>
-                </div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  Dossier Summary
+                </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
@@ -1451,15 +1343,13 @@ export default function NewCustomerPage() {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[11px] font-bold text-slate-500">Customer ID:</span>
+                      <span className="font-mono text-xs font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg">
                         {customerId}
                       </span>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        {form.status}
-                      </span>
                     </div>
-                    <h4 className="text-xs font-black text-slate-900 truncate mt-1">
+                    <h4 className="text-xs font-black text-slate-900 truncate">
                       {form.fullName || "No Name Entered"}
                     </h4>
                     <p className="text-[11px] font-mono font-bold text-slate-700">
@@ -1529,14 +1419,14 @@ export default function NewCustomerPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
                 <ArrowLeft size={15} />
-                <span>Back: Document Uploads</span>
+                <span>Back</span>
               </button>
               <button
                 type="submit"
                 className="inline-flex items-center gap-2 px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
               >
                 <UserPlus size={16} />
-                <span>Register &amp; Save Customer Record</span>
+                <span>Register Customer</span>
               </button>
             </div>
           </div>
