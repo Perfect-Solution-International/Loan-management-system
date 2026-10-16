@@ -23,6 +23,10 @@ import {
   AlertTriangle,
   Lock,
   Shield,
+  Trash2,
+  Sparkles,
+  Eye,
+  Sun,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -69,20 +73,20 @@ export default function NewCustomerPage() {
   ];
 
   const goToStep = (stepNum: number) => {
-    if (stepNum > 1) {
+    if (stepNum > 2 && currentStep >= 2) {
       if (!form.fullName.trim()) {
         setErrorMsg("Please enter customer's full legal name.");
-        setCurrentStep(1);
+        setCurrentStep(2);
         return;
       }
       if (!form.nic.trim()) {
         setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
-        setCurrentStep(1);
+        setCurrentStep(2);
         return;
       }
       if (!form.phone.trim()) {
         setErrorMsg("Please enter a primary contact phone number.");
-        setCurrentStep(1);
+        setCurrentStep(2);
         return;
       }
     }
@@ -93,6 +97,10 @@ export default function NewCustomerPage() {
 
   const handleNextStep = () => {
     if (currentStep === 1) {
+      setErrorMsg("");
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 2) {
       if (!form.fullName.trim()) {
         setErrorMsg("Please enter customer's full legal name.");
         return;
@@ -105,10 +113,6 @@ export default function NewCustomerPage() {
         setErrorMsg("Please enter a primary contact phone number.");
         return;
       }
-      setErrorMsg("");
-      setCurrentStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (currentStep === 2) {
       setErrorMsg("");
       setCurrentStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -356,17 +360,17 @@ export default function NewCustomerPage() {
 
     if (!form.fullName.trim()) {
       setErrorMsg("Please enter customer's full legal name.");
-      setCurrentStep(1);
+      setCurrentStep(2);
       return;
     }
     if (!form.nic.trim()) {
       setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
-      setCurrentStep(1);
+      setCurrentStep(2);
       return;
     }
     if (!form.phone.trim()) {
       setErrorMsg("Please enter a primary contact phone number.");
-      setCurrentStep(1);
+      setCurrentStep(2);
       return;
     }
 
@@ -522,25 +526,19 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-8 max-w-5xl mx-auto space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Link
-            href="/customers"
-            className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 shadow-xs transition active:scale-95 cursor-pointer"
-            title="Back"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Customer Registration
-          </h1>
-        </div>
-        <div className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200/80 text-xs font-bold shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-          <span>Step {currentStep} of 4</span>
-        </div>
+      <div className="space-y-3">
+        <Link
+          href="/customers"
+          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-red-600 hover:bg-slate-50 shadow-xs transition"
+          title="Back"
+        >
+          <ArrowLeft size={18} />
+        </Link>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          Customer Registration
+        </h1>
       </div>
 
       {submitted && (
@@ -553,41 +551,38 @@ export default function NewCustomerPage() {
       )}
 
       {errorMsg && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold flex items-center gap-2 shadow-2xs animate-fade-in">
-          <AlertTriangle size={16} className="shrink-0 text-red-600" />
-          <span>{errorMsg}</span>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold">
+          {errorMsg}
         </div>
       )}
 
       {/* ── MULTI-STEP PROGRESS STEPPER ── */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-xs">
-        <div className="flex items-center justify-between max-w-sm sm:max-w-md mx-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+        <div className="flex items-center justify-between max-w-md mx-auto">
           {[1, 2, 3, 4].map((stepNum, idx) => {
             const isActive = currentStep === stepNum;
             const isCompleted = currentStep > stepNum;
             return (
               <React.Fragment key={stepNum}>
                 {idx > 0 && (
-                  <div className="flex-1 h-1 mx-2 sm:mx-3 rounded-full overflow-hidden bg-slate-100">
-                    <div
-                      className={`h-full transition-all duration-300 ${
-                        isCompleted ? "bg-red-600" : "bg-transparent"
-                      }`}
-                    />
-                  </div>
+                  <div
+                    className={`flex-1 h-0.5 mx-2 rounded-full transition-colors ${
+                      isCompleted ? "bg-red-600" : "bg-slate-200"
+                    }`}
+                  />
                 )}
                 <button
                   type="button"
                   onClick={() => goToStep(stepNum)}
-                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-all cursor-pointer ${
                     isActive
-                      ? "bg-red-600 text-white shadow-md shadow-red-500/25 ring-4 ring-red-100 scale-105"
+                      ? "bg-red-600 text-white shadow-md shadow-red-600/20 ring-4 ring-red-100"
                       : isCompleted
-                      ? "bg-slate-900 text-white hover:bg-slate-800"
+                      ? "bg-slate-900 text-white"
                       : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
                   }`}
                 >
-                  {isCompleted ? <Check size={16} strokeWidth={3} /> : stepNum}
+                  {stepNum}
                 </button>
               </React.Fragment>
             );
@@ -596,148 +591,202 @@ export default function NewCustomerPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-        {/* ── STEP 1: IDENTITY & PHOTOGRAPH ── */}
+        {/* ── STEP 1: PHOTO & BIOMETRIC VERIFICATION ── */}
         {currentStep === 1 && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 shadow-2xs">
-                  <UserCheck size={20} />
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+              {/* Card Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shadow-2xs">
+                    <Camera size={20} />
+                  </div>
+                  <h2 className="text-base font-black text-slate-900 tracking-tight">
+                    Customer Photograph
+                  </h2>
                 </div>
-                <h2 className="text-base font-black text-slate-900 tracking-tight">
-                  Customer Identity &amp; Photograph
-                </h2>
+                {form.photoUrl ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                    <CheckCircle2 size={13} /> Photo Uploaded
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                    <Sparkles size={13} /> Portrait Studio
+                  </span>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Photograph Studio Column */}
-                <div className="lg:col-span-4 flex flex-col items-center p-6 rounded-2xl bg-gradient-to-b from-slate-50 to-white border border-slate-200/80 shadow-2xs text-center space-y-4">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                    <Camera size={14} className="text-red-600" />
-                    Portrait Photo
-                  </span>
+              {/* 2-Column Responsive Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                {/* Left: Viewfinder & Upload Box */}
+                <div className="lg:col-span-7 flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-slate-50/70 via-white to-slate-50/40 border border-slate-200/80 shadow-2xs space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                        <Camera size={14} className="text-red-600" />
+                        Biometric Viewfinder
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-500">
+                        Max 5MB (JPG, PNG, WEBP)
+                      </span>
+                    </div>
 
-                  {/* Avatar Display */}
-                  <div className="relative group">
-                    {form.photoUrl ? (
-                      <div className="relative">
-                        <img
-                          src={form.photoUrl}
-                          alt="Customer Portrait"
-                          className="w-32 h-32 rounded-3xl object-cover border-2 border-red-500 shadow-md ring-4 ring-red-50 transition-transform group-hover:scale-[1.02]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
-                          className="absolute -top-2 -right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md cursor-pointer transition active:scale-90"
-                          title="Remove photo"
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-32 h-32 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 group-hover:border-red-400 group-hover:bg-red-50/20 transition-all shadow-inner">
-                        <Camera size={34} className="text-slate-400 group-hover:text-red-500 transition-colors mb-1" />
-                        <span className="text-[11px] font-bold text-slate-500">Add Photo</span>
-                      </div>
-                    )}
+                    {/* Viewfinder frame */}
+                    <div className="relative group w-full py-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 hover:border-red-400 bg-white/80 transition-all">
+                      {form.photoUrl ? (
+                        <div className="relative flex flex-col items-center">
+                          <img
+                            src={form.photoUrl}
+                            alt="Customer Portrait Preview"
+                            className="w-40 h-40 sm:w-48 sm:h-48 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-red-500/20"
+                          />
+                          <div className="flex items-center gap-2 mt-4">
+                            <label className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
+                              <Upload size={14} />
+                              <span>Change Photo</span>
+                              <input
+                                type="file"
+                                accept="image/png, image/jpeg, image/webp"
+                                onChange={handlePhotoUpload}
+                                className="hidden"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-xl transition cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                              <span>Remove</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center text-center px-4 py-4 space-y-3">
+                          {/* Corner Focus Brackets Visual */}
+                          <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shadow-inner group-hover:scale-105 group-hover:border-red-300 transition-all">
+                            <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-red-500 rounded-tl-sm" />
+                            <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-red-500 rounded-tr-sm" />
+                            <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-red-500 rounded-bl-sm" />
+                            <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-red-500 rounded-br-sm" />
+                            <Camera size={40} className="text-slate-400 group-hover:text-red-500 transition-colors" />
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-slate-800">
+                              Attach Recent Borrower Portrait
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              Click the button below to upload photograph
+                            </p>
+                          </div>
+
+                          <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition cursor-pointer">
+                            <Upload size={14} />
+                            <span>Upload Customer Photo</span>
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg, image/webp"
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Upload Trigger Button */}
-                  <label className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer">
-                    <Upload size={14} />
-                    <span>{form.photoUrl ? "Change Photo" : "Upload Photo"}</span>
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {form.photoUrl ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                      <CheckCircle2 size={12} /> Ready
-                    </span>
-                  ) : (
-                    <span className="text-[11px] text-slate-400 font-medium">
-                      JPG, PNG or WEBP
-                    </span>
-                  )}
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200/60 font-medium">
+                    <span>Facial Verification Dossier</span>
+                    <span className="font-semibold text-slate-700">PNG, JPG or WEBP</span>
+                  </div>
                 </div>
 
-                {/* Core Details Column */}
-                <div className="lg:col-span-8 space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-800">
-                      Full Legal Name <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      autoComplete="off"
-                      required
-                      placeholder="e.g. Sunil Perera"
-                      value={form.fullName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-2xs font-bold transition"
-                    />
-                  </div>
+                {/* Right: Digital Member Card Mockup & Quality Tips */}
+                <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
+                  {/* Digital Dossier Badge Mockup */}
+                  <div className="p-5 rounded-3xl bg-slate-900 text-white shadow-md relative overflow-hidden space-y-4">
+                    {/* Background geometric flare */}
+                    <div className="absolute -right-8 -top-8 w-28 h-28 bg-red-600/20 rounded-full blur-xl pointer-events-none" />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-800">
-                        National Identity Card (NIC) <span className="text-red-600">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="nic"
-                        autoComplete="off"
-                        required
-                        placeholder="e.g. 198512345678 or 851234567V"
-                        value={form.nic}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-2xs font-mono font-bold uppercase transition"
-                      />
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Shield size={16} className="text-red-500" />
+                        <span className="text-[11px] font-black tracking-wider uppercase text-slate-300">
+                          Borrower Dossier
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] font-bold text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-800/40">
+                        {customerId}
+                      </span>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-800">
-                        Contact Number <span className="text-red-600">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        autoComplete="off"
-                        required
-                        placeholder="e.g. 077 123 4567"
-                        value={form.phone}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-2xs font-bold transition"
-                      />
+                    <div className="flex items-center gap-4">
+                      {form.photoUrl ? (
+                        <img
+                          src={form.photoUrl}
+                          alt=""
+                          className="w-16 h-16 rounded-2xl object-cover border-2 border-red-500 shadow-md shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 shrink-0">
+                          <Camera size={22} className="text-slate-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">
+                          Profile Preview
+                        </p>
+                        <h4 className="text-xs font-black text-white truncate">
+                          {form.fullName || "New Customer"}
+                        </h4>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/50">
+                          {form.photoUrl ? "Photo Attached" : "Pending Photo"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 pt-1">
-                    <label className="text-xs font-bold text-slate-800">Gender</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(["Male", "Female", "Other"] as const).map((g) => {
-                        const isSelected = form.gender === g;
-                        return (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => setForm((prev) => ({ ...prev, gender: g }))}
-                            className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-red-600 text-white border-red-600 shadow-xs ring-2 ring-red-200"
-                                : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
-                            }`}
-                          >
-                            {g}
-                          </button>
-                        );
-                      })}
+                  {/* Photo Quality Guidelines (3 Cards) */}
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 px-1">
+                      Photograph Guidelines
+                    </p>
+
+                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3 shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                        <Eye size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Clear &amp; Front-Facing</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Look directly at the camera with full face visible.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3 shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                        <Sun size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Even Lighting</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Ensure bright, uniform light with no harsh shadows.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3 shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                        <Shield size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">No Face Coverings</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Remove tinted glasses or caps that obscure features.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -764,21 +813,68 @@ export default function NewCustomerPage() {
           </div>
         )}
 
-        {/* ── STEP 2: RESIDENTIAL & EMERGENCY CONTACT ── */}
+        {/* ── STEP 2: CUSTOMER DETAILS (PERSONAL DETAILS & EMERGENCY CONTACT) ── */}
         {currentStep === 2 && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. RESIDENTIAL & CONTACT DETAILS */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shadow-2xs shrink-0">
+            {/* 1. PERSONAL DETAILS */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                   <UserCheck size={18} />
                 </div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Residential &amp; Additional Information
-                </h2>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Personal Details
+                  </h2>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Full Legal Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    autoComplete="off"
+                    required
+                    value={form.fullName}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    National Identity Card (NIC) <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nic"
+                    autoComplete="off"
+                    required
+                    value={form.nic}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Gender</label>
+                  <select
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800">Date of Birth (DOB)</label>
                   <input
@@ -792,90 +888,68 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Contact Number <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    autoComplete="off"
+                    required
+                    value={form.phone}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-800">Email Address (Optional)</label>
                   <input
                     type="email"
                     name="email"
                     autoComplete="off"
-                    placeholder="e.g. sunil@example.com"
                     value={form.email}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
 
-                <div className="sm:col-span-2 space-y-1.5">
+                <div className="sm:col-span-2 lg:col-span-4 space-y-1.5">
                   <label className="text-xs font-bold text-slate-800">
-                    Residential Address
+                    Address
                   </label>
                   <input
                     type="text"
                     name="address"
                     autoComplete="off"
-                    placeholder="e.g. No. 45, Temple Road"
                     value={form.address}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   />
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Village / Town</label>
-                  <input
-                    type="text"
-                    name="town"
-                    autoComplete="off"
-                    placeholder="e.g. Nugegoda"
-                    value={form.town}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">District</label>
-                  <select
-                    name="district"
-                    value={form.district}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                  >
-                    <option value="">Select District</option>
-                    {[
-                      "Colombo", "Gampaha", "Kalutara", "Kandy", "Matale", "Nuwara Eliya",
-                      "Galle", "Matara", "Hambantota", "Jaffna", "Kilinochchi", "Mannar",
-                      "Vavuniya", "Mullaitivu", "Batticaloa", "Ampara", "Trincomalee",
-                      "Kurunegala", "Puttalam", "Anuradhapura", "Polonnaruwa", "Badulla",
-                      "Monaragala", "Ratnapura", "Kegalle"
-                    ].map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </div>
 
             {/* 2. EMERGENCY CONTACT */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shadow-2xs shrink-0">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                   <Phone size={18} />
                 </div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Emergency Contact
-                </h2>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Emergency Contact
+                  </h2>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Contact Person Name</label>
+                  <label className="text-xs font-bold text-slate-800">Emergency Contact Person Name</label>
                   <input
                     type="text"
                     name="emergencyContactName"
                     autoComplete="off"
-                    placeholder="e.g. Kamala Perera"
                     value={form.emergencyContactName}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -883,12 +957,11 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Contact Phone Number</label>
+                  <label className="text-xs font-bold text-slate-800">Emergency Contact Phone Number</label>
                   <input
                     type="tel"
                     name="emergencyContactPhone"
                     autoComplete="off"
-                    placeholder="e.g. 071 987 6543"
                     value={form.emergencyContactPhone}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -896,7 +969,7 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Relationship</label>
+                  <label className="text-xs font-bold text-slate-800">Emergency Relationship</label>
                   <select
                     name="emergencyContactRelationship"
                     value={form.emergencyContactRelationship}
@@ -928,7 +1001,7 @@ export default function NewCustomerPage() {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
                 <span>Next</span>
                 <ArrowRight size={15} />
