@@ -9,6 +9,8 @@ import {
   Receipt,
   CreditCard,
   ArrowRight,
+  TrendingUp,
+  X,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -72,7 +74,7 @@ export default function RepaymentsCollectionsPage() {
   const totalInterestCollected = payments
     .filter((p) => p.type === "Interest")
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const completedLoansCount = loans.filter((l) => l.status === "Completed").length;
+  const completedLoansCount = loans.filter((l) => (l.status || "").toLowerCase() === "completed").length;
 
   const handleRecordRepayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,8 +99,8 @@ export default function RepaymentsCollectionsPage() {
 
     const completionMsg =
       willSettleLoan
-        ? ` Repayment recorded successfully. Loan ${selectedLoan.loanNo || selectedLoan.id} is now fully SETTLED and status has been updated to COMPLETED!`
-        : ` Repayment of ${MONEY(numEnteredAmount)} recorded successfully!`;
+        ? `Repayment recorded successfully. Loan ${selectedLoan.loanNo || selectedLoan.id} is now fully SETTLED and status has been updated to COMPLETED!`
+        : `Repayment of ${MONEY(numEnteredAmount)} recorded successfully!`;
 
     setNotificationMsg(completionMsg);
     setAmount("");
@@ -109,450 +111,458 @@ export default function RepaymentsCollectionsPage() {
     }, 6000);
   };
 
-  const handlePrintReceipt = () => {
-    window.print();
-  };
-
   // Filtered Payments for Ledger
-  const filteredPayments = payments.filter((p) => {
-    const loan = loans.find((l) => l.id === p.loanId);
-    const cust = customers.find((c) => c.id === p.customerId);
-    const searchLower = searchTerm.toLowerCase();
+  const filteredPayments = useMemo(() => {
+    return payments.filter((p) => {
+      const loan = loans.find((l) => l.id === p.loanId);
+      const cust = customers.find((c) => c.id === p.customerId);
+      const searchLower = searchTerm.toLowerCase();
 
-    const matchesSearch =
-      (p.id || "").toLowerCase().includes(searchLower) ||
-      (p.receiptNo || "").toLowerCase().includes(searchLower) ||
-      (p.loanId || "").toLowerCase().includes(searchLower) ||
-      (loan?.loanNo || "").toLowerCase().includes(searchLower) ||
-      (cust?.name || "").toLowerCase().includes(searchLower);
+      const matchesSearch =
+        !searchTerm ||
+        (p.receiptNo || "").toLowerCase().includes(searchLower) ||
+        (p.id || "").toLowerCase().includes(searchLower) ||
+        (cust?.name || "").toLowerCase().includes(searchLower) ||
+        (loan?.loanNo || "").toLowerCase().includes(searchLower) ||
+        (p.notes || "").toLowerCase().includes(searchLower);
 
-    const matchesType = typeFilter === "ALL" || p.type === typeFilter;
-    return matchesSearch && matchesType;
-  });
+      const matchesType = typeFilter === "ALL" || p.type === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [payments, loans, customers, searchTerm, typeFilter]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
-            COLLECTIONS / REPAYMENTS MODULE
-          </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-            Repayment & Collections Terminal
-          </h1>
-          <p className="text-xs text-slate-500">
-            Record loan recoveries separated by Capital, Interest, and Other fees with automated status settlement.
-          </p>
-        </div>
-        <Link
-          href="/reports"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-xs transition"
-        >
-          View Collection Reports <ArrowRight size={14} />
-        </Link>
-      </div>
-
-      {notificationMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in">
-          <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-          <span>{notificationMsg}</span>
-        </div>
-      )}
-
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Total Inflows
-            </p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
-              {MONEY(totalCollectionsAllTime)}
-            </h3>
-            <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-              {payments.length} transactions recorded
-            </p>
+    <main className="min-h-screen bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3">
+        {/* ═══ Action Bar & Notification ═════════════════════════════════════ */}
+        {notificationMsg && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in shadow-xs">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+              <span>{notificationMsg}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNotificationMsg("")}
+              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer"
+            >
+              <X size={14} />
+            </button>
           </div>
-          <div className="p-3 bg-red-50 text-red-600 rounded-xl">
-            <Banknote size={22} />
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest bg-red-50 border border-red-200/60 px-2 py-0.5 rounded-md">
+              Collections Terminal
+            </span>
+            <span className="text-xs text-slate-500 font-semibold hidden sm:inline">
+              Record recoveries & generate receipts
+            </span>
           </div>
+
+          <Link
+            href="/reports"
+            className="inline-flex items-center gap-1.5 px-3 h-8 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-2xs transition"
+          >
+            <span>Reports</span>
+            <ArrowRight size={13} />
+          </Link>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Capital Recovered
-            </p>
-            <h3 className="text-2xl font-black text-emerald-700 mt-1">
-              {MONEY(totalCapitalRepaid)}
-            </h3>
-            <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
-              Principal reductions
-            </p>
-          </div>
-          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
-            <CreditCard size={22} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Interest Earned
-            </p>
-            <h3 className="text-2xl font-black text-purple-700 mt-1">
-              {MONEY(totalInterestCollected)}
-            </h3>
-            <p className="text-[11px] text-purple-800 font-semibold mt-0.5">
-              Gross interest recognized
-            </p>
-          </div>
-          <div className="p-3 bg-purple-50 text-purple-700 rounded-xl">
-            <Receipt size={22} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Settled Loans
-            </p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
-              {completedLoansCount}
-            </h3>
-            <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-              100% paid off contracts
-            </p>
-          </div>
-          <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
-            <CheckCircle2 size={22} />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Repayment Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Active Loan Selector & Repayment Form */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                1. Select Loan & Enter Payment Breakdown
-              </h2>
-              <p className="text-xs text-slate-600 font-medium mt-0.5">
-                Choose the contract and record repayment categorized by financial component.
+        {/* ═══ Summary Cards (Customer Theme Micro KPIs) ═════════════════════ */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+              <Banknote size={16} className="text-red-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                Total Inflows
+              </p>
+              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+                {MONEY(totalCollectionsAllTime)}
+              </p>
+              <p className="text-[10px] text-slate-500 font-medium truncate">
+                {payments.length} transactions
               </p>
             </div>
+          </div>
 
-            <form onSubmit={handleRecordRepayment} className="space-y-5">
-              {/* Loan Dropdown */}
-              <div>
-                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                  Choose Loan Contract *
-                </label>
-                <select
-                  value={selectedLoanId}
-                  onChange={(e) => setSelectedLoanId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  {loans.map((l) => {
-                    const c = customers.find((cust) => cust.id === l.customerId);
-                    return (
-                      <option key={l.id} value={l.id}>
-                        {l.loanNo || l.id} — {c?.name || l.customerName || "Customer"} (
-                        {l.status} · Principal: {MONEY(l.principal || l.amount || 0)})
-                      </option>
-                    );
-                  })}
-                </select>
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+              <CreditCard size={16} className="text-emerald-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                Capital Recovered
+              </p>
+              <p className="text-lg sm:text-xl font-black font-mono text-emerald-600 leading-tight">
+                {MONEY(totalCapitalRepaid)}
+              </p>
+              <p className="text-[10px] text-emerald-700 font-semibold truncate">
+                Principal recovered
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+              <Receipt size={16} className="text-purple-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                Interest Earned
+              </p>
+              <p className="text-lg sm:text-xl font-black font-mono text-purple-700 leading-tight">
+                {MONEY(totalInterestCollected)}
+              </p>
+              <p className="text-[10px] text-purple-700 font-medium truncate">
+                Gross revenue
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+              <CheckCircle2 size={16} className="text-amber-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                Settled Facilities
+              </p>
+              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+                {completedLoansCount}
+              </p>
+              <p className="text-[10px] text-slate-500 font-medium truncate">
+                100% paid off contracts
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ Main Repayment Workspace ══════════════════════════════════════ */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Left 2 Cols: Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                    Post Repayment Entry
+                  </h2>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Select active credit contract and log remittance
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                  POS TERMINAL
+                </span>
               </div>
 
-              {/* Payment Type Tabs */}
-              <div>
-                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                  Repayment Categorization Type *
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(["Capital", "Interest", "Other"] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setPaymentType(t)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-                        paymentType === t
-                          ? "bg-red-600 text-white shadow-md shadow-red-600/20 border-2 border-red-600"
-                          : "bg-white text-slate-800 border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400"
-                      }`}
-                    >
-                      <span>
-                        {t === "Capital" ? "💳" : t === "Interest" ? "📈" : "⚖️"}
-                      </span>
-                      <span>{t} Payment</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-600 font-medium mt-1.5">
-                  {paymentType === "Capital"
-                    ? "Deducts directly from principal borrowed."
-                    : paymentType === "Interest"
-                    ? "Records interest service payment."
-                    : "Records document fees, late charges, or other administrative penalties."}
-                </p>
-              </div>
-
-              {/* Amount, Method, Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <form onSubmit={handleRecordRepayment} className="space-y-3.5">
+                {/* Loan Dropdown */}
                 <div>
-                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                    Amount (LKR) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    autoComplete="off"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                    Payment Method
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    Select Loan Contract *
                   </label>
                   <select
-                    value={paymentMethod}
-                    onChange={(e) =>
-                      setPaymentMethod(
-                        e.target.value as "Cash" | "Bank Transfer" | "Cheque"
-                      )
-                    }
-                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    value={selectedLoanId}
+                    onChange={(e) => setSelectedLoanId(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
                   >
-                    <option value="Cash">Cash On Hand</option>
-                    <option value="Bank Transfer">Bank Transfer / Deposit</option>
-                    <option value="Cheque">Bank Cheque</option>
+                    {loans.map((l) => {
+                      const c = customers.find((cust) => cust.id === l.customerId);
+                      return (
+                        <option key={l.id} value={l.id}>
+                          {l.loanNo || l.id} — {c?.name || l.customerName || "Customer"} (
+                          {l.status} · Principal: {MONEY(l.principal || l.amount || 0)})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
+                {/* Payment Type Tabs */}
                 <div>
-                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                    Collection Date
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    Payment Classification *
                   </label>
-                  <input
-                    type="date"
-                    required
-                    autoComplete="off"
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["Capital", "Interest", "Other"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setPaymentType(t)}
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                          paymentType === t
+                            ? "bg-red-600 text-white shadow-xs"
+                            : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span>
+                          {t === "Capital" ? "💳" : t === "Interest" ? "📈" : "⚖️"}
+                        </span>
+                        <span>{t}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Notes & Staff Collector */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Amount, Method, Date */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                      Amount (LKR) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      autoComplete="off"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                      Payment Method
+                    </label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) =>
+                        setPaymentMethod(
+                          e.target.value as "Cash" | "Bank Transfer" | "Cheque"
+                        )
+                      }
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                    >
+                      <option value="Cash">Cash On Hand</option>
+                      <option value="Bank Transfer">Bank Transfer / Deposit</option>
+                      <option value="Cheque">Bank Cheque</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                      Collection Date
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      autoComplete="off"
+                      value={paymentDate}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes & Staff Collector */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                      Collection Officer
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      value={collectedBy}
+                      onChange={(e) => setCollectedBy(e.target.value)}
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                      Reference / Cashier Notes
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      placeholder="Optional notes or receipt ref"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Real-time settlement banner */}
+                {willSettleLoan && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800 text-xs font-bold">
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <span>
+                      🎉 This payment settles this loan in full! Status will update to COMPLETED.
+                    </span>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={!selectedLoan || numEnteredAmount <= 0}
+                    className={`inline-flex items-center gap-1.5 px-4 h-9 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
+                      !selectedLoan || numEnteredAmount <= 0
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                        : "bg-red-600 hover:bg-red-500 active:bg-red-700 text-white shadow-xs"
+                    }`}
+                  >
+                    <Receipt size={14} /> Record Repayment
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Right Col: Live Loan Financial Ledger & Balance Due Breakdown */}
+          <div>
+            <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                 <div>
-                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                    Collection Officer
-                  </label>
-                  <input
-                    type="text"
-                    autoComplete="off"
-                    value={collectedBy}
-                    onChange={(e) => setCollectedBy(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
+                  <h3 className="font-extrabold text-xs tracking-wider text-slate-300 uppercase">
+                    Contract Position
+                  </h3>
+                  <p className="text-sm font-bold text-white font-mono mt-0.5">
+                    {selectedLoan?.loanNo || selectedLoan?.id || "No Loan"}
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wide mb-1.5">
-                    Reference / Cashier Notes
-                  </label>
-                  <input
-                    type="text"
-                    autoComplete="off"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-              </div>
-
-              {/* Real-time settlement banner */}
-              {willSettleLoan && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold">
-                  <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                  <span>
-                    🎉 This payment will settle the loan in full! Loan status will automatically transition from Active to COMPLETED upon submission.
-                  </span>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={!selectedLoan || numEnteredAmount <= 0}
-                  className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 ${
-                    !selectedLoan || numEnteredAmount <= 0
-                      ? "bg-slate-200 text-slate-500 border-2 border-slate-300 cursor-not-allowed shadow-none"
-                      : "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 cursor-pointer hover:scale-[1.01]"
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    (selectedLoan?.status || "").toLowerCase() === "completed"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                      : (selectedLoan?.status || "").toLowerCase() === "overdue"
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                      : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                   }`}
                 >
-                  <Receipt size={16} /> Record Repayment & Generate Receipt
-                </button>
+                  {selectedLoan?.status || "PENDING"}
+                </span>
               </div>
-            </form>
-          </div>
-        </div>
 
-        {/* Right Col: Live Loan Financial Ledger & Balance Due Breakdown */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-black via-[#1c0307] to-[#36050e] border-2 border-red-950 text-white p-6 rounded-2xl shadow-xl space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div>
-                <h3 className="font-extrabold text-base tracking-wide text-white">
-                  Live Contract Balance
-                </h3>
-                <p className="text-xs text-slate-300 font-mono mt-0.5">
-                  {selectedLoan?.loanNo || selectedLoan?.id}
-                </p>
-              </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                  selectedLoan?.status.toLowerCase() === "completed"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                    : selectedLoan?.status.toLowerCase() === "overdue"
-                    ? "bg-red-500/20 text-red-300 border border-red-500/40"
-                    : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                }`}
-              >
-                {selectedLoan?.status}
-              </span>
-            </div>
-
-            {selectedCustomer && (
-              <div className="flex items-center gap-3 p-3.5 bg-zinc-900/90 border border-zinc-700 rounded-xl text-xs">
-                <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                  {selectedCustomer.name.slice(0, 2).toUpperCase()}
+              {selectedCustomer && (
+                <div className="flex items-center gap-2.5 p-2.5 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs">
+                  <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                    {selectedCustomer.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-white text-xs truncate">{selectedCustomer.name}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">NIC: {selectedCustomer.nic}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-white text-sm">{selectedCustomer.name}</p>
-                  <p className="text-xs text-zinc-300 font-semibold">NIC: {selectedCustomer.nic}</p>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Balances List */}
-            <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
-                <span className="text-slate-300 font-bold">Loan Amount</span>
-                <span className="font-bold text-white text-sm">
-                  {MONEY(selectedLoan?.principal || selectedLoan?.amount || 0)}
-                </span>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
-                <span className="text-slate-300 font-bold">Total Repayment Due</span>
-                <span className="font-bold text-white text-sm">
-                  {MONEY(selectedLoan?.totalRepayment || 0)}
-                </span>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
-                <span className="text-slate-300 font-bold">Total Paid So Far</span>
-                <span className="font-black text-emerald-300 text-sm">
-                  {MONEY(totalPaid)}
-                </span>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-zinc-800/80">
-                <span className="text-slate-200 font-bold">Current Balance Due</span>
-                <span className="font-black text-amber-300 text-base">
-                  {MONEY(balanceDue)}
-                </span>
-              </div>
-
-              {numEnteredAmount > 0 && (
-                <div className="flex justify-between py-2 px-3.5 bg-red-950/80 rounded-xl border-2 border-red-600/60 mt-3 shadow-md">
-                  <span className="text-rose-200 font-bold">After Payment</span>
-                  <span className="font-black text-white text-base">
-                    {MONEY(newBalanceAfter)}
+              {/* Balances List */}
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-slate-800 text-[11px]">
+                  <span className="text-slate-400 font-medium">Principal Borrowed</span>
+                  <span className="font-bold text-white font-mono">
+                    {MONEY(selectedLoan?.principal || selectedLoan?.amount || 0)}
                   </span>
+                </div>
+
+                <div className="flex justify-between py-1 border-b border-slate-800 text-[11px]">
+                  <span className="text-slate-400 font-medium">Total Agreed Repayable</span>
+                  <span className="font-bold text-white font-mono">
+                    {MONEY(selectedLoan?.totalRepayment || 0)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-1 border-b border-slate-800 text-[11px]">
+                  <span className="text-slate-400 font-medium">Total Settled to Date</span>
+                  <span className="font-black text-emerald-400 font-mono">
+                    {MONEY(totalPaid)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-1.5 border-b border-slate-800">
+                  <span className="text-slate-200 font-bold text-xs">Current Balance Due</span>
+                  <span className="font-black text-amber-400 text-sm font-mono">
+                    {MONEY(balanceDue)}
+                  </span>
+                </div>
+
+                {numEnteredAmount > 0 && (
+                  <div className="flex justify-between py-1.5 px-3 bg-red-950/60 rounded-xl border border-red-800/60 mt-2">
+                    <span className="text-rose-300 font-semibold text-xs">New Balance After</span>
+                    <span className="font-black text-white text-xs font-mono">
+                      {MONEY(newBalanceAfter)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Repayment Progress Bar */}
+              {selectedLoan && (
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                    <span>Settlement Ratio</span>
+                    <span className="font-bold text-white">
+                      {selectedLoan.totalRepayment > 0
+                        ? Math.min(100, Math.round((totalPaid / selectedLoan.totalRepayment) * 100))
+                        : 0}
+                      %
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                    <div
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${
+                          selectedLoan.totalRepayment > 0
+                            ? Math.min(100, (totalPaid / selectedLoan.totalRepayment) * 100)
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* Repayment Progress Bar */}
-            {selectedLoan && (
-              <div className="space-y-1.5 pt-2">
-                <div className="flex justify-between text-xs text-slate-300 font-bold">
-                  <span>Recovery Progress</span>
-                  <span className="font-black text-white">
-                    {selectedLoan.totalRepayment > 0
-                      ? Math.min(100, Math.round((totalPaid / selectedLoan.totalRepayment) * 100))
-                      : 0}
-                    %
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-zinc-700">
-                  <div
-                    className="bg-emerald-500 h-full rounded-full transition-all duration-300 shadow-sm"
-                    style={{
-                      width: `${
-                        selectedLoan.totalRepayment > 0
-                          ? Math.min(100, (totalPaid / selectedLoan.totalRepayment) * 100)
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </div>
 
-      {/* COLLECTIONS JOURNAL & LEDGER TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <h3 className="text-base font-black text-slate-900">
-              Collections Journal & Receipts History
-            </h3>
-            <p className="text-xs text-slate-600 font-medium mt-0.5">
-              Complete historical record of incoming repayments and field collections.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-64">
+        {/* ═══ Collections Journal & Ledger Table (Customer Theme) ═══════════ */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          {/* Table Header Filter Bar */}
+          <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            <div className="relative flex-1 sm:max-w-md">
               <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
               />
               <input
                 type="text"
-                placeholder="Search receipt, loan, borrower..."
+                placeholder="Search receipt, loan, borrower, or notes…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
 
-            <div className="flex gap-1.5">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
               {(["ALL", "Capital", "Interest", "Other"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setTypeFilter(t)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  className={`h-9 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
                     typeFilter === t
-                      ? "bg-red-600 text-white font-black shadow-xs border-2 border-red-600"
-                      : "bg-white text-slate-800 border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400 font-bold"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   {t}
@@ -560,84 +570,90 @@ export default function RepaymentsCollectionsPage() {
               ))}
             </div>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-100 border-b-2 border-slate-300 text-xs text-slate-800 font-black uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">Receipt / Payment ID</th>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Borrower & Loan</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Method</th>
-                <th className="py-3 px-4">Collected By</th>
-                <th className="py-3 px-4 text-right">Amount</th>
-                <th className="py-3 px-4 text-right">Receipt</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-slate-700">
-              {filteredPayments.map((p) => {
-                const loan = loans.find((l) => l.id === p.loanId);
-                const cust = customers.find((c) => c.id === p.customerId);
-                return (
-                  <tr key={p.id} className="hover:bg-slate-50 transition text-xs">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                      {p.receiptNo || p.id}
-                    </td>
-                    <td className="py-3 px-4 text-slate-700 font-semibold">{p.date}</td>
-                    <td className="py-3 px-4">
-                      <div>
-                        <span className="font-bold text-slate-900 block">
-                          {cust?.name || "Customer"}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+                <tr>
+                  <th className="py-3 px-5">Receipt / Payment ID</th>
+                  <th className="py-3 px-5">Date</th>
+                  <th className="py-3 px-5">Borrower & Loan</th>
+                  <th className="py-3 px-5">Type</th>
+                  <th className="py-3 px-5">Method</th>
+                  <th className="py-3 px-5">Collected By</th>
+                  <th className="py-3 px-5 text-right">Amount</th>
+                  <th className="py-3 px-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredPayments.map((p) => {
+                  const loan = loans.find((l) => l.id === p.loanId);
+                  const cust = customers.find((c) => c.id === p.customerId);
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-5">
+                        <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                          {p.receiptNo || p.id}
                         </span>
-                        <span className="text-[11px] text-slate-600 font-mono font-bold">
-                          {loan?.loanNo || p.loanId}
+                      </td>
+                      <td className="py-3 px-5 text-xs text-slate-600 font-medium">
+                        {p.date}
+                      </td>
+                      <td className="py-3 px-5">
+                        <div>
+                          <span className="font-bold text-slate-900 text-xs block">
+                            {cust?.name || "Customer"}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {loan?.loanNo || p.loanId}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            p.type === "Capital"
+                              ? "bg-blue-100 text-blue-800"
+                              : p.type === "Interest"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
+                          {p.type}
                         </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                          p.type === "Capital"
-                            ? "bg-red-100 text-red-800 border border-red-300"
-                            : p.type === "Interest"
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                            : "bg-purple-100 text-purple-800 border border-purple-300"
-                        }`}
-                      >
-                        {p.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-800 font-semibold">{p.method || "Cash"}</td>
-                    <td className="py-3 px-4 text-slate-800 font-semibold">
-                      {p.collectedBy || "Admin Officer"}
-                    </td>
-                    <td className="py-3 px-4 text-right font-black text-slate-900 text-sm">
-                      {MONEY(p.amount)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setActiveReceipt(p)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shadow-xs"
-                        title="View & Print Official Receipt"
-                      >
-                        <Receipt size={13} className="text-white shrink-0" />
-                        <span className="text-white font-bold">Receipt</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="py-3 px-5 text-xs text-slate-700 font-medium">
+                        {p.method || "Cash"}
+                      </td>
+                      <td className="py-3 px-5 text-xs text-slate-600">
+                        {p.collectedBy || "Admin Officer"}
+                      </td>
+                      <td className="py-3 px-5 text-right font-black font-mono text-slate-900 text-xs">
+                        {MONEY(p.amount)}
+                      </td>
+                      <td className="py-3 px-5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setActiveReceipt(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/60 rounded-lg transition cursor-pointer"
+                          title="View & Print Official Receipt"
+                        >
+                          <Receipt size={12} className="text-red-600 shrink-0" />
+                          <span>Receipt</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-          {filteredPayments.length === 0 && (
-            <div className="p-8 text-center text-slate-600 font-bold text-xs">
-              No repayment transactions match the filter criteria.
-            </div>
-          )}
+            {filteredPayments.length === 0 && (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                No repayment transactions match the filter criteria.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -650,6 +666,6 @@ export default function RepaymentsCollectionsPage() {
           loan={selectedLoan}
         />
       )}
-    </div>
+    </main>
   );
 }
