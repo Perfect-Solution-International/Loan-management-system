@@ -894,53 +894,53 @@ export function NewLoanForm({
 
       {/* ── STEP 3: CONFIGURE LOAN DETAILS ─────────────────────────────────── */}
       {step === "form" && selectedCustomer && (
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+        <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off">
           {/* Selected Borrower Mini Banner */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
               {selectedCustomer.photoUrl ? (
                 <img
                   src={selectedCustomer.photoUrl}
                   alt={selectedCustomer.name}
-                  className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
+                  className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-red-100 text-red-700 font-bold text-base flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
                   {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
                 </div>
               )}
-              <div>
-                <p className="text-sm font-black text-slate-900">{selectedCustomer.fullName || selectedCustomer.name}</p>
-                <p className="text-xs text-slate-500 font-mono">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-black text-slate-900 truncate">{selectedCustomer.fullName || selectedCustomer.name}</p>
+                <p className="text-[11px] text-slate-500 font-mono truncate">
                   NIC: <strong className="text-slate-800">{selectedCustomer.nic}</strong> · {selectedCustomer.phone} ·{" "}
                   {selectedCustomer.town || "Sri Lanka"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setStep("review")}
-                className="px-3.5 py-1.5 text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-xl transition cursor-pointer shadow-2xs"
+                className="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition cursor-pointer shadow-2xs leading-tight"
               >
                 View Profile
               </button>
               <button
                 type="button"
                 onClick={() => setStep("select")}
-                className="px-3.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer shadow-2xs"
+                className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer shadow-2xs leading-tight"
               >
                 Change Borrower
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
             {/* Left 2 Columns: Form Parameters */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4">
               {/* 1. Loan Terms & Structure */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
                 <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
                   <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                     <DollarSign size={18} />

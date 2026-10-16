@@ -416,19 +416,19 @@ function IssueNewLoanContent() {
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-4 pb-16 space-y-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-3 pb-12 space-y-3">
         {/* ── CLICKABLE TABS / STEPPER WIZARD ─────────────────────────────────── */}
         {step !== "done" && (
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Link
               href="/loans"
-              className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:text-red-600 hover:bg-slate-50 shadow-xs transition shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:text-red-600 hover:bg-slate-50 shadow-xs transition shrink-0 cursor-pointer"
               title="Back to Loans Directory"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} />
             </Link>
 
-            <div className="flex-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-3 min-w-0">
+            <div className="flex-1 bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-3 min-w-0">
               <div className="flex items-center gap-2">
                 {/* Tab 1 */}
                 <button
@@ -917,42 +917,44 @@ function IssueNewLoanContent() {
 
         {/* ── STEP 3: LOAN DETAILS ───────────────────────────────────────────── */}
         {step === "form" && selectedCustomer && (
-          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+          <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off">
             {/* Top Borrower Summary Strip */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            <div className="bg-white rounded-xl border border-slate-200/90 py-2 px-3.5 shadow-2xs flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
                 {selectedCustomer.photoUrl ? (
                   <img
                     src={selectedCustomer.photoUrl}
                     alt=""
-                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
+                    className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-100"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-red-100 text-red-700 font-bold text-base flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
                     {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <p className="text-sm font-black text-slate-900">{selectedCustomer.fullName || selectedCustomer.name}</p>
-                  <p className="text-xs text-slate-500 font-mono">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                    {selectedCustomer.fullName || selectedCustomer.name}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono truncate">
                     NIC: <strong className="text-slate-800">{selectedCustomer.nic}</strong> · {selectedCustomer.phone} ·{" "}
                     {selectedCustomer.town || "Sri Lanka"}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setStep("review")}
-                  className="px-3.5 py-1.5 text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-xl transition cursor-pointer shadow-2xs"
+                  className="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition cursor-pointer shadow-2xs leading-tight"
                 >
                   View Profile
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep("select")}
-                  className="px-3.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer shadow-2xs"
+                  className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer shadow-2xs leading-tight"
                 >
                   Change Borrower
                 </button>
@@ -960,10 +962,10 @@ function IssueNewLoanContent() {
             </div>
 
             {/* Layout: Form on Left 2 cols, Financial Summary on Right col */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+              <div className="lg:col-span-2 space-y-4">
                 {/* 1. Loan Terms & Structure */}
-                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
                   <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
                     <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                       <DollarSign size={18} />
@@ -1195,7 +1197,7 @@ function IssueNewLoanContent() {
                 </div>
 
                 {/* 2. Upfront Deductions & Fees */}
-                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
@@ -1305,7 +1307,7 @@ function IssueNewLoanContent() {
                 </div>
 
                 {/* 3. Guarantor Information */}
-                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 bg-red-50 text-red-600 rounded-xl">
@@ -1435,7 +1437,7 @@ function IssueNewLoanContent() {
                 </div>
 
                 {/* 4. Additional Contract Notes */}
-                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                     <FileText size={16} className="text-slate-500" />
                     <h4 className="text-xs font-bold text-slate-800 uppercase">4. Contract Remarks &amp; Notes</h4>
@@ -1451,8 +1453,8 @@ function IssueNewLoanContent() {
               </div>
 
               {/* Right Column: Financial Summary & Submit */}
-              <div className="space-y-4 sticky top-24">
-                <div className="bg-gradient-to-br from-black via-[#160205] to-[#2d050c] text-white p-6 rounded-3xl shadow-xl space-y-5 border-2 border-red-950">
+              <div className="space-y-3.5 sticky top-20">
+                <div className="bg-gradient-to-br from-black via-[#160205] to-[#2d050c] text-white p-5 rounded-2xl shadow-xl space-y-4 border-2 border-red-950">
                   <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                     <div className="flex items-center gap-2">
                       <Calculator size={18} className="text-rose-400" />
