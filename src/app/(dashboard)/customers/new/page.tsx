@@ -153,6 +153,7 @@ export default function NewCustomerPage() {
     emergencyContactName: "",
     emergencyContactPhone: "",
     emergencyContactRelationship: "",
+    emergencyContactRelationshipCustom: "",
     
     // Customer Status
     status: "Active" as CustomerStatus,
@@ -374,8 +375,13 @@ export default function NewCustomerPage() {
       return;
     }
 
+    const finalEmergencyRelationship =
+      form.emergencyContactRelationship === "Other"
+        ? form.emergencyContactRelationshipCustom.trim() || "Other"
+        : form.emergencyContactRelationship;
+
     const emergencyContactStr = form.emergencyContactName
-      ? `${form.emergencyContactName} (${form.emergencyContactRelationship}) - ${form.emergencyContactPhone || form.phone}`
+      ? `${form.emergencyContactName} (${finalEmergencyRelationship || "Contact"}) - ${form.emergencyContactPhone || form.phone}`
       : "";
 
     // 1. Create Customer Object
@@ -822,13 +828,14 @@ export default function NewCustomerPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Emergency Contact Person Name</label>
+                  <label className="text-xs font-bold text-slate-800">Name</label>
                   <input
                     type="text"
                     name="emergencyContactName"
                     autoComplete="off"
+                    placeholder="Full name"
                     value={form.emergencyContactName}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -836,11 +843,12 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Emergency Contact Phone Number</label>
+                  <label className="text-xs font-bold text-slate-800">Contact Number</label>
                   <input
                     type="tel"
                     name="emergencyContactPhone"
                     autoComplete="off"
+                    placeholder="e.g. 07XXXXXXXX"
                     value={form.emergencyContactPhone}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
@@ -848,7 +856,7 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Emergency Relationship</label>
+                  <label className="text-xs font-bold text-slate-800">Relationship</label>
                   <select
                     name="emergencyContactRelationship"
                     value={form.emergencyContactRelationship}
@@ -856,6 +864,7 @@ export default function NewCustomerPage() {
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
                   >
                     <option value="">Select Relationship</option>
+                    <option value="Other">Other</option>
                     <option value="Spouse">Spouse</option>
                     <option value="Parent">Parent</option>
                     <option value="Sibling">Sibling</option>
@@ -863,6 +872,22 @@ export default function NewCustomerPage() {
                     <option value="Relative">Relative</option>
                     <option value="Friend">Friend</option>
                   </select>
+
+                  {form.emergencyContactRelationship === "Other" && (
+                    <div className="pt-1.5 space-y-1 animate-in fade-in duration-150">
+                      <label className="text-[11px] font-bold text-slate-700">Specify Relationship</label>
+                      <input
+                        type="text"
+                        name="emergencyContactRelationshipCustom"
+                        autoComplete="off"
+                        placeholder="Type relationship (e.g. Uncle, Colleague)"
+                        value={form.emergencyContactRelationshipCustom}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-red-300 bg-red-50/20 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1380,7 +1405,11 @@ export default function NewCustomerPage() {
                   </p>
                   {form.emergencyContactName && (
                     <p className="text-[11px] text-slate-500 truncate">
-                      Emergency: {form.emergencyContactName} ({form.emergencyContactRelationship || "Contact"})
+                      Emergency: {form.emergencyContactName} (
+                      {form.emergencyContactRelationship === "Other"
+                        ? form.emergencyContactRelationshipCustom.trim() || "Other"
+                        : form.emergencyContactRelationship || "Contact"}
+                      )
                     </p>
                   )}
                 </div>
