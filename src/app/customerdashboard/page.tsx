@@ -19,6 +19,9 @@ import {
   Phone,
   HelpCircle,
   ArrowRight,
+  ArrowLeft,
+  Eye,
+  Coins,
   ExternalLink,
   Wallet,
   Check,
@@ -66,6 +69,10 @@ export default function CustomerDashboardPage() {
         sessionStorage.setItem("customerSessionId", urlId);
       } else if (stored) {
         setSessionCustomerId(stored);
+      }
+      const urlLoanId = params.get("loanId");
+      if (urlLoanId) {
+        setActiveLoanId(urlLoanId);
       }
     }
   }, []);
@@ -119,7 +126,7 @@ export default function CustomerDashboardPage() {
     );
   }, [loans, currentCustomer]);
 
-  // Active primary loan
+  // Active primary loan (empty string by default to show Loans List first)
   const [activeLoanId, setActiveLoanId] = useState<string>("");
 
   const currentLoan = useMemo(() => {
@@ -127,8 +134,75 @@ export default function CustomerDashboardPage() {
       const match = customerLoans.find((l) => l.id === activeLoanId);
       if (match) return match;
     }
-    return customerLoans[0] || null;
+    return null;
   }, [customerLoans, activeLoanId]);
+
+  // Pre-calculate statistics for each customer loan
+  const loanStats = useMemo(() => {
+    const statsMap = new Map<
+      string,
+      {
+        paid: number;
+        payable: number;
+        outstanding: number;
+        percent: number;
+        paymentsCount: number;
+      }
+    >();
+
+    customerLoans.forEach((loan) => {
+      const principal = loan.principal || loan.amount || 0;
+      const interest = loan.interest || (loan.totalRepayment ? loan.totalRepayment - principal : 0);
+      const payable = loan.totalRepayment || (principal + interest);
+
+      const loanPayments = repayments.filter(
+        (p) =>
+          p.loanId === loan.id ||
+          (currentCustomer?.id && p.customerId === currentCustomer.id && !p.loanId)
+      );
+      const paid = loanPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const outstanding = Math.max(0, payable - paid);
+      const percent = payable > 0 ? Math.min(100, Math.round((paid / payable) * 100)) : 0;
+
+      statsMap.set(loan.id, {
+        paid,
+        payable,
+        outstanding,
+        percent,
+        paymentsCount: loanPayments.length,
+      });
+    });
+
+    return statsMap;
+  }, [customerLoans, repayments, currentCustomer?.id]);
+
+  // Portfolio overview totals across all facilities
+  const portfolioSummary = useMemo(() => {
+    let totalBorrowing = 0;
+    let totalPayableSum = 0;
+    let totalPaidSum = 0;
+    let totalOutstandingSum = 0;
+
+    customerLoans.forEach((loan) => {
+      const principal = loan.principal || loan.amount || 0;
+      totalBorrowing += principal;
+      const stat = loanStats.get(loan.id);
+      if (stat) {
+        totalPayableSum += stat.payable;
+        totalPaidSum += stat.paid;
+        totalOutstandingSum += stat.outstanding;
+      }
+    });
+
+    return {
+      activeCount: customerLoans.filter((l) => (l.status || "").toLowerCase() === "active").length,
+      totalCount: customerLoans.length,
+      totalBorrowing,
+      totalPayableSum,
+      totalPaidSum,
+      totalOutstandingSum,
+    };
+  }, [customerLoans, loanStats]);
 
   // Payments / Repayments for current customer's loans
   const customerPayments = useMemo(() => {
@@ -387,9 +461,21 @@ export default function CustomerDashboardPage() {
 
           {/* Quick Actions & Facility Switcher */}
           <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            {customerLoans.length > 1 && (
+            {currentLoan && (
+              <button
+                type="button"
+                onClick={() => setActiveLoanId("")}
+                className="inline-flex items-center gap-1.5 px-3 h-8 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer shrink-0"
+                title="Return to All Loans"
+              >
+                <ArrowLeft size={13} className="text-slate-600" />
+                <span>All Loans</span>
+              </button>
+            )}
+
+            {currentLoan && customerLoans.length > 1 && (
               <select
-                value={currentLoan?.id}
+                value={currentLoan.id}
                 onChange={(e) => setActiveLoanId(e.target.value)}
                 className="h-8 px-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-bold focus:outline-none"
               >
@@ -422,8 +508,249 @@ export default function CustomerDashboardPage() {
           </div>
         </div>
 
-        {/* ═══ Zone 1: Financial Standing Pulse (4 Micro KPI Cards) ═════════ */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {!currentLoan ? (
+          /* ═══════════════════════════════════════════════════════════════════
+             VIEW 1: MY LOAN FACILITIES LIST (Default View)
+             ═══════════════════════════════════════════════════════════════════ */
+          <div className="space-y-4">
+            {/* Portfolio Summary 4-KPI Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                  <Coins size={16} className="text-blue-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    Total Facilities
+                  </p>
+                  <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+                    {customerLoans.length} Loans
+                  </p>
+                  <p className="text-[10px] text-blue-600 font-semibold truncate">
+                    {portfolioSummary.activeCount} Active Contracts
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                  <CreditCard size={16} className="text-indigo-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    Total Borrowed
+                  </p>
+                  <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+                    {MONEY(portfolioSummary.totalBorrowing)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-medium truncate">
+                    Payable: {MONEY(portfolioSummary.totalPayableSum)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={16} className="text-emerald-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    Total Repaid
+                  </p>
+                  <p className="text-lg sm:text-xl font-black font-mono text-emerald-600 leading-tight">
+                    {MONEY(portfolioSummary.totalPaidSum)}
+                  </p>
+                  <p className="text-[10px] text-emerald-700 font-medium truncate">
+                    Recorded Payments
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+                  <Wallet size={16} className="text-rose-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    Total Outstanding
+                  </p>
+                  <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+                    {MONEY(portfolioSummary.totalOutstandingSum)}
+                  </p>
+                  <p className="text-[10px] text-rose-600 font-medium truncate">
+                    Remaining Balance
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Loans Cards Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="text-sm sm:text-base font-black text-slate-900">
+                    My Loan Facilities
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Select any loan facility below to view its installment due dates, payments history, and settlement receipts.
+                  </p>
+                </div>
+                <span className="text-xs font-mono font-bold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg shrink-0">
+                  Total: {customerLoans.length} Facilities
+                </span>
+              </div>
+
+              {customerLoans.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {customerLoans.map((loan) => {
+                    const stats = loanStats.get(loan.id) || {
+                      paid: 0,
+                      payable: loan.totalRepayment || (loan.principal || 0),
+                      outstanding: loan.totalRepayment || (loan.principal || 0),
+                      percent: 0,
+                      paymentsCount: 0,
+                    };
+
+                    const statusLower = (loan.status || "").toLowerCase();
+                    const statusClass =
+                      statusLower === "completed"
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                        : statusLower === "overdue"
+                        ? "bg-rose-100 text-rose-800 border-rose-200"
+                        : "bg-blue-100 text-blue-800 border-blue-200";
+
+                    return (
+                      <div
+                        key={loan.id}
+                        className="bg-white rounded-2xl border border-slate-200 hover:border-red-300 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                Loan Facility
+                              </span>
+                              <h3 className="text-base font-black text-slate-900 font-mono group-hover:text-red-600 transition">
+                                {loan.loanNo || loan.id}
+                              </h3>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusClass}`}
+                              >
+                                {loan.status || "Active"}
+                              </span>
+                              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                {loan.repaymentFrequency || "Daily"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {loan.purpose && (
+                            <p className="text-xs text-slate-600 line-clamp-1 italic">
+                              &ldquo;{loan.purpose}&rdquo;
+                            </p>
+                          )}
+
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Principal Disbursed:</span>
+                              <span className="font-bold font-mono text-slate-800">
+                                {MONEY(loan.principal || loan.amount || 0)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Total Payable:</span>
+                              <span className="font-bold font-mono text-slate-800">
+                                {MONEY(stats.payable)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Total Repaid:</span>
+                              <span className="font-bold font-mono text-emerald-600">
+                                {MONEY(stats.paid)}
+                              </span>
+                            </div>
+                            <div className="pt-1.5 border-t border-slate-200/80 flex justify-between items-baseline">
+                              <span className="text-[11px] font-bold text-slate-700">
+                                Remaining Balance:
+                              </span>
+                              <span className="text-sm font-black font-mono text-slate-900">
+                                {MONEY(stats.outstanding)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="bg-red-600 h-full rounded-full transition-all duration-300"
+                                style={{ width: `${stats.percent}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-slate-400 font-medium mt-1">
+                              <span>{stats.percent}% Settled</span>
+                              <span>{stats.paymentsCount} Payments Recorded</span>
+                            </div>
+                          </div>
+
+                          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1">
+                            <span>
+                              Installment: <b className="text-slate-800 font-mono">{MONEY(loan.installment || 0)}</b>
+                            </span>
+                            <span>{loan.duration || 30} Cycles</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setActiveLoanId(loan.id)}
+                          className="w-full mt-4 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer group-hover:bg-red-700"
+                        >
+                          <Eye size={14} />
+                          <span>View Loan Details &amp; Schedule</span>
+                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                  <FileText size={32} className="mx-auto text-slate-400" />
+                  <h3 className="text-sm font-bold text-slate-800">
+                    No active loan facilities found
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    There are no registered loans under your borrower account. Please contact your loan officer or branch office.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Assistance & Helpline strip */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-slate-700">
+                <Phone size={16} className="text-red-600 shrink-0" />
+                <span>Need assistance? <b>Branch Hotline: 011-2345678</b> (Mon-Sat 8:30AM - 5:00PM)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStatementOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition cursor-pointer"
+              >
+                <Printer size={13} className="text-red-600" />
+                <span>Print Statement</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ═══════════════════════════════════════════════════════════════════
+             VIEW 2: SPECIFIC LOAN DETAILED VIEW (Active when a loan is selected)
+             ═══════════════════════════════════════════════════════════════════ */
+          <>
+            {/* ═══ Zone 1: Financial Standing Pulse (4 Micro KPI Cards) ═════════ */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Card 1: Outstanding Balance */}
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
@@ -770,7 +1097,9 @@ export default function CustomerDashboardPage() {
             </div>
           </div>
         </div>
-      </div>
+      </>
+      )}
+    </div>
 
       {/* ── Single Payment Printable Receipt Modal ───────────────────────── */}
       {receiptToPrint && (

@@ -99,6 +99,15 @@ export default function FieldStaffPortal() {
     setShowOfficerModal(false);
   };
 
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("psi_active_staff_id");
+      localStorage.removeItem("staff_token");
+      sessionStorage.clear();
+      window.location.href = "/login";
+    }
+  };
+
   // ── 2. Today's Date & System Clock ────────────────────────────────────────
   const [todayStr, setTodayStr] = useState<string>("2026-10-15");
   useEffect(() => {
@@ -362,9 +371,13 @@ export default function FieldStaffPortal() {
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
           {/* Logo & Portal Identity */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-              FO
+          <Link href="/field" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0">
+              <img
+                src="/logos/psi-logo.png"
+                alt="PSI ONE Logo"
+                className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(239,68,68,0.25)] group-hover:scale-105 transition-transform"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -377,7 +390,7 @@ export default function FieldStaffPortal() {
                 PSI ONE Operations Portal
               </h1>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop/Tablet Center Navigation Tabs */}
           <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -435,24 +448,36 @@ export default function FieldStaffPortal() {
             </button>
           </div>
 
-          {/* Active Officer Button */}
+          {/* Active Officer & Logout Buttons */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowOfficerModal(true)}
-              className="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition text-left cursor-pointer shadow-2xs"
+              className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl transition text-left cursor-pointer shadow-2xs"
+              title="Switch Officer Profile"
             >
-              <div className="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-black text-xs">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-black text-xs shrink-0">
                 {currentOfficer ? currentOfficer.name.charAt(0) : "U"}
               </div>
               <div className="hidden sm:block min-w-0">
-                <p className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
+                <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">
                   {currentOfficer ? currentOfficer.name : "Officer"}
                 </p>
                 <p className="text-[10px] text-slate-500 font-mono">
                   {currentOfficer?.id || "STF-02"} • {currentOfficer?.branch || "Colombo"}
                 </p>
               </div>
-              <SlidersHorizontal size={14} className="text-slate-400 ml-0.5" />
+              <SlidersHorizontal size={13} className="text-slate-400 ml-0.5" />
+            </button>
+
+            {/* Logout Button */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs shrink-0"
+              title="Sign Out to Login"
+            >
+              <LogOut size={14} className="text-rose-600" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -528,16 +553,26 @@ export default function FieldStaffPortal() {
               })}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
-              <span className="text-slate-500">
-                Data Scoping: <b className="text-emerald-700">Strictly Isolated</b>
-              </span>
+            <div className="pt-2.5 border-t border-slate-100 flex justify-between items-center text-xs">
               <button
-                onClick={() => setShowOfficerModal(false)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl cursor-pointer"
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-rose-700 hover:bg-rose-50 rounded-xl font-bold transition cursor-pointer"
               >
-                Done
+                <LogOut size={14} />
+                <span>Sign Out</span>
               </button>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-slate-400 text-[11px]">
+                  Scoping: <b className="text-emerald-700">Strictly Isolated</b>
+                </span>
+                <button
+                  onClick={() => setShowOfficerModal(false)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>
