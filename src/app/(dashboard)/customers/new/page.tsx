@@ -66,27 +66,27 @@ export default function NewCustomerPage() {
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   const STEPS = [
-    { number: 1, title: "Photo & Customer ID", subtitle: "Portrait & System Number" },
-    { number: 2, title: "Customer Details", subtitle: "Name, NIC, Address & Contacts" },
-    { number: 3, title: "Document Uploads", subtitle: "NIC Front/Back & Proofs" },
-    { number: 4, title: "Prior Loan & Review", subtitle: "Existing Facility & Submit" },
+    { number: 1, title: "Customer Details", subtitle: "Name, NIC, Address & Contacts" },
+    { number: 2, title: "Photo & Document Uploads", subtitle: "Photograph, NIC Front/Back & Proofs" },
+    { number: 3, title: "Prior Loan Details", subtitle: "Existing Facility & History" },
+    { number: 4, title: "Final Review & Submit", subtitle: "Dossier Summary & Submit" },
   ];
 
   const goToStep = (stepNum: number) => {
-    if (stepNum > 2 && currentStep >= 2) {
+    if (stepNum > 1 && currentStep >= 1) {
       if (!form.fullName.trim()) {
         setErrorMsg("Please enter customer's full legal name.");
-        setCurrentStep(2);
+        setCurrentStep(1);
         return;
       }
       if (!form.nic.trim()) {
         setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
-        setCurrentStep(2);
+        setCurrentStep(1);
         return;
       }
       if (!form.phone.trim()) {
         setErrorMsg("Please enter a primary contact phone number.");
-        setCurrentStep(2);
+        setCurrentStep(1);
         return;
       }
     }
@@ -97,10 +97,6 @@ export default function NewCustomerPage() {
 
   const handleNextStep = () => {
     if (currentStep === 1) {
-      setErrorMsg("");
-      setCurrentStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (currentStep === 2) {
       if (!form.fullName.trim()) {
         setErrorMsg("Please enter customer's full legal name.");
         return;
@@ -113,6 +109,10 @@ export default function NewCustomerPage() {
         setErrorMsg("Please enter a primary contact phone number.");
         return;
       }
+      setErrorMsg("");
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentStep === 2) {
       setErrorMsg("");
       setCurrentStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -361,17 +361,17 @@ export default function NewCustomerPage() {
 
     if (!form.fullName.trim()) {
       setErrorMsg("Please enter customer's full legal name.");
-      setCurrentStep(2);
+      setCurrentStep(1);
       return;
     }
     if (!form.nic.trim()) {
       setErrorMsg("Please enter a valid National Identity Card (NIC) number.");
-      setCurrentStep(2);
+      setCurrentStep(1);
       return;
     }
     if (!form.phone.trim()) {
       setErrorMsg("Please enter a primary contact phone number.");
-      setCurrentStep(2);
+      setCurrentStep(1);
       return;
     }
 
@@ -597,109 +597,8 @@ export default function NewCustomerPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-        {/* ── STEP 1: PHOTO & BIOMETRIC VERIFICATION ── */}
+        {/* ── STEP 1: CUSTOMER DETAILS (PERSONAL DETAILS & EMERGENCY CONTACT) ── */}
         {currentStep === 1 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-xs space-y-6">
-              {/* Card Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shadow-2xs">
-                    <Camera size={20} />
-                  </div>
-                  <h2 className="text-base font-black text-slate-900 tracking-tight">
-                    Customer Photograph
-                  </h2>
-                </div>
-                {form.photoUrl && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                    <CheckCircle2 size={13} /> Photo Uploaded
-                  </span>
-                )}
-              </div>
-
-              {/* Centered Modern Photo Uploader */}
-              <div className="max-w-md mx-auto py-6 sm:py-8 flex flex-col items-center justify-center text-center space-y-5">
-                {form.photoUrl ? (
-                  <div className="relative group flex flex-col items-center space-y-4">
-                    <div className="relative">
-                      <img
-                        src={form.photoUrl}
-                        alt="Customer Portrait Preview"
-                        className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-red-500/20 transition-transform group-hover:scale-[1.02]"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition">
-                        <Upload size={14} />
-                        <span>Change Photograph</span>
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg, image/webp"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-xl transition cursor-pointer"
-                      >
-                        <Trash2 size={13} />
-                        <span>Remove</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full flex flex-col items-center space-y-4">
-                    <label className="w-full max-w-sm py-10 px-6 rounded-3xl border-2 border-dashed border-slate-300 hover:border-red-500 bg-slate-50/60 hover:bg-red-50/20 flex flex-col items-center justify-center cursor-pointer transition-all group shadow-inner">
-                      <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-red-600 group-hover:scale-105 group-hover:border-red-300 shadow-sm transition-all mb-3">
-                        <Camera size={36} />
-                      </div>
-                      <span className="text-sm font-bold text-slate-800 group-hover:text-red-600 transition-colors">
-                        Upload Customer Photograph
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-medium mt-1">
-                        Click to browse image from your device
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/png, image/jpeg, image/webp"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <span className="text-[11px] text-slate-400 font-medium">
-                      Supported formats: JPG, PNG, WEBP (Max 5MB)
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Step 1 Navigation Bar */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <Link
-                  href="/customers"
-                  className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
-                >
-                  <span>Next</span>
-                  <ArrowRight size={15} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 2: CUSTOMER DETAILS (PERSONAL DETAILS & EMERGENCY CONTACT) ── */}
-        {currentStep === 2 && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* 1. PERSONAL DETAILS */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
@@ -892,20 +791,18 @@ export default function NewCustomerPage() {
               </div>
             </div>
 
-            {/* Step 2 Navigation Bar */}
+            {/* Step 1 Navigation Bar */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={handlePrevStep}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              <Link
+                href="/customers"
+                className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
               >
-                <ArrowLeft size={15} />
-                <span>Back</span>
-              </button>
+                Cancel
+              </Link>
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
               >
                 <span>Next</span>
                 <ArrowRight size={15} />
@@ -914,10 +811,10 @@ export default function NewCustomerPage() {
           </div>
         )}
 
-        {/* ── STEP 3: NIC & DOCUMENTS ── */}
-        {currentStep === 3 && (
+        {/* ── STEP 2: PHOTO & IDENTITY DOCUMENTS ── */}
+        {currentStep === 2 && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* SECTION 5: NATIONAL IDENTITY CARD (NIC) IMAGES */}
+            {/* SECTION: CUSTOMER PHOTOGRAPH & NATIONAL IDENTITY CARD (NIC) IMAGES */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
                 <div className="p-2 bg-red-50 text-red-600 rounded-xl">
@@ -925,120 +822,178 @@ export default function NewCustomerPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
-                    National Identity Card (NIC) Images
+                    Identity Documents &amp; Photograph
                   </h2>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* NIC Front */}
-                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-600" />
-                      NIC Front Image
-                    </span>
-                    {nicFrontUrl && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        ✓ Uploaded
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+                {/* 1. Customer Photograph */}
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-600" />
+                        Customer Photograph
                       </span>
+                      {form.photoUrl && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          ✓ Uploaded
+                        </span>
+                      )}
+                    </div>
+
+                    {form.photoUrl ? (
+                      <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                        <img
+                          src={form.photoUrl}
+                          alt="Customer Portrait Preview"
+                          className="w-full h-40 object-cover bg-slate-100"
+                        />
+                        <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                          <div className="truncate pr-2">
+                            <p className="text-[11px] font-bold text-slate-800 truncate">
+                              Customer Photo
+                            </p>
+                            <p className="text-[10px] text-slate-500">Portrait Image</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
+                            className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
+                        <Camera size={24} className="text-slate-400 mb-2" />
+                        <span className="text-xs font-bold text-slate-700">Upload Photograph</span>
+                        <span className="text-[10px] text-slate-400 mt-1">JPG, PNG, WEBP</span>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/webp"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
                     )}
                   </div>
-
-                  {nicFrontUrl ? (
-                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
-                      <img
-                        src={nicFrontUrl}
-                        alt="NIC Front Preview"
-                        className="w-full h-40 object-cover bg-slate-100"
-                      />
-                      <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
-                        <div className="truncate pr-2">
-                          <p className="text-[11px] font-bold text-slate-800 truncate">
-                            {nicFrontFileName || "nic_front.jpg"}
-                          </p>
-                          <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNicFrontUrl("");
-                            setNicFrontFileName("");
-                            setNicFrontFileSize("");
-                          }}
-                          className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
-                      <Upload size={22} className="text-slate-400 mb-2" />
-                      <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
-                      <input
-                        type="file"
-                        accept=".pdf,.png,.jpg,.jpeg"
-                        onChange={handleNicFrontUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
                 </div>
 
-                {/* NIC Back */}
-                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-600" />
-                      NIC Back Image
-                    </span>
-                    {nicBackUrl && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        ✓ Uploaded
+                {/* 2. NIC Front Image */}
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-600" />
+                        NIC Front Image
                       </span>
+                      {nicFrontUrl && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          ✓ Uploaded
+                        </span>
+                      )}
+                    </div>
+
+                    {nicFrontUrl ? (
+                      <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                        <img
+                          src={nicFrontUrl}
+                          alt="NIC Front Preview"
+                          className="w-full h-40 object-cover bg-slate-100"
+                        />
+                        <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                          <div className="truncate pr-2">
+                            <p className="text-[11px] font-bold text-slate-800 truncate">
+                              {nicFrontFileName || "nic_front.jpg"}
+                            </p>
+                            <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNicFrontUrl("");
+                              setNicFrontFileName("");
+                              setNicFrontFileSize("");
+                            }}
+                            className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
+                        <Upload size={22} className="text-slate-400 mb-2" />
+                        <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={handleNicFrontUpload}
+                          className="hidden"
+                        />
+                      </label>
                     )}
                   </div>
+                </div>
 
-                  {nicBackUrl ? (
-                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
-                      <img
-                        src={nicBackUrl}
-                        alt="NIC Back Preview"
-                        className="w-full h-40 object-cover bg-slate-100"
-                      />
-                      <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
-                        <div className="truncate pr-2">
-                          <p className="text-[11px] font-bold text-slate-800 truncate">
-                            {nicBackFileName || "nic_back.jpg"}
-                          </p>
-                          <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNicBackUrl("");
-                            setNicBackFileName("");
-                            setNicBackFileSize("");
-                          }}
-                          className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
-                        >
-                          Remove
-                        </button>
-                      </div>
+                {/* 3. NIC Back Image */}
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-600" />
+                        NIC Back Image
+                      </span>
+                      {nicBackUrl && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          ✓ Uploaded
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
-                      <Upload size={22} className="text-slate-400 mb-2" />
-                      <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
-                      <input
-                        type="file"
-                        accept=".pdf,.png,.jpg,.jpeg"
-                        onChange={handleNicBackUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
+
+                    {nicBackUrl ? (
+                      <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                        <img
+                          src={nicBackUrl}
+                          alt="NIC Back Preview"
+                          className="w-full h-40 object-cover bg-slate-100"
+                        />
+                        <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
+                          <div className="truncate pr-2">
+                            <p className="text-[11px] font-bold text-slate-800 truncate">
+                              {nicBackFileName || "nic_back.jpg"}
+                            </p>
+                            <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNicBackUrl("");
+                              setNicBackFileName("");
+                              setNicBackFileSize("");
+                            }}
+                            className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
+                        <Upload size={22} className="text-slate-400 mb-2" />
+                        <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={handleNicBackUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1158,7 +1113,7 @@ export default function NewCustomerPage() {
               </div>
             </div>
 
-            {/* Step 3 Navigation Bar */}
+            {/* Step 2 Navigation Bar */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
               <button
                 type="button"
@@ -1180,8 +1135,8 @@ export default function NewCustomerPage() {
           </div>
         )}
 
-        {/* ── STEP 4: PRIOR LOAN & FINAL REVIEW ── */}
-        {currentStep === 4 && (
+        {/* ── STEP 3: PRIOR LOAN DETAILS & HISTORY ── */}
+        {currentStep === 3 && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
@@ -1353,6 +1308,31 @@ export default function NewCustomerPage() {
               )}
             </div>
 
+            {/* Step 3 Navigation Bar */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                <span>Next</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: FINAL REVIEW & SUBMIT ── */}
+        {currentStep === 4 && (
+          <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 8: FINAL BORROWER DOSSIER REVIEW */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
