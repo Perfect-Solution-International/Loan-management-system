@@ -1201,7 +1201,7 @@ function IssueNewLoanContent() {
                       <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
                         <Calculator size={18} />
                       </div>
-                      <h3 className="text-sm font-black text-slate-900">2. Upfront Deductions &amp; Fees</h3>
+                      <h3 className="text-sm font-black text-slate-900">Fees</h3>
                     </div>
                     <div className="flex items-center gap-3">
                       <button
