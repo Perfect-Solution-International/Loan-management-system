@@ -185,34 +185,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <div suppressHydrationWarning className="flex items-center gap-2.5">
-              <div className="text-right hidden sm:block">
-                <div className="flex items-center justify-end gap-1.5">
-                  {isStaffView ? (
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-200">
-                      Loan Officer / Staff
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-200">
-                      Administrator
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs font-black text-slate-900 mt-0.5">
-                  {isStaffView ? "Field Officer" : "Admin Officer"}
-                </p>
-              </div>
-
-              {isStaffView ? (
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-600/25 ring-2 ring-blue-100">
-                  FO
-                </div>
-              ) : (
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-md shadow-red-600/25 ring-2 ring-red-100">
-                  AD
-                </div>
-              )}
-            </div>
           </div>
         </header>
 

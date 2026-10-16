@@ -80,7 +80,7 @@ export default function CustomersPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       {/* ═══ Page Header ══════════════════════════════════════════════════════ */}
-      <div className="bg-white border-b border-slate-200 px-8 py-6">
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
@@ -89,14 +89,11 @@ export default function CustomersPage() {
             <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
               Customer Directory
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Manage customer profiles, identity documents, and active loan portfolios
-            </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             {/* Search */}
-            <div className="relative">
+            <div className="relative flex-1 sm:flex-initial">
               <Search
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -105,7 +102,7 @@ export default function CustomersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, NIC, ID, town…"
-                className="pl-8 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl w-64 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                className="pl-8 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl w-full sm:w-64 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
               />
             </div>
 
@@ -113,7 +110,7 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={() => router.push("/customers/new")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/25 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/25 transition cursor-pointer shrink-0"
             >
               <UserPlus size={14} />
               Add Customer

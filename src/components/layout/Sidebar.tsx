@@ -154,6 +154,7 @@ interface SidebarProps {
 
 export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
+  const isStaff = pathname === "/staffdashboard";
 
   return (
     <aside
@@ -237,10 +238,40 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
         </div>
       </div>
 
-      {/* Footer System Status & Log Out */}
-      <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2.5 shrink-0">
+      {/* Footer User Profile & System Status */}
+      <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2 shrink-0">
+        {/* User Profile Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`w-8 h-8 rounded-lg ${
+                isStaff
+                  ? "bg-gradient-to-br from-blue-600 to-indigo-700"
+                  : "bg-gradient-to-br from-red-600 to-rose-700"
+              } text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 ring-1 ring-white/10`}
+            >
+              {isStaff ? "FO" : "AD"}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate leading-tight">
+                {isStaff ? "Field Officer" : "Admin Officer"}
+              </p>
+              <p className="text-[10px] text-slate-400 font-medium">
+                {isStaff ? "Loan Officer" : "Administrator"}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/login"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0"
+            title="Sign Out"
+          >
+            <LogOut size={15} />
+          </Link>
+        </div>
+
         {/* System Online Indicator */}
-        <div className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 flex items-center justify-between text-xs font-semibold">
+        <div className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 flex items-center justify-between text-xs font-semibold">
           <div className="flex items-center gap-2 text-white">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -252,15 +283,6 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             ONLINE
           </span>
         </div>
-
-        {/* Sign Out Button */}
-        <Link
-          href="/login"
-          className="flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition border border-slate-800"
-        >
-          <LogOut size={14} className="text-slate-300" />
-          <span>Sign Out</span>
-        </Link>
       </div>
     </aside>
   );
