@@ -368,40 +368,6 @@ export default function CustomerDashboardPage() {
               </button>
             </form>
 
-            {/* Quick Demo Borrower Selection */}
-            {customers.length > 0 && (
-              <div className="pt-4 border-t border-slate-100">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Sample Registered Borrowers (1-Click Test):
-                </p>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {customers.slice(0, 5).map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setSessionCustomerId(c.id);
-                        if (typeof window !== "undefined") {
-                          sessionStorage.setItem("customerSessionId", c.id);
-                        }
-                      }}
-                      className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 hover:border-red-200 border border-slate-100 transition flex items-center justify-between group cursor-pointer"
-                    >
-                      <div>
-                        <div className="text-xs font-bold text-slate-800 group-hover:text-red-700">
-                          {c.fullName || c.name}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          NIC: {c.nic || "N/A"} · {c.phone}
-                        </div>
-                      </div>
-                      <ArrowRight size={13} className="text-slate-400 group-hover:text-red-600 group-hover:translate-x-0.5 transition shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="pt-2 text-center border-t border-slate-100">
               <a
                 href="/login"

@@ -182,43 +182,6 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="login-form">
-            {/* Quick Demo Credentials */}
-            <div className="flex items-center gap-1.5 flex-wrap mb-2">
-              <span className="text-[10px] font-bold uppercase text-slate-400">Quick Fill:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setIdentifier("admin@psione.lk");
-                  setPassword("admin123");
-                }}
-                className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIdentifier("chaminda.b@psione.lk");
-                  setPassword("staff123");
-                }}
-                className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition cursor-pointer"
-              >
-                Field Officer
-              </button>
-              {customers.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier(customers[0].nic || customers[0].id);
-                    setPassword("pass123");
-                  }}
-                  className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 transition cursor-pointer"
-                >
-                  Customer ({customers[0].name.split(" ")[0]})
-                </button>
-              )}
-            </div>
-
             <label htmlFor="login-identifier">Email, Username, or Customer ID / NIC</label>
             <div className="login-input-wrap">
               <Mail size={18} />

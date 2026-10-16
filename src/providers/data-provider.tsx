@@ -38,6 +38,7 @@ export interface DataContextValue {
   updateSettings: (newSettings: Partial<SystemSettings>) => void;
   addStaffUser: (user: StaffUser) => void;
   updateStaffUser: (id: string, updated: Partial<StaffUser>) => void;
+  resetAllData: () => void;
 }
 
 const defaultState: DataContextValue = {
@@ -61,6 +62,7 @@ const defaultState: DataContextValue = {
   updateSettings: () => {},
   addStaffUser: () => {},
   updateStaffUser: () => {},
+  resetAllData: () => {},
 };
 
 const DataContext = createContext<DataContextValue>(defaultState);
@@ -77,58 +79,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Load from localStorage ONCE after mount (client-only)
   React.useEffect(() => {
     try {
-      const DEMO_PURGE_FLAG = "psi_demo_purged_v1";
-      const isPurged = localStorage.getItem(DEMO_PURGE_FLAG);
-      const demoCustomerIds = new Set(["CUS-001", "CUS-002", "CUS-003", "CUS-004", "CUS-005", "CUS-006"]);
-      const demoLoanIds = new Set(["LN-001", "LN-002", "LN-003", "LN-004", "LN-005", "LN-006"]);
-      const demoPaymentIds = new Set([
-        "PAY-001", "PAY-002", "PAY-003", "PAY-004", "PAY-005",
-        "PAY-006", "PAY-007", "PAY-008", "PAY-009", "PAY-010",
-        "PAY-011", "PAY-012", "PAY-013", "PAY-014", "PAY-015",
-      ]);
+      const SYSTEM_WIPE_FLAG = "psi_clean_slate_superadmin_v3";
+      const isWiped = localStorage.getItem(SYSTEM_WIPE_FLAG);
+
+      if (!isWiped) {
+        // Complete clean-slate: wipe all previous mock/dummy data
+        localStorage.removeItem("psi_customers");
+        localStorage.removeItem("psi_loans");
+        localStorage.removeItem("psi_payments");
+        localStorage.removeItem("psi_documents");
+        localStorage.removeItem("psi_field_ptp_notes");
+        localStorage.setItem("psi_staff_users", JSON.stringify(initialStaffUsers));
+        localStorage.setItem(SYSTEM_WIPE_FLAG, "true");
+
+        setCustomers([]);
+        setLoans([]);
+        setPayments([]);
+        setDocuments([]);
+        setStaffUsers(initialStaffUsers);
+        return;
+      }
 
       const storedCustomers = localStorage.getItem("psi_customers");
       if (storedCustomers) {
-        const parsed: Customer[] = JSON.parse(storedCustomers);
-        const filtered = parsed.filter((c) => !demoCustomerIds.has(c.id));
-        setCustomers(filtered);
-        if (!isPurged) {
-          localStorage.setItem("psi_customers", JSON.stringify(filtered));
-        }
+        setCustomers(JSON.parse(storedCustomers));
       }
 
       const storedLoans = localStorage.getItem("psi_loans");
       if (storedLoans) {
-        const parsed: Loan[] = JSON.parse(storedLoans);
-        const filtered = parsed.filter((l) => !demoLoanIds.has(l.id));
-        setLoans(filtered);
-        if (!isPurged) {
-          localStorage.setItem("psi_loans", JSON.stringify(filtered));
-        }
+        setLoans(JSON.parse(storedLoans));
       }
 
       const storedPayments = localStorage.getItem("psi_payments");
       if (storedPayments) {
-        const parsed: Payment[] = JSON.parse(storedPayments);
-        const filtered = parsed.filter((p) => !demoPaymentIds.has(p.id));
-        setPayments(filtered);
-        if (!isPurged) {
-          localStorage.setItem("psi_payments", JSON.stringify(filtered));
-        }
+        setPayments(JSON.parse(storedPayments));
       }
 
       const storedDocs = localStorage.getItem("psi_documents");
       if (storedDocs) {
-        const parsed: CustomerDocument[] = JSON.parse(storedDocs);
-        const filtered = parsed.filter((d) => !demoCustomerIds.has(d.customerId));
-        setDocuments(filtered);
-        if (!isPurged) {
-          localStorage.setItem("psi_documents", JSON.stringify(filtered));
-        }
-      }
-
-      if (!isPurged) {
-        localStorage.setItem(DEMO_PURGE_FLAG, "true");
+        setDocuments(JSON.parse(storedDocs));
       }
 
       const storedSettings = localStorage.getItem("psi_settings");
@@ -139,6 +128,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const storedStaff = localStorage.getItem("psi_staff_users");
       if (storedStaff) {
         setStaffUsers(JSON.parse(storedStaff));
+      } else {
+        setStaffUsers(initialStaffUsers);
       }
     } catch (e) {
       console.error("Failed to load stored data from localStorage", e);
@@ -273,6 +264,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const resetAllData = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("psi_customers");
+      localStorage.removeItem("psi_loans");
+      localStorage.removeItem("psi_payments");
+      localStorage.removeItem("psi_documents");
+      localStorage.removeItem("psi_field_ptp_notes");
+      localStorage.setItem("psi_staff_users", JSON.stringify(initialStaffUsers));
+      sessionStorage.clear();
+    }
+    setCustomers([]);
+    setLoans([]);
+    setPayments([]);
+    setDocuments([]);
+    setStaffUsers(initialStaffUsers);
+  }, []);
+
   const contextValue = React.useMemo<DataContextValue>(
     () => ({
       customers,
@@ -293,6 +301,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateSettings,
       addStaffUser,
       updateStaffUser,
+      resetAllData,
     }),
     [
       customers,
@@ -311,6 +320,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateSettings,
       addStaffUser,
       updateStaffUser,
+      resetAllData,
     ]
   );
 
