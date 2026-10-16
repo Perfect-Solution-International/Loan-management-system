@@ -68,8 +68,7 @@ export default function NewCustomerPage() {
   const STEPS = [
     { number: 1, title: "Customer Details", subtitle: "Name, NIC, Address & Contacts" },
     { number: 2, title: "Photo & Document Uploads", subtitle: "Photograph, NIC Front/Back & Proofs" },
-    { number: 3, title: "Prior Loan Details", subtitle: "Existing Facility & History" },
-    { number: 4, title: "Final Review & Submit", subtitle: "Dossier Summary & Submit" },
+    { number: 3, title: "Final Review & Submit", subtitle: "Dossier Summary & Submit" },
   ];
 
   const goToStep = (stepNum: number) => {
@@ -115,10 +114,6 @@ export default function NewCustomerPage() {
     } else if (currentStep === 2) {
       setErrorMsg("");
       setCurrentStep(3);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (currentStep === 3) {
-      setErrorMsg("");
-      setCurrentStep(4);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -565,7 +560,7 @@ export default function NewCustomerPage() {
       {/* ── MULTI-STEP PROGRESS STEPPER ── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs">
         <div className="flex items-center justify-between max-w-md mx-auto">
-          {[1, 2, 3, 4].map((stepNum, idx) => {
+          {[1, 2, 3].map((stepNum, idx) => {
             const isActive = currentStep === stepNum;
             const isCompleted = currentStep > stepNum;
             return (
@@ -1135,203 +1130,8 @@ export default function NewCustomerPage() {
           </div>
         )}
 
-        {/* ── STEP 3: PRIOR LOAN DETAILS & HISTORY ── */}
+        {/* ── STEP 3: FINAL REVIEW & SUBMIT ── */}
         {currentStep === 3 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* SECTION 7: EXISTING LOANS, OUTSTANDING BALANCES & PREVIOUS REPAYMENT HISTORY */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-                    <CreditCard size={18} />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900">
-                    Existing Loans &amp; Previous Repayment History
-                  </h2>
-                </div>
-
-                {/* Toggle Switch */}
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="hasExistingLoan"
-                    checked={form.hasExistingLoan}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
-                  />
-                  <span>Has Existing / Prior Loan Record</span>
-                </label>
-              </div>
-
-              {form.hasExistingLoan && (
-                <div className="space-y-5 animate-in fade-in duration-200">
-                  {/* Existing Loan Terms */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Existing Loan ID / No.</label>
-                      <input
-                        type="text"
-                        name="existingLoanNo"
-                        autoComplete="off"
-                        value={form.existingLoanNo}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Principal Borrowed (LKR)</label>
-                      <input
-                        type="number"
-                        name="existingLoanPrincipal"
-                        autoComplete="off"
-                        step="5000"
-                        value={form.existingLoanPrincipal}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Interest Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        name="existingInterestRate"
-                        autoComplete="off"
-                        value={form.existingInterestRate}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Duration (Months)</label>
-                      <input
-                        type="number"
-                        name="existingDuration"
-                        autoComplete="off"
-                        min="1"
-                        value={form.existingDuration}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Outstanding Balance & Previous Repayments */}
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-                    <div className="flex items-center gap-2">
-                      <History size={16} className="text-red-600" />
-                      <h3 className="text-xs font-bold text-slate-900">
-                        Repayment History Ledger &amp; Current Outstanding Balance Due
-                      </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-700">
-                          Total Amount Previously Paid (LKR)
-                        </label>
-                        <input
-                          type="number"
-                          name="previousAmountPaid"
-                          autoComplete="off"
-                          step="1000"
-                          value={form.previousAmountPaid}
-                          onChange={handleChange}
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-700">
-                          Installments Settled Count
-                        </label>
-                        <input
-                          type="number"
-                          name="previousInstallmentsPaid"
-                          autoComplete="off"
-                          value={form.previousInstallmentsPaid}
-                          onChange={handleChange}
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-700">
-                          Payment Mode
-                        </label>
-                        <select
-                          name="previousPaymentMethod"
-                          value={form.previousPaymentMethod}
-                          onChange={handleChange}
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                        >
-                          <option value="Cash">Cash</option>
-                          <option value="Bank Transfer">Bank Transfer</option>
-                          <option value="Cheque">Cheque</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Outstanding Balance Banner */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-700">
-                          Previous Repayment History Notes
-                        </label>
-                        <textarea
-                          name="previousRepaymentNotes"
-                          autoComplete="off"
-                          rows={2}
-                          value={form.previousRepaymentNotes}
-                          onChange={handleChange}
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold resize-none"
-                        />
-                      </div>
-
-                      {/* Calculated Balance Callout */}
-                      <div className="p-3.5 bg-red-50/80 border border-red-200 rounded-xl flex flex-col justify-between">
-                        <div>
-                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-                            Current Outstanding Balance Due
-                          </p>
-                          <p className="text-xl font-black font-mono text-red-900 mt-0.5">
-                            {MONEY(computedLoanCalculations?.outstanding || 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Step 3 Navigation Bar */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={handlePrevStep}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer"
-              >
-                <ArrowLeft size={15} />
-                <span>Back</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleNextStep}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
-              >
-                <span>Next</span>
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 4: FINAL REVIEW & SUBMIT ── */}
-        {currentStep === 4 && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 8: FINAL BORROWER DOSSIER REVIEW */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
@@ -1494,41 +1294,10 @@ export default function NewCustomerPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* 4. Prior Loan Details */}
-                <div className="p-4 sm:p-5 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-2">
-                  <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Prior Loan Record
-                  </h4>
-                  <div className="text-xs">
-                    {form.hasExistingLoan ? (
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span className="font-bold text-slate-900">
-                          Loan No: {form.existingLoanNo || "Prior Loan"}
-                        </span>
-                        <span>•</span>
-                        <span className="text-slate-700">
-                          Outstanding:{" "}
-                          <strong className="text-red-600 font-mono font-bold">
-                            {MONEY(computedLoanCalculations?.outstanding || 0)}
-                          </strong>
-                        </span>
-                        <span>•</span>
-                        <span className="text-slate-700">
-                          Installments Paid: {form.previousInstallmentsPaid || 0}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="font-semibold text-slate-700">
-                        None (New Borrower)
-                      </span>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Step 4 Navigation Bar */}
+            {/* Step 3 Navigation Bar */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
               <button
                 type="button"

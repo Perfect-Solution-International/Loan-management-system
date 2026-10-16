@@ -79,82 +79,69 @@ export default function CustomersPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      {/* ═══ Page Header ══════════════════════════════════════════════════════ */}
-      <div className="bg-white border-b border-slate-200 px-8 py-5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
-              PSI ONE · LOAN MANAGEMENT
-            </p>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-              Customer Directory
-            </h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3">
+        {/* ═══ Action Bar (Search & Add Customer) ════════════════════════════ */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Search */}
+          <div className="relative flex-1 sm:max-w-md">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, NIC, ID, town…"
+              className="pl-8 pr-4 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition"
+            />
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {/* Search */}
-            <div className="relative flex-1 sm:flex-initial">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, NIC, ID, town…"
-                className="pl-8 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl w-full sm:w-64 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
-              />
-            </div>
-
-            {/* ADD CUSTOMER — navigates to /customers/new */}
-            <button
-              type="button"
-              onClick={() => router.push("/customers/new")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/25 transition cursor-pointer shrink-0"
-            >
-              <UserPlus size={14} />
-              Add Customer
-            </button>
-          </div>
+          {/* ADD CUSTOMER — navigates to /customers/new */}
+          <button
+            type="button"
+            onClick={() => router.push("/customers/new")}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 h-9 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer shrink-0"
+          >
+            <UserPlus size={14} />
+            Add Customer
+          </button>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8 space-y-6">
         {/* ═══ Summary Cards ═══════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-              <Users size={18} className="text-red-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+              <Users size={16} className="text-red-600" />
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Total Customers
               </p>
-              <p className="text-2xl font-black text-slate-900">{customers.length}</p>
+              <p className="text-xl font-black text-slate-900 leading-tight">{customers.length}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <UserCheck size={18} className="text-emerald-600" />
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+              <UserCheck size={16} className="text-emerald-600" />
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Active Borrowers
               </p>
-              <p className="text-2xl font-black text-slate-900">{activeCount}</p>
+              <p className="text-xl font-black text-slate-900 leading-tight">{activeCount}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
-              <UserX size={18} className="text-rose-600" />
+          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+              <UserX size={16} className="text-rose-600" />
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Inactive / Suspended
               </p>
-              <p className="text-2xl font-black text-slate-900">{inactiveCount}</p>
+              <p className="text-xl font-black text-slate-900 leading-tight">{inactiveCount}</p>
             </div>
           </div>
         </div>
