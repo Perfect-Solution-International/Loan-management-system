@@ -180,7 +180,7 @@ function CustomerDetailsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
-            PORTFOLIO / CUSTOMER PROFILE
+            CUSTOMER PROFILE
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
             {customer.fullName || customer.name}
@@ -339,7 +339,7 @@ function CustomerDetailsContent() {
         {/* Progress Bar */}
         <div className="space-y-1.5 pt-2 border-t border-slate-700/80">
           <div className="flex justify-between text-xs text-slate-300 font-medium">
-            <span>Portfolio Repayment Progress</span>
+            <span>Repayment Progress</span>
             <span className="font-bold text-white">{paymentCompletionRate}% Settled</span>
           </div>
           <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
@@ -684,7 +684,7 @@ function CustomerDetailsContent() {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Existing Loans Portfolio
+                Existing Loans
               </h3>
               <span className="text-xs font-bold text-red-600">
                 {customerLoans.length} Loans

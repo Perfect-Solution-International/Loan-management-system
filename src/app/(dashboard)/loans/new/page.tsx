@@ -379,7 +379,7 @@ function IssueNewLoanContent() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p className="text-[10px] font-extrabold text-red-600 uppercase tracking-widest">
-              PORTFOLIO OPERATIONS / NEW LOAN WIZARD
+              LOANS / NEW LOAN APPLICATION
             </p>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
               Create Loan Application

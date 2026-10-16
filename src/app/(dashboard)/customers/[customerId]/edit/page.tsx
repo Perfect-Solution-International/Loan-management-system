@@ -149,7 +149,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
-            PORTFOLIO / EDIT CUSTOMER
+            CUSTOMER PROFILE / EDIT
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
             Edit Customer Profile

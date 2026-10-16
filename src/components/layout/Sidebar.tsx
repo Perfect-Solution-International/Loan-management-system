@@ -31,7 +31,7 @@ interface SidebarItem {
 
 const navSections = [
   {
-    title: 'CORE PORTFOLIO',
+    title: 'CORE MENU',
     items: [
       {
         name: 'Dashboard',

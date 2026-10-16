@@ -217,7 +217,7 @@ function LoanDetailsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">
-            PORTFOLIO OPERATIONS / FACILITY DETAILS
+            LOANS / FACILITY DETAILS
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
             Loan Record: <span className="font-mono text-red-700">{loan.id}</span>

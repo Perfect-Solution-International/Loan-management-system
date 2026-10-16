@@ -182,7 +182,7 @@ export default function LoansListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-[10px] sm:text-xs font-bold text-red-600 uppercase tracking-widest">
-            CREDIT PORTFOLIO · LOANS REGISTER
+            LOANS REGISTER
           </p>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
             Credit Facilities Register
