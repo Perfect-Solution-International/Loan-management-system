@@ -6,12 +6,12 @@ Existing configuration, the starter homepage, root layout, styles, and public as
 
 ## Commands
 
-- `npm run dev`: start the development server.
+- `npm run ![alt text](image.png)dev`: start the development server.
 - `npm run build`: compile the production application.
 - `npm run lint`: run ESLint.
 - `npm run typecheck`: generate Next.js route types and run TypeScript checks.
 
-On Windows PowerShell, use `npm.cmd` if execution policy prevents running `npm`. The existing root layout uses Google fonts through `next/font`, so a fresh production build needs access to Google Fonts.
+On Windows PowerShell, use `npm.cmd` if execution policy prevents running `npm`. The existing root layout![alt text](image.png) uses Google fonts through `next/font`, so a fresh production build needs access to Google Fonts.
 
 ## Project structure
 

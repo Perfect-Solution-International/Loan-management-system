@@ -1183,9 +1183,9 @@ export function NewLoanForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Capital Deduction (LKR)</label>
+                    <label className="text-[11px] font-bold text-slate-600">Document Charge (LKR)</label>
                     <input
                       type="number"
                       min="0"
@@ -1216,18 +1216,6 @@ export function NewLoanForm({
                       autoComplete="off"
                       value={processingFee}
                       onChange={(e) => setProcessingFee(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Admin / Legal Fee (LKR)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      autoComplete="off"
-                      value={adminFee}
-                      onChange={(e) => setAdminFee(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                     />
                   </div>
