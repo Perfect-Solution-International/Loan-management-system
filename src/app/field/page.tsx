@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+// Field Staff Portal - Today's Collections & Rapid Repayment Desk
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -37,6 +38,13 @@ import {
   UserCheck,
   Eye,
   ChevronDown,
+  UserPlus,
+  PlusCircle,
+  DollarSign,
+  FileText,
+  Calculator,
+  Image as ImageIcon,
+  Menu,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -45,8 +53,10 @@ import {
   formatFriendlyDate,
   type ScheduledCollectionItem,
 } from "@/lib/collection-schedule";
-import type { Customer, Loan, Payment, StaffUser } from "@/types";
+import type { Customer, Loan, Payment, StaffUser, OnlinePayment } from "@/types";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
+import { NewLoanForm } from "@/components/forms/NewLoanForm";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface PtpRecord {
   promiseDate: string;
@@ -55,34 +65,59 @@ interface PtpRecord {
 }
 
 export default function FieldStaffPortal() {
-  const { customers, loans, payments, addPayment, staffUsers, getNextReceiptNo } = useData();
+  const {
+    customers,
+    loans,
+    payments,
+    addPayment,
+    staffUsers,
+    getNextReceiptNo,
+    addCustomer,
+    addLoan,
+    onlinePayments,
+    approveOnlinePayment,
+    rejectOnlinePayment,
+  } = useData();
 
   // ── 1. Active Officer Session & Isolation ─────────────────────────────────
   const fieldStaffList = useMemo(() => {
-    const list = staffUsers.filter(
+    const fieldOnly = staffUsers.filter(
       (s) =>
         s.role === "Loan Officer" ||
         s.role === "Collection Agent" ||
-        s.role === "Administrator"
+        (s.role as string) === "Staff" ||
+        (s.role as string) === "Field Officer"
     );
-    return list.length > 0 ? list : staffUsers;
+    if (fieldOnly.length > 0) return fieldOnly;
+    return staffUsers.map((s) =>
+      s.role === "Administrator"
+        ? { ...s, name: "Staff Officer", role: "Loan Officer" as const }
+        : s
+    );
   }, [staffUsers]);
 
   const [activeOfficerId, setActiveOfficerId] = useState<string>("");
+  const [loggedStaffName, setLoggedStaffName] = useState<string>("");
   const [showOfficerModal, setShowOfficerModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("psi_logged_staff_name");
+      if (storedName) {
+        setLoggedStaffName(storedName);
+      }
+
       const saved = localStorage.getItem("psi_active_staff_id");
-      if (saved && fieldStaffList.some((s) => s.id === saved)) {
+      // If saved is STF-01 (Admin) but field staff exist, prefer field staff in the field portal
+      const fieldStaff = fieldStaffList.find((s) => s.id !== "STF-01");
+      if (saved && saved !== "STF-01" && fieldStaffList.some((s) => s.id === saved)) {
         setActiveOfficerId(saved);
+      } else if (fieldStaff) {
+        setActiveOfficerId(fieldStaff.id);
+        localStorage.setItem("psi_active_staff_id", fieldStaff.id);
       } else if (fieldStaffList.length > 0) {
-        const defaultOfficer =
-          fieldStaffList.find(
-            (s) => s.role === "Loan Officer" || s.role === "Collection Agent"
-          ) || fieldStaffList[0];
-        setActiveOfficerId(defaultOfficer.id);
-        localStorage.setItem("psi_active_staff_id", defaultOfficer.id);
+        setActiveOfficerId(fieldStaffList[0].id);
+        localStorage.setItem("psi_active_staff_id", fieldStaffList[0].id);
       }
     }
   }, [fieldStaffList]);
@@ -91,10 +126,25 @@ export default function FieldStaffPortal() {
     return fieldStaffList.find((s) => s.id === activeOfficerId) || fieldStaffList[0];
   }, [fieldStaffList, activeOfficerId]);
 
+  const staffDisplayName = useMemo(() => {
+    if (loggedStaffName && loggedStaffName !== "System Administrator") {
+      return loggedStaffName;
+    }
+    if (currentOfficer && currentOfficer.name !== "System Administrator") {
+      return currentOfficer.name;
+    }
+    return "Staff Officer";
+  }, [loggedStaffName, currentOfficer]);
+
   const handleSelectOfficer = (officerId: string) => {
     setActiveOfficerId(officerId);
     if (typeof window !== "undefined") {
       localStorage.setItem("psi_active_staff_id", officerId);
+      const officer = fieldStaffList.find((s) => s.id === officerId);
+      if (officer) {
+        localStorage.setItem("psi_logged_staff_name", officer.name);
+        setLoggedStaffName(officer.name);
+      }
     }
     setShowOfficerModal(false);
   };
@@ -117,7 +167,136 @@ export default function FieldStaffPortal() {
   }, []);
 
   // ── 3. Navigation Tabs ────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<"route" | "quickpay" | "receipts" | "handover">("route");
+  const [activeTab, setActiveTab] = useState<
+    "route" | "quickpay" | "receipts" | "online_slips"
+  >("route");
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+
+  // Staff Extended Modals & View States
+  const [showNewLoanModal, setShowNewLoanModal] = useState<boolean>(false);
+  const [showNewCustomerModal, setShowNewCustomerModal] = useState<boolean>(false);
+  const [preselectedCustomerForLoan, setPreselectedCustomerForLoan] = useState<string | undefined>(undefined);
+
+  // Full Repayments Ledger View Controls
+  const [receiptsViewMode, setReceiptsViewMode] = useState<"my_today" | "all_system">("my_today");
+  const [allPaymentsSearch, setAllPaymentsSearch] = useState<string>("");
+  const [allPaymentsTypeFilter, setAllPaymentsTypeFilter] = useState<string>("ALL");
+
+  // Online Payment Slips Controls
+  const [onlineSlipsFilter, setOnlineSlipsFilter] = useState<
+    "ALL" | "PENDING" | "COMPLETED" | "REJECTED"
+  >("ALL");
+  const [onlineSlipsSearch, setOnlineSlipsSearch] = useState<string>("");
+  const [selectedSlipImage, setSelectedSlipImage] = useState<OnlinePayment | null>(null);
+
+  // New Customer Registration Form State
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustFullName, setNewCustFullName] = useState("");
+  const [newCustNic, setNewCustNic] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+  const [newCustAltPhone, setNewCustAltPhone] = useState("");
+  const [newCustAddress, setNewCustAddress] = useState("");
+  const [newCustTown, setNewCustTown] = useState("");
+  const [newCustVillage, setNewCustVillage] = useState("");
+  const [newCustDistrict, setNewCustDistrict] = useState("Colombo");
+  const [newCustIncome, setNewCustIncome] = useState("");
+  const [newCustOccupation, setNewCustOccupation] = useState("");
+  const [newCustGuarantorName, setNewCustGuarantorName] = useState("");
+  const [newCustGuarantorNic, setNewCustGuarantorNic] = useState("");
+  const [newCustGuarantorPhone, setNewCustGuarantorPhone] = useState("");
+  const [newCustGuarantorRel, setNewCustGuarantorRel] = useState("Spouse");
+
+  const pendingOnlineCount = useMemo(() => {
+    return onlinePayments.filter((p) => p.status === "PENDING").length;
+  }, [onlinePayments]);
+
+  const filteredOnlineSlips = useMemo(() => {
+    return onlinePayments.filter((op) => {
+      if (onlineSlipsFilter !== "ALL" && op.status !== onlineSlipsFilter) return false;
+      if (!onlineSlipsSearch.trim()) return true;
+      const q = onlineSlipsSearch.toLowerCase().trim();
+      return (
+        op.id.toLowerCase().includes(q) ||
+        op.customerName.toLowerCase().includes(q) ||
+        (op.customerNic && op.customerNic.toLowerCase().includes(q)) ||
+        (op.customerPhone && op.customerPhone.toLowerCase().includes(q)) ||
+        op.loanId.toLowerCase().includes(q) ||
+        (op.loanNo && op.loanNo.toLowerCase().includes(q)) ||
+        op.bankName.toLowerCase().includes(q) ||
+        (op.referenceNumber && op.referenceNumber.toLowerCase().includes(q))
+      );
+    });
+  }, [onlinePayments, onlineSlipsFilter, onlineSlipsSearch]);
+
+  const allFilteredPayments = useMemo(() => {
+    return payments.filter((p) => {
+      if (allPaymentsTypeFilter !== "ALL" && p.type !== allPaymentsTypeFilter) return false;
+      if (!allPaymentsSearch.trim()) return true;
+      const q = allPaymentsSearch.toLowerCase().trim();
+      const cust = customers.find((c) => c.id === p.customerId);
+      const custName = cust?.fullName || cust?.name || "";
+      return (
+        p.id.toLowerCase().includes(q) ||
+        (p.receiptNo && p.receiptNo.toLowerCase().includes(q)) ||
+        p.loanId.toLowerCase().includes(q) ||
+        custName.toLowerCase().includes(q) ||
+        (p.notes && p.notes.toLowerCase().includes(q)) ||
+        (p.collectedBy && p.collectedBy.toLowerCase().includes(q))
+      );
+    });
+  }, [payments, allPaymentsSearch, allPaymentsTypeFilter, customers]);
+
+  const handleCreateCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustFullName.trim() || !newCustNic.trim() || !newCustPhone.trim()) {
+      showToast("Please fill in required fields: Full Name, NIC, and Phone");
+      return;
+    }
+
+    const newId = `CUS-${String(customers.length + 1).padStart(3, "0")}`;
+    const newCustomer: Customer = {
+      id: newId,
+      name: newCustName.trim() || newCustFullName.trim().split(" ")[0],
+      fullName: newCustFullName.trim(),
+      nic: newCustNic.trim().toUpperCase(),
+      phone: newCustPhone.trim(),
+      alternatePhone: newCustAltPhone.trim() || undefined,
+      address: newCustAddress.trim() || "Local Residential Address",
+      town: newCustTown.trim() || "Colombo",
+      village: newCustVillage.trim() || newCustTown.trim() || "Colombo",
+      district: newCustDistrict.trim() || "Colombo",
+      monthlyIncome: parseFloat(newCustIncome) || 45000,
+      occupation: newCustOccupation.trim() || "Self Employed",
+      guarantorName: newCustGuarantorName.trim() || undefined,
+      guarantorNic: newCustGuarantorNic.trim() || undefined,
+      guarantorPhone: newCustGuarantorPhone.trim() || undefined,
+      guarantorRelationship: newCustGuarantorRel || undefined,
+      status: "Active",
+      registeredAt: todayStr,
+      hasExistingLoan: false,
+      initialOutstandingBalance: 0,
+    };
+
+    addCustomer(newCustomer);
+    setShowNewCustomerModal(false);
+
+    // Reset Form
+    setNewCustName("");
+    setNewCustFullName("");
+    setNewCustNic("");
+    setNewCustPhone("");
+    setNewCustAltPhone("");
+    setNewCustAddress("");
+    setNewCustTown("");
+    setNewCustVillage("");
+    setNewCustIncome("");
+    setNewCustOccupation("");
+    setNewCustGuarantorName("");
+    setNewCustGuarantorNic("");
+    setNewCustGuarantorPhone("");
+
+    showToast(`Customer ${newCustomer.fullName} (${newCustomer.id}) registered successfully!`);
+  };
 
   // ── 4. Toast notification feedback ────────────────────────────────────────
   const [toastMessage, setToastMessage] = useState<string>("");
@@ -154,24 +333,7 @@ export default function FieldStaffPortal() {
     }
   };
 
-  // ── 6. Handover Status State ──────────────────────────────────────────────
-  const [isHandedOver, setIsHandedOver] = useState<boolean>(false);
-  useEffect(() => {
-    if (typeof window !== "undefined" && currentOfficer) {
-      const key = `psi_handover_${currentOfficer.id}_${todayStr}`;
-      setIsHandedOver(localStorage.getItem(key) === "true");
-    }
-  }, [currentOfficer, todayStr]);
-
-  const handleConfirmHandover = () => {
-    if (!currentOfficer) return;
-    const key = `psi_handover_${currentOfficer.id}_${todayStr}`;
-    localStorage.setItem(key, "true");
-    setIsHandedOver(true);
-    showToast(`Physical cash collected today handed over to Branch Vault!`);
-  };
-
-  // ── 7. Officer Scoped Payments & Cash In Hand ─────────────────────────────
+  // ── 6. Officer Scoped Payments & Cash In Hand ─────────────────────────────
   const myTodayPayments = useMemo(() => {
     if (!currentOfficer) return [];
     return payments.filter(
@@ -184,11 +346,10 @@ export default function FieldStaffPortal() {
   }, [payments, todayStr, currentOfficer]);
 
   const myCashInHand = useMemo(() => {
-    if (isHandedOver) return 0;
     return myTodayPayments
       .filter((p) => (p.method || "Cash").toLowerCase() === "cash")
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  }, [myTodayPayments, isHandedOver]);
+  }, [myTodayPayments]);
 
   const myBankTransfersToday = useMemo(() => {
     return myTodayPayments
@@ -366,122 +527,476 @@ export default function FieldStaffPortal() {
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans pb-24 md:pb-12 antialiased">
-      {/* ── High-Contrast Clean Top Bar (Responsive for Mobile, Tablet, Desktop) ── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
-          {/* Logo & Portal Identity */}
-          <Link href="/field" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0">
-              <img
-                src="/logos/psi-logo.png"
-                alt="PSI ONE Logo"
-                className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(239,68,68,0.25)] group-hover:scale-105 transition-transform"
-              />
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex font-sans pb-20 lg:pb-0 antialiased">
+      {/* ── Mobile Off-Canvas Sidebar Drawer ────────────────────────────────── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex lg:hidden animate-in fade-in duration-200"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <aside
+            className="w-64 max-w-[85vw] bg-[#0b0f19] text-slate-200 h-full shadow-2xl flex flex-col p-4 animate-in slide-in-from-left duration-200 border-r border-slate-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Brand Header */}
+            <div className="flex items-center justify-between pb-4 mb-3 border-b border-slate-800/80">
+              <BrandLogo href="/field" size="md" theme="dark" />
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                aria-label="Close navigation"
+              >
+                <X size={20} />
+              </button>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-black tracking-widest text-red-600 uppercase font-mono">
-                  FIELD OPERATIONS
-                </span>
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+
+            {/* Navigation Groups */}
+            <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
+              {/* Core Operations */}
+              <div className="space-y-1">
+                <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                  CORE OPERATIONS
+                </p>
+                <nav className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("route");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                      activeTab === "route"
+                        ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Calendar
+                        size={18}
+                        className={`shrink-0 transition-colors ${
+                          activeTab === "route" ? "text-white" : "text-slate-400 group-hover:text-white"
+                        }`}
+                      />
+                      <span className="truncate">Today&apos;s Collections</span>
+                    </div>
+                    {routeItems.length > 0 && (
+                      <span
+                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          activeTab === "route"
+                            ? "bg-white/25 text-white"
+                            : "bg-slate-700 text-white border border-slate-600"
+                        }`}
+                      >
+                        {routeItems.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("quickpay");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                      activeTab === "quickpay"
+                        ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Coins
+                        size={18}
+                        className={`shrink-0 transition-colors ${
+                          activeTab === "quickpay" ? "text-white" : "text-slate-400 group-hover:text-white"
+                        }`}
+                      />
+                      <span className="truncate">Quick Pay Desk</span>
+                    </div>
+                  </button>
+                </nav>
               </div>
-              <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-tight">
-                PSI ONE Operations Portal
-              </h1>
+
+              {/* Finance & Approvals */}
+              <div className="space-y-1">
+                <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                  FINANCE & APPROVALS
+                </p>
+                <nav className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("receipts");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                      activeTab === "receipts"
+                        ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Receipt
+                        size={18}
+                        className={`shrink-0 transition-colors ${
+                          activeTab === "receipts" ? "text-white" : "text-slate-400 group-hover:text-white"
+                        }`}
+                      />
+                      <span className="truncate">Repayments Ledger</span>
+                    </div>
+                    {myTodayPayments.length > 0 && (
+                      <span
+                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          activeTab === "receipts"
+                            ? "bg-white/25 text-white"
+                            : "bg-red-600 text-white border border-red-500"
+                        }`}
+                      >
+                        {myTodayPayments.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("online_slips");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                      activeTab === "online_slips"
+                        ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CreditCard
+                        size={18}
+                        className={`shrink-0 transition-colors ${
+                          activeTab === "online_slips" ? "text-white" : "text-slate-400 group-hover:text-white"
+                        }`}
+                      />
+                      <span className="truncate">Online Slips</span>
+                    </div>
+                    {pendingOnlineCount > 0 && (
+                      <span
+                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          activeTab === "online_slips"
+                            ? "bg-white/25 text-white"
+                            : "bg-amber-400 text-slate-950 font-black border border-amber-300"
+                        }`}
+                      >
+                        {pendingOnlineCount}
+                      </span>
+                    )}
+                  </button>
+                </nav>
+              </div>
             </div>
-          </Link>
 
-          {/* Desktop/Tablet Center Navigation Tabs */}
-          <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
-            <button
-              onClick={() => setActiveTab("route")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "route"
-                  ? "bg-white text-red-600 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Calendar size={15} />
-              <span>Route Manifest</span>
-            </button>
+            {/* Footer Officer Profile & Status */}
+            <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2 shrink-0">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 ring-1 ring-white/10">
+                    {staffDisplayName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white truncate leading-tight">
+                      {staffDisplayName}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium truncate flex items-center gap-1.5">
+                      <span className="text-rose-400 font-bold uppercase tracking-wider">Staff</span>
+                      <span>•</span>
+                      <span>{currentOfficer?.branch || "Colombo Central"}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOfficerModal(true);
+                    setSidebarOpen(false);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0 cursor-pointer"
+                  title="Switch Officer Profile"
+                >
+                  <SlidersHorizontal size={14} />
+                </button>
+              </div>
 
-            <button
-              onClick={() => setActiveTab("quickpay")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "quickpay"
-                  ? "bg-white text-red-600 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Coins size={15} />
-              <span>Quick Pay</span>
-            </button>
+              <div className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 flex items-center justify-between text-xs font-semibold">
+                <div className="flex items-center gap-2 text-white">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  <span className="text-[11px] font-bold text-white">Field Sync: Online</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-slate-400 hover:text-red-400 transition flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut size={13} />
+                  <span>Exit</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
 
-            <button
-              onClick={() => setActiveTab("receipts")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer relative ${
-                activeTab === "receipts"
-                  ? "bg-white text-red-600 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Receipt size={15} />
-              <span>Receipts Ledger</span>
-              {myTodayPayments.length > 0 && (
-                <span className="w-4 h-4 bg-red-600 text-white font-black text-[9px] rounded-full flex items-center justify-center">
-                  {myTodayPayments.length}
-                </span>
-              )}
-            </button>
+      {/* ── Desktop Fixed Sidebar (w-64) ────────────────────────────────────── */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-30 bg-[#0b0f19] text-slate-200 border-r border-slate-800/80 p-4 shadow-xl justify-between">
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Brand Header */}
+          <div className="flex items-center justify-between pb-4 mb-3 border-b border-slate-800/80">
+            <BrandLogo href="/field" size="md" theme="dark" />
+          </div>
 
+          {/* Navigation Groups */}
+          <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
+            {/* Core Operations */}
+            <div className="space-y-1">
+              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                CORE OPERATIONS
+              </p>
+              <nav className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("route")}
+                  className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                    activeTab === "route"
+                      ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                      : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Calendar
+                      size={18}
+                      className={`shrink-0 transition-colors ${
+                        activeTab === "route" ? "text-white" : "text-slate-400 group-hover:text-white"
+                      }`}
+                    />
+                    <span className="truncate">Today&apos;s Collections</span>
+                  </div>
+                  {routeItems.length > 0 && (
+                    <span
+                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        activeTab === "route"
+                          ? "bg-white/25 text-white"
+                          : "bg-slate-700 text-white border border-slate-600"
+                      }`}
+                    >
+                      {routeItems.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("quickpay")}
+                  className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                    activeTab === "quickpay"
+                      ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                      : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Coins
+                      size={18}
+                      className={`shrink-0 transition-colors ${
+                        activeTab === "quickpay" ? "text-white" : "text-slate-400 group-hover:text-white"
+                      }`}
+                    />
+                    <span className="truncate">Quick Pay Desk</span>
+                  </div>
+                </button>
+              </nav>
+            </div>
+
+            {/* Finance & Approvals */}
+            <div className="space-y-1">
+              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                FINANCE & APPROVALS
+              </p>
+              <nav className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("receipts")}
+                  className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                    activeTab === "receipts"
+                      ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                      : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Receipt
+                      size={18}
+                      className={`shrink-0 transition-colors ${
+                        activeTab === "receipts" ? "text-white" : "text-slate-400 group-hover:text-white"
+                      }`}
+                    />
+                    <span className="truncate">Repayments Ledger</span>
+                  </div>
+                  {myTodayPayments.length > 0 && (
+                    <span
+                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        activeTab === "receipts"
+                          ? "bg-white/25 text-white"
+                          : "bg-red-600 text-white border border-red-500"
+                      }`}
+                    >
+                      {myTodayPayments.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("online_slips")}
+                  className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                    activeTab === "online_slips"
+                      ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                      : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CreditCard
+                      size={18}
+                      className={`shrink-0 transition-colors ${
+                        activeTab === "online_slips" ? "text-white" : "text-slate-400 group-hover:text-white"
+                      }`}
+                    />
+                    <span className="truncate">Online Slips</span>
+                  </div>
+                  {pendingOnlineCount > 0 && (
+                    <span
+                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        activeTab === "online_slips"
+                          ? "bg-white/25 text-white"
+                          : "bg-amber-400 text-slate-950 font-black border border-amber-300"
+                      }`}
+                    >
+                      {pendingOnlineCount}
+                    </span>
+                  )}
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Officer Profile & Status */}
+        <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2 shrink-0">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 ring-1 ring-white/10">
+                {staffDisplayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white truncate leading-tight">
+                  {staffDisplayName}
+                </p>
+                <p className="text-[10px] text-slate-400 font-medium truncate flex items-center gap-1.5">
+                  <span className="text-rose-400 font-bold uppercase tracking-wider">Staff</span>
+                  <span>•</span>
+                  <span>{currentOfficer?.branch || "Colombo Central"}</span>
+                </p>
+              </div>
+            </div>
             <button
-              onClick={() => setActiveTab("handover")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "handover"
-                  ? "bg-white text-red-600 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              type="button"
+              onClick={() => setShowOfficerModal(true)}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0 cursor-pointer"
+              title="Switch Officer Profile"
             >
-              <Building size={15} />
-              <span>Vault Handover</span>
+              <SlidersHorizontal size={14} />
             </button>
           </div>
 
-          {/* Active Officer & Logout Buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowOfficerModal(true)}
-              className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl transition text-left cursor-pointer shadow-2xs"
-              title="Switch Officer Profile"
-            >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-black text-xs shrink-0">
-                {currentOfficer ? currentOfficer.name.charAt(0) : "U"}
-              </div>
-              <div className="hidden sm:block min-w-0">
-                <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">
-                  {currentOfficer ? currentOfficer.name : "Officer"}
-                </p>
-                <p className="text-[10px] text-slate-500 font-mono">
-                  {currentOfficer?.id || "STF-02"} • {currentOfficer?.branch || "Colombo"}
-                </p>
-              </div>
-              <SlidersHorizontal size={13} className="text-slate-400 ml-0.5" />
-            </button>
-
-            {/* Logout Button */}
+          <div className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 flex items-center justify-between text-xs font-semibold">
+            <div className="flex items-center gap-2 text-white">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-bold text-white">Field Sync: Online</span>
+            </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs shrink-0"
-              title="Sign Out to Login"
+              className="text-slate-400 hover:text-red-400 transition flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+              title="Sign Out"
             >
-              <LogOut size={14} className="text-rose-600" />
-              <span className="hidden sm:inline">Logout</span>
+              <LogOut size={13} />
+              <span>Logout</span>
             </button>
           </div>
         </div>
-      </header>
+      </aside>
+
+      {/* ── Main Layout Column (Offset on Desktop by lg:pl-64) ──────────────── */}
+      <div className="lg:pl-64 flex flex-col flex-1 min-w-0">
+        {/* Top Navbar */}
+        <header className="sticky top-0 z-20 bg-white border-b border-slate-200/90 shadow-2xs">
+          <div className="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                title="Open Sidebar"
+                aria-label="Open Sidebar Menu"
+              >
+                <Menu size={20} />
+              </button>
+
+              <div>
+                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-red-600 font-mono">
+                  <span>FIELD PORTAL</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-500 font-bold">{todayStr}</span>
+                </div>
+                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+                  {activeTab === "route" && "Today's Collections"}
+                  {activeTab === "quickpay" && "Rapid Cash Collection Desk"}
+                  {activeTab === "receipts" && "Repayments Ledger & Receipts"}
+                  {activeTab === "online_slips" && "Customer Online Slips Verification"}
+                </h1>
+              </div>
+            </div>
+
+            {/* Top Right Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreselectedCustomerForLoan(undefined);
+                  setShowNewLoanModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                title="Create a new loan facility"
+              >
+                <PlusCircle size={14} />
+                <span>+ Issue Loan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowNewCustomerModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                title="Register a new customer"
+              >
+                <UserPlus size={14} />
+                <span>+ Customer</span>
+              </button>
+            </div>
+          </div>
+        </header>
 
       {/* ── Officer Switcher Bottom Sheet / Modal ──────────────────────────── */}
       {showOfficerModal && (
@@ -593,80 +1108,66 @@ export default function FieldStaffPortal() {
 
         {/* ── Officer Shift & Cash Summary Grid (Responsive 4-Cards Grid) ── */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {/* Card 1: My Cash In Hand */}
-          <div className="bg-gradient-to-br from-emerald-50 via-emerald-50/60 to-teal-50 border border-emerald-200 rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
-                <Wallet size={15} className="text-emerald-700" />
+          {/* Card 1: Cash In Hand */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Wallet size={14} className="text-emerald-600" />
                 Physical Cash In Hand
               </span>
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
 
             <div className="my-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-emerald-900 tracking-tight">
+              <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
                 {MONEY(myCashInHand)}
               </h2>
-              {isHandedOver ? (
-                <p className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center gap-1">
-                  <CheckCircle2 size={13} /> Handed over to Branch Vault
-                </p>
-              ) : (
-                <p className="text-[11px] text-emerald-700/80 font-medium mt-1">
-                  Cash collected today on route
-                </p>
-              )}
             </div>
 
-            <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between">
-              <span className="text-[10px] text-emerald-800 font-bold">
-                {myTodayPayments.length} receipts today
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 text-[11px]">
+                {myTodayPayments.length} receipts logged
               </span>
-              {!isHandedOver && myCashInHand > 0 ? (
-                <button
-                  onClick={() => setActiveTab("handover")}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black rounded-xl shadow-2xs transition cursor-pointer flex items-center gap-1"
-                >
-                  Handover <ChevronRight size={13} />
-                </button>
-              ) : null}
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                Physical Cash
+              </span>
             </div>
           </div>
 
           {/* Card 2: Today's Route Target */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Calendar size={15} className="text-slate-600" />
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar size={14} className="text-slate-600" />
                 Route Target Today
               </span>
-              <span className="text-[11px] font-mono font-bold text-slate-400">
+              <span className="text-[11px] font-mono text-slate-400">
                 {todayStr}
               </span>
             </div>
 
             <div className="my-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
                 {MONEY(totalTargetToday)}
               </h2>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Scheduled installment demand
-              </p>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 font-medium">
-              Assigned to: <b className="text-slate-900">{currentOfficer?.branch || "Colombo Central"}</b>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>Branch</span>
+              <span className="font-bold text-slate-800 font-mono">
+                {currentOfficer?.branch || "Colombo Central"}
+              </span>
             </div>
           </div>
 
           {/* Card 3: Collected Today */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <CheckCircle2 size={15} className="text-emerald-600" />
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-600" />
                 Collected Today
               </span>
-              <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                 {totalTargetToday > 0
                   ? `${Math.round((totalMyCollectedToday / totalTargetToday) * 100)}%`
                   : "0%"}
@@ -674,40 +1175,37 @@ export default function FieldStaffPortal() {
             </div>
 
             <div className="my-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-emerald-700 tracking-tight">
+              <h2 className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
                 {MONEY(totalMyCollectedToday)}
               </h2>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Bank / Online: <b className="text-blue-700 font-mono">{MONEY(myBankTransfersToday)}</b>
-              </p>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
-              <span>Performance:</span>
-              <span className="font-bold text-slate-900">
-                {routeCompletedCount} of {routeItems.length} visited
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>Bank/Online</span>
+              <span className="font-mono font-bold text-blue-700">
+                {MONEY(myBankTransfersToday)}
               </span>
             </div>
           </div>
 
-          {/* Card 4: Route Visits Completed */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Clock size={15} className="text-slate-600" />
+          {/* Card 4: Route Visits Progress */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Clock size={14} className="text-slate-600" />
                 Borrower Visits
               </span>
-              <span className="text-[11px] font-mono font-bold text-slate-500">
-                {routeItems.length} Scheduled
+              <span className="text-[10px] font-mono font-bold text-slate-500">
+                {routeItems.length} Total
               </span>
             </div>
 
             <div className="my-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
                 {routeCompletedCount}{" "}
-                <span className="text-lg text-slate-400 font-normal">/ {routeItems.length}</span>
+                <span className="text-sm text-slate-400 font-normal">/ {routeItems.length}</span>
               </h2>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2">
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
                 <div
                   className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                   style={{
@@ -721,8 +1219,8 @@ export default function FieldStaffPortal() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
-              <span>Remaining:</span>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>Remaining</span>
               <span className="font-bold text-amber-700">
                 {routeItems.length - routeCompletedCount} pending
               </span>
@@ -1257,196 +1755,484 @@ export default function FieldStaffPortal() {
           </div>
         )}
 
-        {/* TAB 3: MY RECEIPTS (Responsive Grid on Tablet/Desktop) */}
+        {/* TAB 3: REPAYMENTS & RECEIPTS LEDGER */}
         {activeTab === "receipts" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            {/* Header & View Mode Switcher */}
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-black text-slate-900">My Issued Receipts</h2>
+                <h2 className="text-lg font-black text-slate-900 leading-tight">
+                  {receiptsViewMode === "my_today" ? "My Route Receipts Today" : "All System Repayments Ledger"}
+                </h2>
                 <p className="text-xs text-slate-500">
-                  Payments logged by {currentOfficer?.name || "Officer"} today
+                  {receiptsViewMode === "my_today"
+                    ? `Payments recorded by ${currentOfficer?.name || "Officer"} during today's field run`
+                    : "Complete organization-wide collections ledger with real-time receipt verification"}
                 </p>
               </div>
-              <span className="text-xs font-mono font-bold bg-white px-3.5 py-1.5 rounded-xl text-emerald-800 border border-slate-200 shadow-2xs">
-                {myTodayPayments.length} Total Issued
-              </span>
+
+              {/* Segmented View Mode Toggle */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setReceiptsViewMode("my_today")}
+                  className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    receiptsViewMode === "my_today"
+                      ? "bg-white text-red-600 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  My Collections ({myTodayPayments.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceiptsViewMode("all_system")}
+                  className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    receiptsViewMode === "all_system"
+                      ? "bg-white text-red-600 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  All System Repayments ({payments.length})
+                </button>
+              </div>
             </div>
 
-            {myTodayPayments.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-2 shadow-sm">
-                <Receipt size={36} className="text-slate-400 mx-auto" />
-                <h3 className="text-base font-black text-slate-900">No Receipts Issued Yet</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  When you collect installments on your route, official receipts will be stored here with instant reprint and WhatsApp share.
-                </p>
-              </div>
+            {/* VIEW MODE 1: MY ROUTE COLLECTIONS TODAY */}
+            {receiptsViewMode === "my_today" ? (
+              myTodayPayments.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-2 shadow-2xs">
+                  <Receipt size={36} className="text-slate-400 mx-auto" />
+                  <h3 className="text-base font-black text-slate-900">No Receipts Issued Today Yet</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    When you collect installments on your route, official receipts will be stored here with instant reprint and WhatsApp share.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {myTodayPayments.map((p) => {
+                    const cust = customers.find((c) => c.id === p.customerId);
+                    const ln = loans.find((l) => l.id === p.loanId);
+                    const custName = cust?.fullName || cust?.name || ln?.customerName || "Customer";
+
+                    return (
+                      <div
+                        key={p.id}
+                        className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                              {custName}
+                            </p>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">
+                              {p.method || "Cash"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                            {p.receiptNo || p.id} • Loan: {ln?.loanNo || p.loanId}
+                          </p>
+                        </div>
+
+                        <div className="text-right shrink-0 flex items-center gap-2.5">
+                          <div>
+                            <p className="text-sm sm:text-base font-black text-emerald-700 font-mono">
+                              {MONEY(Number(p.amount) || 0)}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-mono">
+                              {p.date}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => setSelectedReceipt(p)}
+                            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition cursor-pointer border border-slate-200"
+                            title="View Official Receipt"
+                          >
+                            <Receipt size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {myTodayPayments.map((p) => {
-                  const cust = customers.find((c) => c.id === p.customerId);
-                  const ln = loans.find((l) => l.id === p.loanId);
-                  const custName = cust?.fullName || cust?.name || ln?.customerName || "Customer";
+              /* VIEW MODE 2: ALL SYSTEM REPAYMENTS LEDGER */
+              <div className="space-y-3">
+                {/* Search & Filter Toolbar */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="relative w-full sm:w-80">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search receipt #, customer, loan, notes..."
+                      value={allPaymentsSearch}
+                      onChange={(e) => setAllPaymentsSearch(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
 
-                  return (
-                    <div
-                      key={p.id}
-                      className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                            {custName}
-                          </p>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">
-                            {p.method || "Cash"}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                          {p.receiptNo || p.id} • Loan: {ln?.loanNo || p.loanId}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                    {(["ALL", "Capital", "Interest", "Other"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setAllPaymentsTypeFilter(t)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          allPaymentsTypeFilter === t
+                            ? "bg-slate-900 text-white shadow-2xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                      <div className="text-right shrink-0 flex items-center gap-2.5">
-                        <div>
-                          <p className="text-sm sm:text-base font-black text-emerald-700 font-mono">
-                            {MONEY(Number(p.amount) || 0)}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-mono">
-                            {p.date}
-                          </p>
-                        </div>
+                {/* All Repayments Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                          <th className="py-3 px-4">Receipt / Payment ID</th>
+                          <th className="py-3 px-4">Date</th>
+                          <th className="py-3 px-4">Borrower & Loan</th>
+                          <th className="py-3 px-4">Type</th>
+                          <th className="py-3 px-4">Method</th>
+                          <th className="py-3 px-4">Collected By</th>
+                          <th className="py-3 px-4 text-right">Amount</th>
+                          <th className="py-3 px-4 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {allFilteredPayments.map((p) => {
+                          const cust = customers.find((c) => c.id === p.customerId);
+                          const ln = loans.find((l) => l.id === p.loanId);
 
-                        <button
-                          onClick={() => setSelectedReceipt(p)}
-                          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition cursor-pointer border border-slate-200"
-                          title="View Official Receipt"
-                        >
-                          <Receipt size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                          return (
+                            <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                              <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                                {p.receiptNo || p.id}
+                              </td>
+                              <td className="py-3 px-4 text-slate-600 font-medium">
+                                {p.date}
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="font-bold text-slate-900 block truncate max-w-[160px]">
+                                  {cust?.fullName || cust?.name || "Customer"}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  Loan: {ln?.loanNo || p.loanId}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                  {p.type || "Capital"}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-slate-700 font-medium">
+                                {p.method || "Cash"}
+                              </td>
+                              <td className="py-3 px-4 text-slate-600">
+                                {p.collectedBy || "Officer"}
+                              </td>
+                              <td className="py-3 px-4 text-right font-mono font-black text-slate-950 text-xs">
+                                {MONEY(p.amount)}
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedReceipt(p)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/60 rounded-lg transition cursor-pointer"
+                                >
+                                  <Receipt size={12} className="text-red-600" />
+                                  <span>Receipt</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {allFilteredPayments.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
+                              No repayments recorded matching criteria.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* TAB 4: HANDOVER (Responsive Centered Card) */}
-        {activeTab === "handover" && (
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center">
-                  <Building size={22} />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-slate-900">
-                    Day-End Cashier Handover
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Reconcile physical cash bag and deposit to Branch Vault.
-                  </p>
-                </div>
-              </div>
-
-              {/* Status Banner */}
-              {isHandedOver ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-emerald-950">
-                      Handover Complete for Today
-                    </h3>
-                    <p className="text-xs text-emerald-800 mt-0.5">
-                      All physical cash collected on {todayStr} has been deposited to the branch cashier.
-                    </p>
+        {/* TAB 4: ONLINE PAYMENT SLIPS (STAFF RECONCILIATION) */}
+        {activeTab === "online_slips" && (
+          <div className="space-y-4">
+            {/* KPI Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/80 p-4 rounded-2xl shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+                    Pending Review
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
+                    <Clock size={16} />
                   </div>
                 </div>
-              ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shrink-0">
-                    <Clock size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-amber-950">
-                      Handover Pending
-                    </h3>
-                    <p className="text-xs text-amber-800 mt-0.5">
-                      You are holding physical cash collected on today&apos;s route. Reconcile and deposit at branch.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Breakdown Grid */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Officer In Charge</span>
-                  <span className="font-bold text-slate-900 font-mono">
-                    {currentOfficer?.name} ({currentOfficer?.id})
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Branch Assignment</span>
-                  <span className="font-bold text-slate-900">
-                    {currentOfficer?.branch || "Colombo Central"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Total Receipts Logged</span>
-                  <span className="font-bold text-slate-900 font-mono">
-                    {myTodayPayments.length} receipts
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Bank Transfers / Online</span>
-                  <span className="font-bold text-blue-700 font-mono">
-                    {MONEY(myBankTransfersToday)}
-                  </span>
-                </div>
-                <div className="pt-3 border-t border-slate-200 flex justify-between items-center text-base">
-                  <span className="font-black text-slate-900">Physical Cash To Deposit</span>
-                  <span className="font-black text-emerald-700 font-mono text-2xl">
-                    {MONEY(myCashInHand)}
+                <p className="text-xl sm:text-2xl font-black text-slate-950 font-mono mt-1">
+                  {MONEY(
+                    onlinePayments
+                      .filter((o) => o.status === "PENDING")
+                      .reduce((s, o) => s + (Number(o.amount) || 0), 0)
+                  )}
+                </p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-200/60 text-[11px]">
+                  <span className="text-slate-600 font-medium">Slips Awaiting Verification</span>
+                  <span className="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-full bg-amber-200/80">
+                    {pendingOnlineCount} Pending
                   </span>
                 </div>
               </div>
 
-              {!isHandedOver && myCashInHand > 0 ? (
-                <button
-                  onClick={handleConfirmHandover}
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <FileCheck size={18} />
-                  Confirm Cash Handover to Branch Vault
-                </button>
-              ) : null}
+              <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-300/80 p-4 rounded-2xl shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">
+                    Approved & Credited
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800">
+                    <CheckCircle2 size={16} />
+                  </div>
+                </div>
+                <p className="text-xl sm:text-2xl font-black text-slate-950 font-mono mt-1">
+                  {MONEY(
+                    onlinePayments
+                      .filter((o) => o.status === "COMPLETED")
+                      .reduce((s, o) => s + (Number(o.amount) || 0), 0)
+                  )}
+                </p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-200/60 text-[11px]">
+                  <span className="text-slate-600 font-medium">Reconciled to Borrowers</span>
+                  <span className="font-mono font-bold text-emerald-900 px-2 py-0.5 rounded-full bg-emerald-200/80">
+                    {onlinePayments.filter((o) => o.status === "COMPLETED").length} Approved
+                  </span>
+                </div>
+              </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                <Link
-                  href="/login"
-                  className="text-slate-500 hover:text-red-600 flex items-center gap-1.5 transition font-semibold"
-                >
-                  <LogOut size={14} />
-                  Sign Out
-                </Link>
-                <button
-                  onClick={() => setShowOfficerModal(true)}
-                  className="text-red-600 hover:underline font-bold"
-                >
-                  Switch Officer Profile
-                </button>
+              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Total Online Records
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+                    <CreditCard size={16} />
+                  </div>
+                </div>
+                <p className="text-xl sm:text-2xl font-black text-slate-950 font-mono mt-1">
+                  {MONEY(
+                    onlinePayments.reduce((s, o) => s + (Number(o.amount) || 0), 0)
+                  )}
+                </p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-[11px]">
+                  <span className="text-slate-600 font-medium">All Slips Submitted</span>
+                  <span className="font-mono font-bold text-slate-800 px-2 py-0.5 rounded-full bg-slate-100">
+                    {onlinePayments.length} Total
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Tabs & Search Controls */}
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center gap-1.5 border-b border-slate-100 pb-3 overflow-x-auto">
+                {(["ALL", "PENDING", "COMPLETED", "REJECTED"] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setOnlineSlipsFilter(st)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+                      onlineSlipsFilter === st
+                        ? st === "PENDING"
+                          ? "bg-amber-600 text-white shadow-2xs"
+                          : st === "COMPLETED"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : st === "REJECTED"
+                          ? "bg-rose-600 text-white shadow-2xs"
+                          : "bg-red-600 text-white shadow-2xs"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {st === "ALL" ? "All Slips" : st === "PENDING" ? "Pending Review" : st === "COMPLETED" ? "Approved" : "Declined"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by customer name, NIC, phone, loan ID, or bank reference..."
+                  value={onlineSlipsSearch}
+                  onChange={(e) => setOnlineSlipsSearch(e.target.value)}
+                  className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            {/* Online Slips Table */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      <th className="py-3 px-4">Slip ID & Date</th>
+                      <th className="py-3 px-4">Borrower Details</th>
+                      <th className="py-3 px-4">Loan Reference</th>
+                      <th className="py-3 px-4">Bank & Transaction Ref</th>
+                      <th className="py-3 px-4 text-right">Amount Paid</th>
+                      <th className="py-3 px-4 text-center">Slip Proof</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredOnlineSlips.map((item) => {
+                      const targetLoan = loans.find((l) => l.id === item.loanId);
+
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-4">
+                            <span className="font-mono font-bold text-slate-900 block">{item.id}</span>
+                            <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                              <Calendar size={11} /> {item.paymentDate}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <p className="font-bold text-slate-900">{item.customerName}</p>
+                            <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                              {item.customerNic && <span>NIC: {item.customerNic}</span>}
+                              {item.customerPhone && <span>• {item.customerPhone}</span>}
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="font-mono font-bold text-red-700 block">
+                              {item.loanNo || item.loanId}
+                            </span>
+                            {targetLoan && (
+                              <span className="text-[10px] text-slate-500">
+                                Facility: {MONEY(targetLoan.principal || targetLoan.amount || 0)}
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-slate-800 block truncate max-w-[150px]">
+                              {item.bankName}
+                            </span>
+                            <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 border border-slate-200">
+                              Ref: {item.referenceNumber || "N/A"}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-right font-mono font-black text-slate-950 text-xs">
+                            {MONEY(item.amount)}
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSlipImage(item)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/60 rounded-lg transition cursor-pointer"
+                            >
+                              <ImageIcon size={13} />
+                              <span>View Slip</span>
+                            </button>
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                item.status === "COMPLETED"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : item.status === "REJECTED"
+                                  ? "bg-rose-100 text-rose-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            {item.status === "PENDING" && (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    approveOnlinePayment(item.id, "Verified by Staff Officer", currentOfficer?.name);
+                                    showToast(`Slip ${item.id} approved and credited to loan!`);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
+                                  title="Approve slip & credit loan"
+                                >
+                                  <Check size={12} /> Accept
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const reason = prompt("Enter reason for declining slip:") || "Declined by officer";
+                                    rejectOnlinePayment(item.id, reason, currentOfficer?.name);
+                                    showToast(`Slip ${item.id} declined.`);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-lg text-xs font-bold transition cursor-pointer"
+                                  title="Decline slip"
+                                >
+                                  <X size={12} /> Decline
+                                </button>
+                              </div>
+                            )}
+
+                            {item.status === "COMPLETED" && (
+                              <span className="text-[11px] text-emerald-700 font-bold font-mono">
+                                {item.receiptNo || "Reconciled"}
+                              </span>
+                            )}
+
+                            {item.status === "REJECTED" && (
+                              <span className="text-[10px] text-slate-500 italic truncate max-w-[120px] block ml-auto" title={item.reviewNotes}>
+                                {item.reviewNotes || "Declined"}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredOnlineSlips.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
+                          No customer online payment slips found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
+
       </main>
+      </div>
 
       {/* ── Fixed Bottom App Navigation (Visible on Mobile Only, Hidden on Tablet & Desktop) ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-4 shadow-lg md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-3 shadow-lg md:hidden">
         <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
           <button
             onClick={() => setActiveTab("route")}
@@ -1457,7 +2243,7 @@ export default function FieldStaffPortal() {
             }`}
           >
             <Calendar size={18} />
-            <span className="text-[10px] tracking-tight mt-1">Route</span>
+            <span className="text-[10px] tracking-tight mt-1">Collections</span>
           </button>
 
           <button
@@ -1483,22 +2269,27 @@ export default function FieldStaffPortal() {
             <Receipt size={18} />
             <span className="text-[10px] tracking-tight mt-1">Receipts</span>
             {myTodayPayments.length > 0 && (
-              <span className="absolute top-1 right-3 w-4 h-4 bg-red-600 text-white font-black text-[9px] rounded-full flex items-center justify-center">
+              <span className="absolute top-1 right-2 w-4 h-4 bg-red-600 text-white font-black text-[9px] rounded-full flex items-center justify-center">
                 {myTodayPayments.length}
               </span>
             )}
           </button>
 
           <button
-            onClick={() => setActiveTab("handover")}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition cursor-pointer ${
-              activeTab === "handover"
+            onClick={() => setActiveTab("online_slips")}
+            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition cursor-pointer relative ${
+              activeTab === "online_slips"
                 ? "text-red-600 font-black bg-red-50"
                 : "text-slate-500 hover:text-slate-900 font-medium"
             }`}
           >
-            <Building size={18} />
-            <span className="text-[10px] tracking-tight mt-1">Handover</span>
+            <ImageIcon size={18} />
+            <span className="text-[10px] tracking-tight mt-1">Slips</span>
+            {pendingOnlineCount > 0 && (
+              <span className="absolute top-1 right-2 w-4 h-4 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full flex items-center justify-center animate-pulse">
+                {pendingOnlineCount}
+              </span>
+            )}
           </button>
         </div>
       </nav>
@@ -1963,6 +2754,412 @@ export default function FieldStaffPortal() {
           payment={selectedReceipt}
           onClose={() => setSelectedReceipt(null)}
         />
+      )}
+
+      {/* ── MODAL: Originate New Loan Facility ─────────────────────────────── */}
+      {showNewLoanModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150 overflow-y-auto"
+          onClick={() => setShowNewLoanModal(false)}
+        >
+          <div
+            className="bg-white border border-slate-200 w-full max-w-4xl rounded-3xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                  <PlusCircle size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    Originate New Loan Facility (Staff Portal)
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Issue microfinance facility, set deductions, repayment frequency and guarantors.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewLoanModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <NewLoanForm
+              isModal={true}
+              initialCustomerId={preselectedCustomerForLoan}
+              onSuccess={(loanId) => {
+                setShowNewLoanModal(false);
+                setPreselectedCustomerForLoan(undefined);
+                showToast(`Loan ${loanId} originated successfully!`);
+              }}
+              onCancel={() => {
+                setShowNewLoanModal(false);
+                setPreselectedCustomerForLoan(undefined);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Register New Borrower ──────────────────────────────────── */}
+      {showNewCustomerModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150 overflow-y-auto"
+          onClick={() => setShowNewCustomerModal(false)}
+        >
+          <div
+            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    Register New Borrower
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Fast-track field onboarding for borrowers in your route cluster.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewCustomerModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCustomer} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCustFullName}
+                    onChange={(e) => setNewCustFullName(e.target.value)}
+                    placeholder="e.g. Sunil Shantha Perera"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Display / Calling Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustName}
+                    onChange={(e) => setNewCustName(e.target.value)}
+                    placeholder="e.g. Sunil"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    NIC Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCustNic}
+                    onChange={(e) => setNewCustNic(e.target.value)}
+                    placeholder="e.g. 198512345678 or 851234567V"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition uppercase"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Primary Mobile Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={newCustPhone}
+                    onChange={(e) => setNewCustPhone(e.target.value)}
+                    placeholder="e.g. 077 123 4567"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Secondary / Landline Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={newCustAltPhone}
+                    onChange={(e) => setNewCustAltPhone(e.target.value)}
+                    placeholder="e.g. 011 234 5678"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Monthly Income (LKR)
+                  </label>
+                  <input
+                    type="number"
+                    value={newCustIncome}
+                    onChange={(e) => setNewCustIncome(e.target.value)}
+                    placeholder="e.g. 65000"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Residential Address
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustAddress}
+                    onChange={(e) => setNewCustAddress(e.target.value)}
+                    placeholder="Street number, road, lane"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Town / City
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustTown}
+                    onChange={(e) => setNewCustTown(e.target.value)}
+                    placeholder="e.g. Maharagama"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Guarantor Details Accordion / Sub-card */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                  <UserCheck size={14} className="text-red-600" />
+                  <span>Guarantor Information</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-600 uppercase block">
+                      Guarantor Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newCustGuarantorName}
+                      onChange={(e) => setNewCustGuarantorName(e.target.value)}
+                      placeholder="Guarantor Full Name"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-600 uppercase block">
+                      Guarantor Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={newCustGuarantorPhone}
+                      onChange={(e) => setNewCustGuarantorPhone(e.target.value)}
+                      placeholder="07X XXXXXXX"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-600 uppercase block">
+                      Guarantor NIC
+                    </label>
+                    <input
+                      type="text"
+                      value={newCustGuarantorNic}
+                      onChange={(e) => setNewCustGuarantorNic(e.target.value)}
+                      placeholder="NIC Number"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600 uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNewCustomerModal(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <CheckCircle2 size={14} />
+                  Complete Registration
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: View Full Bank Slip (Staff Verification) ───────────────── */}
+      {selectedSlipImage && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+          onClick={() => setSelectedSlipImage(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                  <ImageIcon size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Customer Deposit Slip Proof
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Slip ID: {selectedSlipImage.id} · Ref: {selectedSlipImage.referenceNumber || "N/A"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSlipImage(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Slip Details Banner */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+              <div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                  Borrower
+                </span>
+                <span className="font-bold text-slate-900 truncate block">
+                  {selectedSlipImage.customerName}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                  Amount
+                </span>
+                <span className="font-mono font-black text-emerald-700">
+                  {MONEY(selectedSlipImage.amount)}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                  Bank Name
+                </span>
+                <span className="font-bold text-slate-900 truncate block">
+                  {selectedSlipImage.bankName}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                  Transfer Date
+                </span>
+                <span className="font-mono font-bold text-slate-900">
+                  {selectedSlipImage.paymentDate}
+                </span>
+              </div>
+            </div>
+
+            {/* Slip Image Preview */}
+            <div className="flex-1 overflow-auto bg-slate-900 rounded-2xl p-2 min-h-[260px] max-h-[440px] flex items-center justify-center border border-slate-800">
+              {selectedSlipImage.slipUrl ? (
+                <img
+                  src={selectedSlipImage.slipUrl}
+                  alt="Customer Bank Deposit Slip"
+                  className="max-h-full max-w-full object-contain rounded-xl shadow-lg"
+                />
+              ) : (
+                <div className="text-center text-slate-400 p-6">
+                  <ImageIcon size={36} className="mx-auto mb-2 opacity-40" />
+                  <p className="text-xs">No direct image file attached.</p>
+                  <p className="text-[10px] font-mono mt-1 text-slate-500">
+                    Ref: {selectedSlipImage.referenceNumber}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Bar inside Slip Modal */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    selectedSlipImage.status === "COMPLETED"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : selectedSlipImage.status === "REJECTED"
+                      ? "bg-rose-100 text-rose-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  Status: {selectedSlipImage.status}
+                </span>
+              </div>
+
+              {selectedSlipImage.status === "PENDING" && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reason = prompt("Enter reason for declining slip:") || "Declined by field officer";
+                      rejectOnlinePayment(selectedSlipImage.id, reason, currentOfficer?.name);
+                      setSelectedSlipImage(null);
+                      showToast(`Slip ${selectedSlipImage.id} declined.`);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Decline Slip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      approveOnlinePayment(
+                        selectedSlipImage.id,
+                        "Verified by Field Staff",
+                        currentOfficer?.name
+                      );
+                      setSelectedSlipImage(null);
+                      showToast(`Slip ${selectedSlipImage.id} approved and credited to loan!`);
+                    }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Check size={14} /> Accept & Credit Loan
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

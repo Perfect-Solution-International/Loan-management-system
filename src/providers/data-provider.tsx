@@ -195,7 +195,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       const storedStaff = localStorage.getItem("psi_staff_users");
       if (storedStaff) {
-        setStaffUsers(JSON.parse(storedStaff));
+        const parsedStaff: StaffUser[] = JSON.parse(storedStaff);
+        const merged = [...parsedStaff];
+        for (const initUser of initialStaffUsers) {
+          if (!merged.some((u) => u.id === initUser.id)) {
+            merged.push(initUser);
+          }
+        }
+        setStaffUsers(merged);
+        localStorage.setItem("psi_staff_users", JSON.stringify(merged));
       } else {
         setStaffUsers(initialStaffUsers);
       }

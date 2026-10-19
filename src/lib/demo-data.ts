@@ -42,4 +42,21 @@ export const initialStaffUsers: StaffUser[] = [
       manageCustomers: true,
     },
   },
+  {
+    id: "STF-02",
+    name: "Staff Officer",
+    email: "staff@psione.lk",
+    role: "Loan Officer",
+    branch: "Colombo Central",
+    status: "Active",
+    joinedDate: "2025-01-15",
+    password: "Staff@123",
+    permissions: {
+      approveLoans: true,
+      recordRepayments: true,
+      exportReports: false,
+      manageSettings: false,
+      manageCustomers: true,
+    },
+  },
 ];

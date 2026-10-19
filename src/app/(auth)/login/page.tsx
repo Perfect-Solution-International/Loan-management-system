@@ -124,7 +124,11 @@ export default function LoginPage() {
 
       // Valid Staff credentials
       if (typeof window !== "undefined") {
-        localStorage.setItem("psi_active_staff_id", matchedStaff?.id || "STF-FIELD");
+        const staffId = matchedStaff?.id || "STF-02";
+        const staffName = matchedStaff?.name || (term.includes("@") ? "Staff Officer" : term);
+        localStorage.setItem("psi_active_staff_id", staffId);
+        localStorage.setItem("psi_logged_staff_name", staffName);
+        localStorage.setItem("psi_user_role", "Staff");
       }
 
       // If Field Officer or Collection Agent -> route directly to /field app!
