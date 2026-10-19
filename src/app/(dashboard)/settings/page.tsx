@@ -757,7 +757,8 @@ function SettingsContent() {
                         step="10000"
                         value={simPrincipal}
                         onChange={(e) => setSimPrincipal(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-600 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-red-400"
+                        className="w-full px-3.5 py-2 text-xs bg-white text-slate-950 font-mono font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
+                        style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
                       />
                     </div>
                     <div>
@@ -770,7 +771,8 @@ function SettingsContent() {
                         max="36"
                         value={simDuration}
                         onChange={(e) => setSimDuration(parseInt(e.target.value, 10) || 1)}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-600 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-red-400"
+                        className="w-full px-3.5 py-2 text-xs bg-white text-slate-950 font-mono font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
+                        style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
                       />
                     </div>
                   </div>
