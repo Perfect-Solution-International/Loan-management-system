@@ -43,7 +43,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith("/audit-logs")) return "Activity & Audit Trail";
     if (pathname.startsWith("/settings")) return "System Settings";
     if (pathname.startsWith("/repayments")) return "Repayment Ledger";
-    if (pathname.startsWith("/online-payments")) return "Online Payments & Bank Slips";
+    if (pathname.startsWith("/online-payments")) return "Online Payment Slips";
     return "Portfolio Operations";
   }, [pathname]);
 

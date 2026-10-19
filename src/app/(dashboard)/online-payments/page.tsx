@@ -281,39 +281,21 @@ export default function OnlinePaymentsPage() {
         </div>
       )}
 
-      {/* ── Page Header ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
-              FINANCE & COLLECTIONS
-            </span>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-bold text-slate-500">Bank Transfer Verification</span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            Online Payment Slips
-          </h1>
-          <p className="text-xs text-slate-600 font-medium mt-0.5">
-            Review, verify, and approve customer bank deposit slips and online transfer receipts.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setIsUploadModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
-          >
-            <Plus size={15} /> Record Bank Slip
-          </button>
-          <Link
-            href="/repayments"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition shadow-2xs"
-          >
-            <Receipt size={14} /> Repayments Ledger
-          </Link>
-        </div>
+      {/* ── Page Actions ────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-end gap-2.5 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setIsUploadModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
+        >
+          <Plus size={15} /> Record Bank Slip
+        </button>
+        <Link
+          href="/repayments"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition shadow-2xs"
+        >
+          <Receipt size={14} /> Repayments Ledger
+        </Link>
       </div>
 
       {/* ── Summary KPI Cards ──────────────────────────────────────────────── */}
