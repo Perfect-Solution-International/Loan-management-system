@@ -31,7 +31,7 @@ import {
 import type { Payment } from "@/types";
 
 export default function CollectionsPage() {
-  const { loans, customers, payments, addPayment } = useData();
+  const { loans, customers, payments, addPayment, getNextReceiptNo } = useData();
 
   // Selected collection date (defaults to system date 2026-10-14)
   const [selectedDate, setSelectedDate] = useState<string>("2026-10-14");
@@ -141,7 +141,7 @@ export default function CollectionsPage() {
       return;
     }
 
-    const receiptNo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = getNextReceiptNo();
     const newPayment: Payment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       loanId: collectingItem.loan.id,

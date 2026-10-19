@@ -55,7 +55,7 @@ interface PtpRecord {
 }
 
 export default function FieldStaffPortal() {
-  const { customers, loans, payments, addPayment, staffUsers } = useData();
+  const { customers, loans, payments, addPayment, staffUsers, getNextReceiptNo } = useData();
 
   // ── 1. Active Officer Session & Isolation ─────────────────────────────────
   const fieldStaffList = useMemo(() => {
@@ -317,7 +317,7 @@ export default function FieldStaffPortal() {
       return;
     }
 
-    const receiptNum = `REC-FLD-${Date.now().toString().slice(-6)}`;
+    const receiptNum = getNextReceiptNo();
     const newPayment: Payment = {
       id: `pay-${Date.now()}`,
       loanId: collectItem.loan.id,

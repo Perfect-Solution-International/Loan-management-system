@@ -48,7 +48,7 @@ interface DashboardPageProps {
 type CollectionTab = "ALL" | "PENDING" | "COLLECTED" | "OVERDUE";
 
 export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
-  const { customers, loans, payments, addPayment } = useData();
+  const { customers, loans, payments, addPayment, getNextReceiptNo } = useData();
 
   // Active role state: "admin" | "staff" (synced with initialRole)
   const [role, setRole] = useState<"admin" | "staff">(initialRole);
@@ -277,7 +277,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     const numAmount = Number(collectAmount);
     if (!numAmount || numAmount <= 0) return;
 
-    const receiptNo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = getNextReceiptNo();
     const newPayment: Payment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       loanId: collectingItem.loan.id,

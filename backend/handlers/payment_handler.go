@@ -72,7 +72,8 @@ func (h *PaymentHandler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 		p.ID = "PAY-" + uuid.New().String()[:8]
 	}
 	if p.ReceiptNo == "" {
-		p.ReceiptNo = fmt.Sprintf("REC-%d-%s", time.Now().Year(), p.ID[4:])
+		count, _ := h.paymentRepo.GetCount()
+		p.ReceiptNo = fmt.Sprintf("REC-%d-%04d", time.Now().Year(), count+1)
 	}
 	if p.Date == "" {
 		p.Date = time.Now().Format("2006-01-02")

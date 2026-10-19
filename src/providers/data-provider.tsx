@@ -39,6 +39,32 @@ export interface DataContextValue {
   addStaffUser: (user: StaffUser) => void;
   updateStaffUser: (id: string, updated: Partial<StaffUser>) => void;
   resetAllData: () => void;
+  getNextReceiptNo: () => string;
+}
+
+export function getNextReceiptNo(paymentsList: Payment[] = []): string {
+  const currentYear = new Date().getFullYear();
+  let maxSeq = 0;
+
+  for (const p of paymentsList) {
+    if (!p.receiptNo) continue;
+    const match = p.receiptNo.match(/^REC-(\d{4})-(\d+)$/);
+    if (match) {
+      const parsed = parseInt(match[2], 10);
+      if (!isNaN(parsed)) {
+        if (paymentsList.length < 50 && parsed >= 1000) {
+          // Ignore legacy random numbers like 5954
+          continue;
+        }
+        if (parsed > maxSeq) {
+          maxSeq = parsed;
+        }
+      }
+    }
+  }
+
+  const nextSeq = maxSeq > 0 ? maxSeq + 1 : (paymentsList.length > 0 ? paymentsList.length + 1 : 1);
+  return `REC-${currentYear}-${String(nextSeq).padStart(4, "0")}`;
 }
 
 const defaultState: DataContextValue = {
@@ -63,6 +89,7 @@ const defaultState: DataContextValue = {
   addStaffUser: () => {},
   updateStaffUser: () => {},
   resetAllData: () => {},
+  getNextReceiptNo: () => `REC-${new Date().getFullYear()}-0001`,
 };
 
 const DataContext = createContext<DataContextValue>(defaultState);
@@ -112,7 +139,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       const storedPayments = localStorage.getItem("psi_payments");
       if (storedPayments) {
-        setPayments(JSON.parse(storedPayments));
+        const parsed: Payment[] = JSON.parse(storedPayments);
+        // Normalize any legacy random receipts so they cleanly sequence from 0001
+        const normalized = [...parsed]
+          .reverse()
+          .map((p, idx) => {
+            const isOldRandom =
+              !p.receiptNo ||
+              /^REC-\d{4}-[1-9]\d{3}$/.test(p.receiptNo) ||
+              p.receiptNo.startsWith("REC-FLD-") ||
+              p.receiptNo.startsWith("RCP-");
+            if (isOldRandom) {
+              const yr = p.date ? p.date.slice(0, 4) : new Date().getFullYear().toString();
+              return {
+                ...p,
+                receiptNo: `REC-${yr}-${String(idx + 1).padStart(4, "0")}`,
+              };
+            }
+            return p;
+          })
+          .reverse();
+        setPayments(normalized);
+        localStorage.setItem("psi_payments", JSON.stringify(normalized));
       }
 
       const storedDocs = localStorage.getItem("psi_documents");
@@ -222,7 +270,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addPayment = React.useCallback((payment: Payment) => {
-    setPayments((prev) => [payment, ...prev]);
+    const isOldRandom =
+      !payment.receiptNo ||
+      /^REC-\d{4}-[1-9]\d{3}$/.test(payment.receiptNo) ||
+      payment.receiptNo.startsWith("REC-FLD-") ||
+      payment.receiptNo.startsWith("RCP-");
+
+    const finalReceiptNo = isOldRandom ? getNextReceiptNo(payments) : payment.receiptNo;
+    const paymentWithReceipt: Payment = {
+      ...payment,
+      receiptNo: finalReceiptNo,
+    };
+
+    setPayments((prev) => [paymentWithReceipt, ...prev]);
 
     // Check if the loan balance is now settled in full
     setLoans((prevLoans) =>
@@ -240,6 +300,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return l;
       })
     );
+  }, [payments]);
+
+  const getNextReceiptNumber = React.useCallback(() => {
+    return getNextReceiptNo(payments);
   }, [payments]);
 
   const addDocument = React.useCallback((doc: CustomerDocument) => {
@@ -302,6 +366,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addStaffUser,
       updateStaffUser,
       resetAllData,
+      getNextReceiptNo: getNextReceiptNumber,
     }),
     [
       customers,
@@ -321,6 +386,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addStaffUser,
       updateStaffUser,
       resetAllData,
+      getNextReceiptNumber,
     ]
   );
 

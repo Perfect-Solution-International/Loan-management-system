@@ -89,6 +89,12 @@ func (r *PaymentRepository) GetByCustomerID(customerID string) ([]models.Payment
 	return payments, nil
 }
 
+func (r *PaymentRepository) GetCount() (int, error) {
+	var count int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM payments").Scan(&count)
+	return count, err
+}
+
 func (r *PaymentRepository) Create(p *models.Payment) error {
 	query := `
 		INSERT INTO payments (

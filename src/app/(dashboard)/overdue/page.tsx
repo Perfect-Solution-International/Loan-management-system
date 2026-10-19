@@ -33,7 +33,7 @@ import ReceiptModal from "@/components/modals/ReceiptModal";
 import { BrandLogo } from "@/components/brand-logo";
 
 export default function OverduePage() {
-  const { loans, customers, payments, addPayment } = useData();
+  const { loans, customers, payments, addPayment, getNextReceiptNo } = useData();
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -231,7 +231,7 @@ export default function OverduePage() {
       return;
     }
 
-    const receiptNo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = getNextReceiptNo();
     const newPayment: Payment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       loanId: settlingItem.loan.id,

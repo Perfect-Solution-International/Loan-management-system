@@ -45,7 +45,7 @@ interface AttachedDoc {
 
 export default function NewCustomerPage() {
   const router = useRouter();
-  const { customers, addCustomer, addDocument, addLoan, addPayment } = useData();
+  const { customers, addCustomer, addDocument, addLoan, addPayment, getNextReceiptNo } = useData();
 
   // Helper to generate sequential Customer ID starting from CUS-001, CUS-002, etc.
   const generateCustomerId = React.useCallback(() => {
@@ -515,7 +515,7 @@ export default function NewCustomerPage() {
             `Migrated ${form.previousInstallmentsPaid} past repayments on onboarding`,
           method: form.previousPaymentMethod,
           collectedBy: "Branch Credit Officer",
-          receiptNo: `RCP-${Math.floor(100000 + Math.random() * 900000)}`,
+          receiptNo: getNextReceiptNo(),
         };
         addPayment(paymentRecord);
       }

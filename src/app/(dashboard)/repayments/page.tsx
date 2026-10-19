@@ -18,7 +18,7 @@ import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Customer, Loan, Payment } from "@/types";
 
 export default function RepaymentsCollectionsPage() {
-  const { customers, loans, payments, addPayment } = useData();
+  const { customers, loans, payments, addPayment, getNextReceiptNo } = useData();
 
   const [selectedLoanId, setSelectedLoanId] = useState<string>(
     loans.find((l) => l.status === "Active" || l.status === "Overdue")?.id || loans[0]?.id || ""
@@ -80,7 +80,7 @@ export default function RepaymentsCollectionsPage() {
     e.preventDefault();
     if (!selectedLoan || numEnteredAmount <= 0) return;
 
-    const receiptNo = `REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = getNextReceiptNo();
     const newPayment: Payment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       loanId: selectedLoan.id,

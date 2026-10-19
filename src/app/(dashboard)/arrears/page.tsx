@@ -26,7 +26,7 @@ import {
 import type { Loan, Customer, Payment } from "@/types";
 
 export default function ArrearsPage() {
-  const { loans, customers, payments, addPayment } = useData();
+  const { loans, customers, payments, addPayment, getNextReceiptNo } = useData();
 
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -242,7 +242,7 @@ export default function ArrearsPage() {
       return;
     }
 
-    const receiptNo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = getNextReceiptNo();
     const newPayment: Payment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       loanId: recoveringLoan.loan.id,
