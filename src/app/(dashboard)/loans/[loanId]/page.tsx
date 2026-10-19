@@ -220,7 +220,7 @@ function LoanDetailsContent() {
             LOANS / FACILITY DETAILS
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
-            Loan Record: <span className="font-mono text-red-700">{loan.id}</span>
+            <span className="font-mono text-red-700">{loan.id}</span>
           </h1>
           <p className="text-xs text-slate-600 font-medium">
             Detailed breakdown of loan terms, repayment scheme, amortization schedule, and committee decision.
