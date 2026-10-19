@@ -33,6 +33,7 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { BrandLogo } from "@/components/brand-logo";
+import { CustomerPaymentGatewayModal } from "@/components/payment/CustomerPaymentGatewayModal";
 import type { Payment, OnlinePayment } from "@/types";
 
 function parseDateString(dateStr?: string): Date | null {
@@ -241,6 +242,27 @@ export default function CustomerDashboardPage() {
   // Receipt & Statement Modal States
   const [receiptToPrint, setReceiptToPrint] = useState<Payment | null>(null);
   const [isStatementOpen, setIsStatementOpen] = useState(false);
+
+  // Secure Payment Gateway Modal States
+  const [isGatewayOpen, setIsGatewayOpen] = useState(false);
+  const [gatewayLoanId, setGatewayLoanId] = useState<string>("");
+
+  const handleOpenGateway = (targetLoanId?: string) => {
+    setGatewayLoanId(targetLoanId || activeLoanId || customerLoans[0]?.id || "");
+    setIsGatewayOpen(true);
+  };
+
+  const handleGatewaySuccess = (receiptNo?: string) => {
+    if (receiptNo) {
+      setActiveTab("history");
+      const match = repayments.find((p) => p.receiptNo === receiptNo);
+      if (match) {
+        setReceiptToPrint(match);
+      }
+    } else {
+      setActiveTab("slips");
+    }
+  };
 
   // Online Bank Slip Upload Modal States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -608,16 +630,6 @@ export default function CustomerDashboardPage() {
 
             <button
               type="button"
-              onClick={() => handleOpenUploadModal()}
-              className="inline-flex items-center gap-1.5 px-3 h-8 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
-              title="Upload bank transfer or deposit slip"
-            >
-              <Upload size={13} />
-              <span>Upload Slip</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => setIsStatementOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 h-8 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer shrink-0"
             >
@@ -859,12 +871,12 @@ export default function CustomerDashboardPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleOpenUploadModal(loan.id)}
-                            className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                            title="Upload bank deposit slip for this loan"
+                            onClick={() => handleOpenGateway(loan.id)}
+                            className="py-2.5 px-3.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                            title="Upload pay slip or pay online for this facility"
                           >
                             <Upload size={14} className="text-red-600" />
-                            <span className="hidden sm:inline">Pay Slip</span>
+                            <span>Upload Pay Slip</span>
                           </button>
                         </div>
                       </div>
@@ -882,22 +894,6 @@ export default function CustomerDashboardPage() {
                   </p>
                 </div>
               )}
-            </div>
-
-            {/* Assistance & Helpline strip */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Phone size={16} className="text-red-600 shrink-0" />
-                <span>Need assistance? <b>Branch Hotline: 011-2345678</b> (Mon-Sat 8:30AM - 5:00PM)</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsStatementOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition cursor-pointer"
-              >
-                <Printer size={13} className="text-red-600" />
-                <span>Print Statement</span>
-              </button>
             </div>
           </div>
         ) : (
@@ -1196,6 +1192,19 @@ export default function CustomerDashboardPage() {
               {/* TAB 3: Online Bank Slips Table */}
               {activeTab === "slips" && (
                 <div className="overflow-x-auto min-w-full">
+                  <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
+                    <p className="text-xs text-slate-600 font-medium">
+                      All submitted electronic transfer slips and online payments for this facility.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenGateway(currentLoan?.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                    >
+                      <Upload size={12} />
+                      <span>Upload Pay Slip</span>
+                    </button>
+                  </div>
                   <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
                       <tr>
@@ -1305,11 +1314,11 @@ export default function CustomerDashboardPage() {
                             </p>
                             <button
                               type="button"
-                              onClick={() => handleOpenUploadModal()}
+                              onClick={() => handleOpenGateway()}
                               className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
                             >
-                              <Upload size={12} />
-                              <span>Upload First Bank Slip</span>
+                              <CreditCard size={12} />
+                              <span>Pay Online / Upload Slip</span>
                             </button>
                           </td>
                         </tr>
@@ -1359,11 +1368,11 @@ export default function CustomerDashboardPage() {
                 {/* Quick Upload Button */}
                 <button
                   type="button"
-                  onClick={() => handleOpenUploadModal(currentLoan?.id)}
+                  onClick={() => handleOpenGateway(currentLoan?.id)}
                   className="w-full mt-2 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                 >
-                  <Upload size={14} />
-                  <span>Upload Deposit Slip</span>
+                  <CreditCard size={14} />
+                  <span>Pay Online / Upload Slip</span>
                 </button>
               </div>
             </div>
@@ -1885,6 +1894,18 @@ export default function CustomerDashboardPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Secure Fintech Customer Payment Gateway Modal ────────────────── */}
+      {currentCustomer && isGatewayOpen && (
+        <CustomerPaymentGatewayModal
+          isOpen={isGatewayOpen}
+          onClose={() => setIsGatewayOpen(false)}
+          customer={currentCustomer}
+          loans={customerLoans}
+          initialLoanId={gatewayLoanId}
+          onPaymentSuccess={handleGatewaySuccess}
+        />
       )}
     </main>
   );

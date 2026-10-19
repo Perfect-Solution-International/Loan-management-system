@@ -94,7 +94,7 @@ export interface Payment {
   date: string;
   type: "Capital" | "Interest" | "Other";
   notes?: string;
-  method?: "Cash" | "Bank Transfer" | "Cheque";
+  method?: "Cash" | "Bank Transfer" | "Cheque" | "Card" | "Credit Card" | "Debit Card" | "LankaQR" | "Online Gateway";
   collectedBy?: string;
   receiptNo?: string;
 }
@@ -123,6 +123,9 @@ export interface OnlinePayment {
   reviewNotes?: string;
   receiptNo?: string;
   notes?: string;
+  paymentMethod?: "BANK_SLIP" | "CARD" | "LANKA_QR";
+  cardLast4?: string;
+  cardBrand?: string;
 }
 
 export interface LoanCalculation {
