@@ -133,6 +133,34 @@ type Payment struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+// Online Payment Slip Model
+type OnlinePayment struct {
+	ID              string    `json:"id"`
+	LoanID          string    `json:"loanId"`
+	LoanNo          string    `json:"loanNo,omitempty"`
+	CustomerID      string    `json:"customerId"`
+	CustomerName    string    `json:"customerName"`
+	CustomerPhone   string    `json:"customerPhone,omitempty"`
+	CustomerNIC     string    `json:"customerNic,omitempty"`
+	Amount          float64   `json:"amount"`
+	PaymentDate     string    `json:"paymentDate"`
+	SubmittedAt     string    `json:"submittedAt"`
+	BankName        string    `json:"bankName"`
+	ReferenceNumber string    `json:"referenceNumber,omitempty"`
+	SlipURL         string    `json:"slipUrl"`
+	SlipFileName    string    `json:"slipFileName,omitempty"`
+	SlipFileType    string    `json:"slipFileType,omitempty"`
+	Status          string    `json:"status"` // PENDING, COMPLETED, REJECTED
+	ReviewedBy      string    `json:"reviewedBy,omitempty"`
+	ReviewedAt      string    `json:"reviewedAt,omitempty"`
+	ReviewNotes     string    `json:"reviewNotes,omitempty"`
+	ReceiptNo       string    `json:"receiptNo,omitempty"`
+	Notes           string    `json:"notes,omitempty"`
+	PaymentMethod   string    `json:"paymentMethod,omitempty"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+}
+
 // Audit Log Model
 type AuditLog struct {
 	ID        string    `json:"id"`

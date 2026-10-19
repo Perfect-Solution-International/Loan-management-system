@@ -21,6 +21,7 @@ import {
   initialSettings,
   initialStaffUsers,
 } from "@/lib/demo-data";
+import { api } from "@/lib/api-client";
 
 export interface DataContextValue {
   customers: Customer[];
@@ -205,6 +206,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Real-time cross-tab synchronization: when customer submits in one tab, admin updates immediately
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "psi_online_payments" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setOnlinePayments(parsed);
+        } catch {}
+      }
+      if (e.key === "psi_payments" && e.newValue) {
+        try {
+          setPayments(JSON.parse(e.newValue));
+        } catch {}
+      }
+      if (e.key === "psi_loans" && e.newValue) {
+        try {
+          setLoans(JSON.parse(e.newValue));
+        } catch {}
+      }
+      if (e.key === "psi_customers" && e.newValue) {
+        try {
+          setCustomers(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   // Sync state to localStorage on changes (ONLY after hydration)
   React.useEffect(() => {
     if (!isHydrated) return;
@@ -357,7 +390,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addOnlinePayment = React.useCallback((payment: OnlinePayment) => {
-    setOnlinePayments((prev) => [payment, ...prev]);
+    setOnlinePayments((prev) => [payment, ...prev.filter((p) => p.id !== payment.id)]);
+    // Asynchronously sync with backend API
+    api.createOnlinePayment(payment).catch((err) => {
+      console.warn("Backend sync notice for online payment:", err?.message || err);
+    });
   }, []);
 
   const approveOnlinePayment = React.useCallback(
@@ -384,6 +421,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return op;
         })
       );
+
+      // Asynchronously notify backend API
+      api.approveOnlinePayment(id, notes, reviewerName, generatedReceiptNo).catch((err) => {
+        console.warn("Backend sync notice for approval:", err?.message || err);
+      });
 
       // Create official repayment record and credit loan
       const target = targetItem || onlinePayments.find((o) => o.id === id);
@@ -426,6 +468,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             : op
         )
       );
+
+      // Asynchronously notify backend API
+      api.rejectOnlinePayment(id, notes, reviewerName).catch((err) => {
+        console.warn("Backend sync notice for rejection:", err?.message || err);
+      });
     },
     []
   );

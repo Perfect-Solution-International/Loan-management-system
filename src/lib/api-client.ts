@@ -1,4 +1,4 @@
-import type { Customer, Loan, Payment, StaffUser, SystemSettings } from "@/types";
+import type { Customer, Loan, Payment, StaffUser, SystemSettings, OnlinePayment } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
@@ -114,6 +114,54 @@ export const api = {
   // Settings
   async getSettings(): Promise<SystemSettings> {
     const res = await fetch(`${API_BASE_URL}/settings`, { headers: getAuthHeader() });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  // Online Payments
+  async getOnlinePayments(loanId?: string, customerId?: string): Promise<OnlinePayment[]> {
+    let url = `/api/online-payments`;
+    const params = new URLSearchParams();
+    if (loanId) params.append("loanId", loanId);
+    if (customerId) params.append("customerId", customerId);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    try {
+      const res = await fetch(url, { headers: getAuthHeader() });
+      if (res.ok) return await res.json();
+    } catch {
+      // fallback
+    }
+
+    return [];
+  },
+
+  async createOnlinePayment(payment: Partial<OnlinePayment>): Promise<OnlinePayment> {
+    const res = await fetch(`/api/online-payments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payment),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async approveOnlinePayment(id: string, notes?: string, reviewer?: string, receiptNo?: string) {
+    const res = await fetch(`/api/online-payments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "APPROVE", notes, reviewer, receiptNo }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async rejectOnlinePayment(id: string, notes?: string, reviewer?: string) {
+    const res = await fetch(`/api/online-payments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "REJECT", notes, reviewer }),
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },

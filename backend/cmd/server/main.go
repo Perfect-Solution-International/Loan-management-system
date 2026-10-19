@@ -102,6 +102,12 @@ func main() {
 			pub.Get("/payments", payHandler.ListPayments)
 			pub.Post("/payments", payHandler.RecordPayment)
 
+			// Online Payment Slips
+			pub.Get("/online-payments", payHandler.ListOnlinePayments)
+			pub.Post("/online-payments", payHandler.SubmitOnlinePayment)
+			pub.Patch("/online-payments/{id}/approve", payHandler.ApproveOnlinePayment)
+			pub.Patch("/online-payments/{id}/reject", payHandler.RejectOnlinePayment)
+
 			// Audit Logs
 			pub.Get("/audit-logs", auditSettingsHandler.ListAuditLogs)
 
