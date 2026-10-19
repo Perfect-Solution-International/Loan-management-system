@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   CreditCard,
   Building,
@@ -97,8 +97,16 @@ export function CustomerPaymentGatewayModal({
   // Bank Slip Upload Fields
   const [slipBank, setSlipBank] = useState("Commercial Bank of Ceylon");
   const [slipRef, setSlipRef] = useState("");
-  const [slipDate, setSlipDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [slipDate, setSlipDate] = useState("2026-10-19");
   const [slipNotes, setSlipNotes] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const da = String(now.getDate()).padStart(2, "0");
+    setSlipDate(`${yr}-${mo}-${da}`);
+  }, []);
   const [slipImageBase64, setSlipImageBase64] = useState("");
   const [slipFileName, setSlipFileName] = useState("");
 

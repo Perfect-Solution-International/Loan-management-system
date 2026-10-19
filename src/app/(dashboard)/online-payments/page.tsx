@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   CreditCard,
@@ -72,9 +72,17 @@ export default function OnlinePaymentsPage() {
   const [uploadAmount, setUploadAmount] = useState("");
   const [uploadBank, setUploadBank] = useState("Commercial Bank");
   const [uploadRef, setUploadRef] = useState("");
-  const [uploadDate, setUploadDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [uploadDate, setUploadDate] = useState("2026-10-19");
   const [uploadSlipUrl, setUploadSlipUrl] = useState("");
   const [uploadSlipName, setUploadSlipName] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const da = String(now.getDate()).padStart(2, "0");
+    setUploadDate(`${yr}-${mo}-${da}`);
+  }, []);
 
   // Bank Options
   const SRI_LANKAN_BANKS = [

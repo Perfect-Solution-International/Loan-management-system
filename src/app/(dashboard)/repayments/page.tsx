@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Banknote,
@@ -28,9 +28,15 @@ export default function RepaymentsCollectionsPage() {
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
   const [notes, setNotes] = useState<string>("");
   const [collectedBy, setCollectedBy] = useState<string>("Admin Officer");
-  const [paymentDate, setPaymentDate] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [paymentDate, setPaymentDate] = useState<string>("2026-10-19");
+
+  useEffect(() => {
+    const now = new Date();
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const da = String(now.getDate()).padStart(2, "0");
+    setPaymentDate(`${yr}-${mo}-${da}`);
+  }, []);
 
   // Filter state for collections ledger
   const [searchTerm, setSearchTerm] = useState("");
