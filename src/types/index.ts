@@ -46,6 +46,7 @@ export interface Customer {
   existingLoanNotes?: string;
   priorRepaymentHistory?: string;
   initialOutstandingBalance?: number;
+  password?: string;
 }
 
 export type LoanStatus = "Pending" | "Active" | "Completed" | "Rejected" | "Overdue";
@@ -142,5 +143,6 @@ export interface StaffUser {
   branch: string;
   status: "Active" | "Inactive";
   joinedDate: string;
+  password?: string;
   permissions: StaffPermissions;
 }

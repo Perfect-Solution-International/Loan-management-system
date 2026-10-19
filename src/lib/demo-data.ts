@@ -31,6 +31,7 @@ export const initialStaffUsers: StaffUser[] = [
     branch: "Head Office",
     status: "Active",
     joinedDate: "2025-01-01",
+    password: "admin123",
     permissions: {
       approveLoans: true,
       recordRepayments: true,

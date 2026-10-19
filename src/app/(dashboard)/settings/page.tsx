@@ -266,6 +266,7 @@ function SettingsContent() {
         status: staffForm.status,
         joinedDate: new Date().toISOString().slice(0, 10),
         permissions: staffForm.permissions,
+        password: "Staff@123",
       };
       addStaffUser(newStaffUser);
       setNotificationMsg(`New staff member "${staffForm.name}" registered successfully.`);

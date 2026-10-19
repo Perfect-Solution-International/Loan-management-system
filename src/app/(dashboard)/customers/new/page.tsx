@@ -414,6 +414,7 @@ export default function NewCustomerPage() {
           )}). ${form.previousRepaymentNotes}`
         : undefined,
       initialOutstandingBalance: computedLoanCalculations?.outstanding,
+      password: "User@123",
     };
 
     addCustomer(newCustomer);
