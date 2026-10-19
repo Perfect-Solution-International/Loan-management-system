@@ -1106,133 +1106,132 @@ export default function FieldStaffPortal() {
           </div>
         )}
 
-        {/* ── Officer Shift & Cash Summary Grid (Responsive 4-Cards Grid) ── */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {/* Card 1: Cash In Hand */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                <Wallet size={14} className="text-emerald-600" />
-                Physical Cash In Hand
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-
-            <div className="my-2">
-              <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
-                {MONEY(myCashInHand)}
-              </h2>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-500 text-[11px]">
-                {myTodayPayments.length} receipts logged
-              </span>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                Physical Cash
-              </span>
-            </div>
-          </div>
-
-          {/* Card 2: Today's Route Target */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar size={14} className="text-slate-600" />
-                Route Target Today
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">
-                {todayStr}
-              </span>
-            </div>
-
-            <div className="my-2">
-              <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
-                {MONEY(totalTargetToday)}
-              </h2>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span>Branch</span>
-              <span className="font-bold text-slate-800 font-mono">
-                {currentOfficer?.branch || "Colombo Central"}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Collected Today */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 size={14} className="text-emerald-600" />
-                Collected Today
-              </span>
-              <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                {totalTargetToday > 0
-                  ? `${Math.round((totalMyCollectedToday / totalTargetToday) * 100)}%`
-                  : "0%"}
-              </span>
-            </div>
-
-            <div className="my-2">
-              <h2 className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
-                {MONEY(totalMyCollectedToday)}
-              </h2>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span>Bank/Online</span>
-              <span className="font-mono font-bold text-blue-700">
-                {MONEY(myBankTransfersToday)}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 4: Route Visits Progress */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                <Clock size={14} className="text-slate-600" />
-                Borrower Visits
-              </span>
-              <span className="text-[10px] font-mono font-bold text-slate-500">
-                {routeItems.length} Total
-              </span>
-            </div>
-
-            <div className="my-2">
-              <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
-                {routeCompletedCount}{" "}
-                <span className="text-sm text-slate-400 font-normal">/ {routeItems.length}</span>
-              </h2>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
-                <div
-                  className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${
-                      routeItems.length > 0
-                        ? Math.min(100, Math.round((routeCompletedCount / routeItems.length) * 100))
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span>Remaining</span>
-              <span className="font-bold text-amber-700">
-                {routeItems.length - routeCompletedCount} pending
-              </span>
-            </div>
-          </div>
-        </section>
-
         {/* ── TAB CONTENT ─────────────────────────────────────────────────── */}
 
         {/* TAB 1: ROUTE (RESPONSIVE MASTER-DETAIL SPLIT VIEW ON DESKTOP/TABLET) */}
         {activeTab === "route" && (
           <div className="space-y-4">
+            {/* ── Officer Shift & Cash Summary Grid (Shown ONLY on Today's Collections) ── */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* Card 1: Cash In Hand */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <Wallet size={14} className="text-emerald-600" />
+                    Physical Cash In Hand
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+
+                <div className="my-2">
+                  <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                    {MONEY(myCashInHand)}
+                  </h2>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 text-[11px]">
+                    {myTodayPayments.length} receipts logged
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                    Physical Cash
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2: Today's Route Target */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar size={14} className="text-slate-600" />
+                    Route Target Today
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {todayStr}
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                    {MONEY(totalTargetToday)}
+                  </h2>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Branch</span>
+                  <span className="font-bold text-slate-800 font-mono">
+                    {currentOfficer?.branch || "Colombo Central"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 3: Collected Today */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 size={14} className="text-emerald-600" />
+                    Collected Today
+                  </span>
+                  <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    {totalTargetToday > 0
+                      ? `${Math.round((totalMyCollectedToday / totalTargetToday) * 100)}%`
+                      : "0%"}
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <h2 className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
+                    {MONEY(totalMyCollectedToday)}
+                  </h2>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Bank/Online</span>
+                  <span className="font-mono font-bold text-blue-700">
+                    {MONEY(myBankTransfersToday)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 4: Route Visits Progress */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock size={14} className="text-slate-600" />
+                    Borrower Visits
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-slate-500">
+                    {routeItems.length} Total
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                    {routeCompletedCount}{" "}
+                    <span className="text-sm text-slate-400 font-normal">/ {routeItems.length}</span>
+                  </h2>
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
+                    <div
+                      className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${
+                          routeItems.length > 0
+                            ? Math.min(100, Math.round((routeCompletedCount / routeItems.length) * 100))
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Remaining</span>
+                  <span className="font-bold text-amber-700">
+                    {routeItems.length - routeCompletedCount} pending
+                  </span>
+                </div>
+              </div>
+            </section>
             {/* Search & Filter Bar */}
             <div className="bg-white border border-slate-200 rounded-3xl p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* Search Bar */}

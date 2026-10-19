@@ -6,7 +6,6 @@ import {
   CreditCard,
   Building,
   Upload,
-  QrCode,
   CheckCircle2,
   Copy,
   Check,
@@ -14,6 +13,7 @@ import {
   ShieldCheck,
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   X,
   Printer,
   Clock,
@@ -41,7 +41,7 @@ interface CustomerPaymentGatewayModalProps {
   onPaymentSuccess?: (receiptNo?: string) => void;
 }
 
-type PaymentMethodType = "BANK_SLIP" | "CARD" | "LANKA_QR";
+type PaymentMethodType = "BANK_SLIP" | "CARD";
 
 export function CustomerPaymentGatewayModal({
   isOpen,
@@ -121,7 +121,16 @@ export function CustomerPaymentGatewayModal({
 
   // Status & Feedback
   const [errorMessage, setErrorMessage] = useState("");
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Step Navigation: 1 = Amount, 2 = Channel, 3 = Payment Details
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1);
+      setErrorMessage("");
+    }
+  }, [isOpen]);
 
   // Success Confirmation State
   const [completedTransaction, setCompletedTransaction] = useState<{
@@ -132,37 +141,6 @@ export function CustomerPaymentGatewayModal({
     refNumber?: string;
     authCode?: string;
   } | null>(null);
-
-  // Pre-configured official company accounts
-  const COMPANY_BANK_ACCOUNTS = [
-    {
-      id: "combank",
-      bankName: "Commercial Bank of Ceylon",
-      accountName: "PSI ONE MICROFINANCE (PVT) LTD",
-      accountNo: "1000 248 952",
-      branch: "Maharagama Branch",
-      swiftCode: "CCEYLKX",
-      tag: "Most Popular",
-    },
-    {
-      id: "sampath",
-      bankName: "Sampath Bank PLC",
-      accountName: "PSI ONE HOLDINGS PVT LTD",
-      accountNo: "0145 1002 9841",
-      branch: "City Office, Colombo 01",
-      swiftCode: "BSAMLKLX",
-      tag: "Fast Clearance",
-    },
-    {
-      id: "boc",
-      bankName: "Bank of Ceylon (BOC)",
-      accountName: "PSI ONE OPERATIONS",
-      accountNo: "8341 0029 4412",
-      branch: "Corporate Branch, Colombo",
-      swiftCode: "BCEYLKLX",
-      tag: "Govt / State",
-    },
-  ];
 
   const SRI_LANKAN_BANKS = [
     "Commercial Bank of Ceylon",
@@ -178,15 +156,6 @@ export function CustomerPaymentGatewayModal({
     "Union Bank",
     "Other / Digital Transfer",
   ];
-
-  // Helper: Copy to clipboard
-  const handleCopy = (text: string, key: string) => {
-    if (navigator?.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), 2500);
-    }
-  };
 
   // Helper: Format Card Number (XXXX XXXX XXXX XXXX)
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,6 +218,19 @@ export function CustomerPaymentGatewayModal({
     return num;
   };
 
+  // Step wizard navigation handlers
+  const handleProceedToStep2 = () => {
+    setErrorMessage("");
+    const validAmt = validateAmount();
+    if (!validAmt) return;
+    setCurrentStep(2);
+  };
+
+  const handleProceedToStep3 = () => {
+    setErrorMessage("");
+    setCurrentStep(3);
+  };
+
   // Handle Bank Slip / LankaQR Submission
   const handleSubmitBankSlip = (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,19 +244,18 @@ export function CustomerPaymentGatewayModal({
       return;
     }
 
-    if (!slipBank) {
-      setErrorMessage("Please select or specify the bank.");
-      return;
-    }
-
     // Default SVG slip preview if user didn't upload custom file
+    const effectiveBank = slipBank || "Bank Transfer";
+    const effectiveDate = slipDate || new Date().toISOString().split("T")[0];
+    const effectiveRef = slipRef.trim().toUpperCase() || `DEP-${Date.now().toString().slice(-6)}`;
+
     const fallbackSlipSvg =
       "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360' viewBox='0 0 600 360'><rect width='100%' height='100%' fill='%23f8fafc'/><rect x='20' y='20' width='560' height='320' rx='16' fill='%23ffffff' stroke='%23cbd5e1' stroke-width='2'/><text x='50' y='70' font-family='sans-serif' font-size='20' font-weight='bold' fill='%230f172a'>BANK TRANSFER RECEIPT</text><text x='50' y='110' font-family='sans-serif' font-size='13' fill='%2364748b'>Bank: " +
-      encodeURIComponent(slipBank) +
+      encodeURIComponent(effectiveBank) +
       "</text><text x='50' y='140' font-family='sans-serif' font-size='13' fill='%2364748b'>Reference: " +
-      encodeURIComponent(slipRef || "ONL-" + Date.now().toString().slice(-6)) +
+      encodeURIComponent(effectiveRef) +
       "</text><text x='50' y='170' font-family='sans-serif' font-size='13' fill='%2364748b'>Date: " +
-      encodeURIComponent(slipDate) +
+      encodeURIComponent(effectiveDate) +
       "</text><text x='50' y='200' font-family='sans-serif' font-size='13' fill='%2364748b'>Facility: " +
       encodeURIComponent(selectedLoan.loanNo || selectedLoan.id) +
       "</text><text x='50' y='260' font-family='sans-serif' font-size='26' font-weight='bold' fill='%2316a34a'>LKR " +
@@ -291,15 +272,15 @@ export function CustomerPaymentGatewayModal({
       customerNic: customer.nic,
       customerPhone: customer.phone,
       amount: validAmt,
-      paymentDate: slipDate,
+      paymentDate: effectiveDate,
       submittedAt: new Date().toISOString(),
-      bankName: slipBank,
-      referenceNumber: slipRef.trim().toUpperCase() || `DEP-${Date.now().toString().slice(-6)}`,
+      bankName: effectiveBank,
+      referenceNumber: effectiveRef,
       slipUrl: slipImageBase64 || fallbackSlipSvg,
       slipFileName: slipFileName || "bank_deposit_slip.jpg",
       status: "PENDING",
       notes: slipNotes.trim() || undefined,
-      paymentMethod: paymentMethod === "LANKA_QR" ? "LANKA_QR" : "BANK_SLIP",
+      paymentMethod: "BANK_SLIP",
     };
 
     addOnlinePayment(newOnlinePayment);
@@ -539,627 +520,579 @@ export function CustomerPaymentGatewayModal({
               </div>
             )}
 
-            {/* ═══ Section 1: Facility Selection & Amount ═════════════════════ */}
-            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
-                <div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                    Target Loan Facility
-                  </span>
-                  {loans.length > 1 ? (
-                    <select
-                      value={selectedLoanId}
-                      onChange={(e) => {
-                        setSelectedLoanId(e.target.value);
-                        const match = loans.find((l) => l.id === e.target.value);
-                        if (match?.installment) {
-                          setPayAmount(String(match.installment));
-                        }
-                      }}
-                      className="mt-0.5 text-xs font-black text-slate-900 bg-white border border-slate-300 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                    >
-                      {loans.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.loanNo || l.id} · Disbursed: {MONEY(l.principal || l.amount || 0)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <h3 className="text-sm font-black text-slate-900 font-mono">
-                      {selectedLoan?.loanNo || selectedLoan?.id || "N/A"}
-                    </h3>
-                  )}
+            {/* ═══ Step Wizard Progress Indicator ═══════════════════════════ */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition ${
+                    currentStep === 1
+                      ? "bg-red-600 text-white shadow-xs shadow-red-500/30"
+                      : currentStep > 1
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-200 text-slate-500"
+                  }`}
+                >
+                  {currentStep > 1 ? <Check size={13} /> : "1"}
                 </div>
-
-                <div className="flex items-center gap-4 text-xs font-mono">
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase block">
-                      Outstanding
-                    </span>
-                    <span className="text-sm font-black text-slate-900">
-                      {MONEY(loanFinancials.outstanding)}
-                    </span>
-                  </div>
-                  <div className="text-right border-l border-slate-200 pl-3">
-                    <span className="text-[10px] text-amber-600 font-bold uppercase block">
-                      Installment
-                    </span>
-                    <span className="text-sm font-black text-amber-700">
-                      {MONEY(loanFinancials.nextInstallment)}
-                    </span>
-                  </div>
-                </div>
+                <span
+                  className={`text-xs font-bold transition ${
+                    currentStep === 1
+                      ? "text-slate-900"
+                      : currentStep > 1
+                      ? "text-emerald-700 font-semibold"
+                      : "text-slate-400"
+                  }`}
+                >
+                  Amount
+                </span>
               </div>
 
-              {/* Amount Quick-Select Pills */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 flex justify-between">
-                  <span>Enter Amount to Pay (LKR)</span>
-                  <span className="text-slate-400 font-normal">
-                    Remaining after pay:{" "}
-                    <b>
-                      {MONEY(
-                        Math.max(0, loanFinancials.outstanding - (Number(payAmount) || 0))
+              <div
+                className={`h-0.5 flex-1 mx-3 rounded-full transition ${
+                  currentStep > 1 ? "bg-emerald-500" : "bg-slate-200"
+                }`}
+              />
+
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition ${
+                    currentStep === 2
+                      ? "bg-red-600 text-white shadow-xs shadow-red-500/30"
+                      : currentStep > 2
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-200 text-slate-500"
+                  }`}
+                >
+                  {currentStep > 2 ? <Check size={13} /> : "2"}
+                </div>
+                <span
+                  className={`text-xs font-bold transition ${
+                    currentStep === 2
+                      ? "text-slate-900"
+                      : currentStep > 2
+                      ? "text-emerald-700 font-semibold"
+                      : "text-slate-400"
+                  }`}
+                >
+                  Method
+                </span>
+              </div>
+
+              <div
+                className={`h-0.5 flex-1 mx-3 rounded-full transition ${
+                  currentStep > 2 ? "bg-emerald-500" : "bg-slate-200"
+                }`}
+              />
+
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition ${
+                    currentStep === 3
+                      ? "bg-red-600 text-white shadow-xs shadow-red-500/30"
+                      : "bg-slate-200 text-slate-500"
+                  }`}
+                >
+                  3
+                </div>
+                <span
+                  className={`text-xs font-bold transition ${
+                    currentStep === 3 ? "text-slate-900" : "text-slate-400"
+                  }`}
+                >
+                  Pay
+                </span>
+              </div>
+            </div>
+
+            {/* ═══ STEP 1: Facility Selection & Amount ════════════════════════ */}
+            {currentStep === 1 && (
+              <div className="space-y-5 animate-in fade-in-50 duration-200">
+                <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                        Target Loan Facility
+                      </span>
+                      {loans.length > 1 ? (
+                        <select
+                          value={selectedLoanId}
+                          onChange={(e) => {
+                            setSelectedLoanId(e.target.value);
+                            const match = loans.find((l) => l.id === e.target.value);
+                            if (match?.installment) {
+                              setPayAmount(String(match.installment));
+                            }
+                          }}
+                          className="mt-0.5 text-xs font-black text-slate-900 bg-white border border-slate-300 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                        >
+                          {loans.map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.loanNo || l.id} · Disbursed: {MONEY(l.principal || l.amount || 0)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <h3 className="text-sm font-black text-slate-900 font-mono">
+                          {selectedLoan?.loanNo || selectedLoan?.id || "N/A"}
+                        </h3>
                       )}
-                    </b>
-                  </span>
-                </label>
+                    </div>
 
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
-                    LKR
-                  </span>
-                  <input
-                    type="number"
-                    min="100"
-                    step="any"
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    placeholder="e.g. 5000"
-                    className="w-full h-11 pl-12 pr-4 bg-white border border-slate-300 rounded-xl text-base font-mono font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
-                  />
-                </div>
-
-                {/* Quick Presets */}
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  {loanFinancials.nextInstallment > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPayAmount(String(loanFinancials.nextInstallment))}
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                        Number(payAmount) === loanFinancials.nextInstallment
-                          ? "bg-red-600 text-white border-red-600 shadow-2xs"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      1 Installment ({MONEY(loanFinancials.nextInstallment)})
-                    </button>
-                  )}
-                  {loanFinancials.nextInstallment * 2 <= loanFinancials.outstanding && (
-                    <button
-                      type="button"
-                      onClick={() => setPayAmount(String(loanFinancials.nextInstallment * 2))}
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                        Number(payAmount) === loanFinancials.nextInstallment * 2
-                          ? "bg-red-600 text-white border-red-600 shadow-2xs"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      2 Installments ({MONEY(loanFinancials.nextInstallment * 2)})
-                    </button>
-                  )}
-                  {loanFinancials.outstanding > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPayAmount(String(loanFinancials.outstanding))}
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                        Number(payAmount) === loanFinancials.outstanding
-                          ? "bg-red-600 text-white border-red-600 shadow-2xs"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      Full Settle ({MONEY(loanFinancials.outstanding)})
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ═══ Section 2: Payment Method Selector (Fintech Style Tabs) ═════ */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
-                Select Payment Channel
-              </label>
-
-              <div className="grid grid-cols-3 gap-2">
-                {/* Method 1: Bank Transfer Slip */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("BANK_SLIP")}
-                  className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between h-20 ${
-                    paymentMethod === "BANK_SLIP"
-                      ? "border-red-600 bg-red-50/50 shadow-sm ring-2 ring-red-500/20"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <Building
-                      size={18}
-                      className={paymentMethod === "BANK_SLIP" ? "text-red-600" : "text-slate-400"}
-                    />
-                    {paymentMethod === "BANK_SLIP" && (
-                      <CheckCircle2 size={14} className="text-red-600" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900 leading-tight">Bank Slip</p>
-                    <p className="text-[10px] text-slate-500 font-medium truncate">Direct Transfer / Slip</p>
-                  </div>
-                </button>
-
-                {/* Method 2: Credit / Debit Card */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("CARD")}
-                  className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between h-20 ${
-                    paymentMethod === "CARD"
-                      ? "border-red-600 bg-red-50/50 shadow-sm ring-2 ring-red-500/20"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <CreditCard
-                      size={18}
-                      className={paymentMethod === "CARD" ? "text-red-600" : "text-slate-400"}
-                    />
-                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
-                      Instant
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900 leading-tight">Card Payment</p>
-                    <p className="text-[10px] text-slate-500 font-medium truncate">Visa / Mastercard</p>
-                  </div>
-                </button>
-
-                {/* Method 3: LankaQR */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("LANKA_QR")}
-                  className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between h-20 ${
-                    paymentMethod === "LANKA_QR"
-                      ? "border-red-600 bg-red-50/50 shadow-sm ring-2 ring-red-500/20"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <QrCode
-                      size={18}
-                      className={paymentMethod === "LANKA_QR" ? "text-red-600" : "text-slate-400"}
-                    />
-                    {paymentMethod === "LANKA_QR" && (
-                      <CheckCircle2 size={14} className="text-red-600" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900 leading-tight">LankaQR</p>
-                    <p className="text-[10px] text-slate-500 font-medium truncate">Scan Banking App</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* ═══ Section 3A: Bank Transfer & Slip Upload Form ═══════════════ */}
-            {paymentMethod === "BANK_SLIP" && (
-              <form onSubmit={handleSubmitBankSlip} className="space-y-4">
-                {/* Official Bank Accounts List with 1-Click Copy */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-700">
-                      Step 1: Transfer funds to any official account
-                    </span>
-                    <span className="text-[10px] text-slate-400">Click to copy</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {COMPANY_BANK_ACCOUNTS.map((acc) => (
-                      <div
-                        key={acc.id}
-                        className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-2.5 space-y-1 transition text-xs"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-red-600 truncate">
-                            {acc.bankName}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between font-mono font-black text-slate-900 text-xs">
-                          <span>{acc.accountNo}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(acc.accountNo.replace(/\s/g, ""), acc.id)}
-                            className="p-1 text-slate-400 hover:text-slate-800 transition cursor-pointer"
-                            title="Copy Account Number"
-                          >
-                            {copiedKey === acc.id ? (
-                              <Check size={13} className="text-emerald-600" />
-                            ) : (
-                              <Copy size={13} />
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-slate-400 truncate">{acc.branch}</p>
+                    <div className="flex items-center gap-4 text-xs font-mono">
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                          Outstanding
+                        </span>
+                        <span className="text-sm font-black text-slate-900">
+                          {MONEY(loanFinancials.outstanding)}
+                        </span>
                       </div>
-                    ))}
+                      <div className="text-right border-l border-slate-200 pl-3">
+                        <span className="text-[10px] text-amber-600 font-bold uppercase block">
+                          Installment
+                        </span>
+                        <span className="text-sm font-black text-amber-700">
+                          {MONEY(loanFinancials.nextInstallment)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Payment Reference Helper Note */}
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between text-xs text-amber-900">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Info size={14} className="text-amber-600 shrink-0" />
-                      <span className="text-[11px] truncate">
-                        Use Reference: <b>{selectedLoan?.loanNo || customer.nic}</b>
+                  {/* Amount Quick-Select Pills */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-700 flex justify-between">
+                      <span>Enter Amount to Pay (LKR)</span>
+                      <span className="text-slate-400 font-normal">
+                        Remaining after pay:{" "}
+                        <b>
+                          {MONEY(
+                            Math.max(0, loanFinancials.outstanding - (Number(payAmount) || 0))
+                          )}
+                        </b>
+                      </span>
+                    </label>
+
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
+                        LKR
+                      </span>
+                      <input
+                        type="number"
+                        min="100"
+                        step="any"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        placeholder="e.g. 5000"
+                        className="w-full h-11 pl-12 pr-4 bg-white border border-slate-300 rounded-xl text-base font-mono font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
+                      />
+                    </div>
+
+                    {/* Quick Presets - 1 Installment only */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      {loanFinancials.nextInstallment > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPayAmount(String(loanFinancials.nextInstallment))}
+                          className="text-[11px] font-bold px-3 py-1.5 rounded-lg border transition cursor-pointer bg-red-600 text-white border-red-600 shadow-2xs"
+                        >
+                          1 Installment ({MONEY(loanFinancials.nextInstallment)})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 1 Action Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProceedToStep2}
+                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs shadow-red-600/20 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Next</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ═══ STEP 2: Choose Payment Method ══════════════════════════════ */}
+            {currentStep === 2 && (
+              <div className="space-y-5 animate-in fade-in-50 duration-200">
+                {/* Summary Strip */}
+                <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Target Facility &amp; Amount
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-slate-900 text-xs">
+                        {selectedLoan?.loanNo || selectedLoan?.id}
+                      </span>
+                      <span className="text-slate-300">·</span>
+                      <span className="font-mono font-black text-red-600 text-sm">
+                        LKR {Number(payAmount || 0).toLocaleString()}
                       </span>
                     </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+                  >
+                    Edit Amount
+                  </button>
+                </div>
+
+                {/* Payment Channels Grid */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
+                    Choose Payment Channel
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Method 1: Bank Transfer */}
                     <button
                       type="button"
-                      onClick={() => handleCopy(selectedLoan?.loanNo || customer.nic, "ref")}
-                      className="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 rounded text-[10px] font-bold text-amber-800 transition cursor-pointer shrink-0 inline-flex items-center gap-1"
+                      onClick={() => setPaymentMethod("BANK_SLIP")}
+                      className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between h-24 ${
+                        paymentMethod === "BANK_SLIP"
+                          ? "border-red-600 bg-red-50/50 shadow-sm ring-2 ring-red-500/20"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
                     >
-                      {copiedKey === "ref" ? <Check size={10} /> : <Copy size={10} />}
-                      <span>{copiedKey === "ref" ? "Copied" : "Copy Ref"}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-xl bg-red-100/70 text-red-600 flex items-center justify-center">
+                          <Upload size={16} />
+                        </div>
+                        {paymentMethod === "BANK_SLIP" && (
+                          <CheckCircle2 size={16} className="text-red-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 leading-tight">Bank Transfer</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Direct Transfer / Slip Proof</p>
+                      </div>
+                    </button>
+
+                    {/* Method 2: Credit / Debit Card */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("CARD")}
+                      className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between h-24 ${
+                        paymentMethod === "CARD"
+                          ? "border-red-600 bg-red-50/50 shadow-sm ring-2 ring-red-500/20"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-xl bg-red-100/70 text-red-600 flex items-center justify-center">
+                          <CreditCard size={16} />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                            Instant
+                          </span>
+                          {paymentMethod === "CARD" && (
+                            <CheckCircle2 size={16} className="text-red-600" />
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 leading-tight">Card Payment</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Visa / Mastercard 3D Secure</p>
+                      </div>
                     </button>
                   </div>
                 </div>
 
-                {/* Step 2: Upload Slip Form */}
-                <div className="space-y-3 pt-2 border-t border-slate-200">
-                  <span className="text-[11px] font-bold text-slate-700 block">
-                    Step 2: Upload proof of payment &amp; deposit slip
-                  </span>
+                {/* Step 2 Action Buttons */}
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Back</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProceedToStep3}
+                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs shadow-red-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Next</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
 
-                  {/* Drag & Drop File Zone */}
-                  <div className="border-2 border-dashed border-slate-300 hover:border-red-400 rounded-2xl p-4 bg-slate-50/60 hover:bg-slate-50 transition text-center relative">
-                    <input
-                      type="file"
-                      id="slip-upload-file"
-                      accept="image/*"
-                      onChange={handleSlipFileSelect}
-                      className="hidden"
-                    />
+            {/* ═══ STEP 3: Complete Payment (Bank Slip / Card) ═════════════════ */}
+            {currentStep === 3 && (
+              <div className="space-y-4 animate-in fade-in-50 duration-200">
+                {/* Channel & Facility Summary */}
+                <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 font-medium">Paying:</span>
+                    <span className="font-mono font-black text-slate-900">
+                      LKR {Number(payAmount || 0).toLocaleString()}
+                    </span>
+                    <span className="text-slate-300">·</span>
+                    <span className="font-medium text-slate-600">
+                      {paymentMethod === "BANK_SLIP" ? "Bank Transfer" : "Card Payment"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                  >
+                    Change Method
+                  </button>
+                </div>
 
-                    {slipImageBase64 ? (
-                      <div className="space-y-2">
-                        <img
-                          src={slipImageBase64}
-                          alt="Slip Preview"
-                          className="max-h-40 mx-auto rounded-xl border border-slate-200 shadow-xs object-contain"
+                {/* ── 3A: Bank Slip Upload Form (Bank Accounts section completely removed) ── */}
+                {paymentMethod === "BANK_SLIP" && (
+                  <form onSubmit={handleSubmitBankSlip} className="space-y-4">
+                    <div className="space-y-3">
+                      <span className="text-[11px] font-bold text-slate-700 block">
+                        Upload proof of payment &amp; deposit slip
+                      </span>
+
+                      {/* Drag & Drop File Zone */}
+                      <div className="border-2 border-dashed border-slate-300 hover:border-red-400 rounded-2xl p-4 bg-slate-50/60 hover:bg-slate-50 transition text-center relative">
+                        <input
+                          type="file"
+                          id="slip-upload-file"
+                          accept="image/*"
+                          onChange={handleSlipFileSelect}
+                          className="hidden"
                         />
-                        <div className="flex items-center justify-center gap-3">
+
+                        {slipImageBase64 ? (
+                          <div className="space-y-2">
+                            <img
+                              src={slipImageBase64}
+                              alt="Slip Preview"
+                              className="max-h-40 mx-auto rounded-xl border border-slate-200 shadow-xs object-contain"
+                            />
+                            <div className="flex items-center justify-center gap-3">
+                              <label
+                                htmlFor="slip-upload-file"
+                                className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                              >
+                                Change Slip Image
+                              </label>
+                              <span className="text-slate-300">·</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSlipImageBase64("");
+                                  setSlipFileName("");
+                                }}
+                                className="text-xs font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
                           <label
                             htmlFor="slip-upload-file"
-                            className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                            className="cursor-pointer flex flex-col items-center justify-center gap-2 py-3"
                           >
-                            Change Slip Image
+                            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                              <Upload size={22} />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800">
+                                Click to upload deposit slip or bank transfer screenshot
+                              </p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                Supports PNG, JPG, JPEG up to 5MB
+                              </p>
+                            </div>
                           </label>
-                          <span className="text-slate-300">·</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSlipImageBase64("");
-                              setSlipFileName("");
-                            }}
-                            className="text-xs font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
-                          >
-                            Remove
-                          </button>
+                        )}
+                      </div>
+
+                      {/* Note / Remarks Field Only */}
+                      <div className="text-xs">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Remarks / Note (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={slipNotes}
+                          onChange={(e) => setSlipNotes(e.target.value)}
+                          placeholder="e.g. Paid via CDM at Maharagama"
+                          className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Navigation & Submit Action */}
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(2)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <ArrowLeft size={13} />
+                        <span>Back</span>
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-8 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs shadow-red-600/20 flex items-center justify-center cursor-pointer"
+                      >
+                        <span>Submit</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* ── 3B: Credit / Debit Card Interactive Gateway ── */}
+                {paymentMethod === "CARD" && (
+                  <form onSubmit={handleInitiateCardPayment} className="space-y-4">
+                    {/* Interactive Virtual Card Mockup */}
+                    <div className="bg-gradient-to-tr from-slate-900 via-slate-800 to-red-950 text-white p-5 rounded-2xl shadow-xl relative overflow-hidden border border-slate-700/60 max-w-sm mx-auto">
+                      <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-red-600/20 blur-xl pointer-events-none" />
+                      <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-blue-600/20 blur-xl pointer-events-none" />
+
+                      <div className="relative z-10 flex flex-col justify-between h-44">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono tracking-widest text-slate-400">
+                            PSI ONE SECURE PAY
+                          </span>
+                          <span className="text-xs font-black italic tracking-wider text-white">
+                            {cardBrand}
+                          </span>
+                        </div>
+
+                        <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-300 to-amber-500 border border-amber-200/50 shadow-inner my-auto flex items-center justify-center">
+                          <div className="w-5 h-4 border border-amber-700/40 rounded-xs" />
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="font-mono text-base sm:text-lg tracking-widest text-white font-bold drop-shadow-xs">
+                            {cardNumber || "•••• •••• •••• ••••"}
+                          </p>
+
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-300 uppercase">
+                            <span className="truncate max-w-[170px]">
+                              {cardHolder || "CARDHOLDER NAME"}
+                            </span>
+                            <span>{cardExpiry || "MM/YY"}</span>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <label
-                        htmlFor="slip-upload-file"
-                        className="cursor-pointer flex flex-col items-center justify-center gap-2 py-3"
-                      >
-                        <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
-                          <Upload size={22} />
+                    </div>
+
+                    {/* Card input fields */}
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Cardholder Full Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={cardHolder}
+                          onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
+                          placeholder="e.g. S A PERERA"
+                          className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 uppercase"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Card Number <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            value={cardNumber}
+                            onChange={handleCardNumberChange}
+                            placeholder="4532 0000 0000 0000"
+                            className="w-full h-9 pl-3 pr-10 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                          />
+                          <CreditCard
+                            size={16}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <p className="text-xs font-bold text-slate-800">
-                            Click to upload deposit slip or bank transfer screenshot
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Supports PNG, JPG, JPEG up to 5MB
-                          </p>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Expiry Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={cardExpiry}
+                            onChange={handleExpiryChange}
+                            placeholder="MM/YY"
+                            maxLength={5}
+                            className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                          />
                         </div>
-                      </label>
-                    )}
-                  </div>
 
-                  {/* Bank & Ref inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Bank Paid Through <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={slipBank}
-                        onChange={(e) => setSlipBank(e.target.value)}
-                        className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      >
-                        {SRI_LANKAN_BANKS.map((b) => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Bank Reference / Slip No <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={slipRef}
-                        onChange={(e) => setSlipRef(e.target.value)}
-                        placeholder="e.g. TXN-892182"
-                        className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Transfer Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={slipDate}
-                        onChange={(e) => setSlipDate(e.target.value)}
-                        className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Remarks / Note (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={slipNotes}
-                        onChange={(e) => setSlipNotes(e.target.value)}
-                        placeholder="e.g. Paid via CDM at Maharagama"
-                        className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Action */}
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Upload size={14} />
-                  <span>Submit Deposit Slip for Verification</span>
-                </button>
-              </form>
-            )}
-
-            {/* ═══ Section 3B: Credit / Debit Card Interactive Gateway ═════════ */}
-            {paymentMethod === "CARD" && (
-              <form onSubmit={handleInitiateCardPayment} className="space-y-4">
-                {/* Interactive Virtual Card Mockup */}
-                <div className="bg-gradient-to-tr from-slate-900 via-slate-800 to-red-950 text-white p-5 rounded-2xl shadow-xl relative overflow-hidden border border-slate-700/60 max-w-sm mx-auto">
-                  {/* Decorative card glow circles */}
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-red-600/20 blur-xl pointer-events-none" />
-                  <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-blue-600/20 blur-xl pointer-events-none" />
-
-                  <div className="relative z-10 flex flex-col justify-between h-44">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono tracking-widest text-slate-400">
-                        PSI ONE SECURE PAY
-                      </span>
-                      <span className="text-xs font-black italic tracking-wider text-white">
-                        {cardBrand}
-                      </span>
-                    </div>
-
-                    <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-300 to-amber-500 border border-amber-200/50 shadow-inner my-auto flex items-center justify-center">
-                      <div className="w-5 h-4 border border-amber-700/40 rounded-xs" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="font-mono text-base sm:text-lg tracking-widest text-white font-bold drop-shadow-xs">
-                        {cardNumber || "•••• •••• •••• ••••"}
-                      </p>
-
-                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-300 uppercase">
-                        <span className="truncate max-w-[170px]">
-                          {cardHolder || "CARDHOLDER NAME"}
-                        </span>
-                        <span>{cardExpiry || "MM/YY"}</span>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            CVV / CVC <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            maxLength={4}
+                            value={cardCvv}
+                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))}
+                            placeholder="•••"
+                            className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-mono font-black text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Card input fields */}
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Cardholder Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={cardHolder}
-                      onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                      placeholder="e.g. S A PERERA"
-                      className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 uppercase"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Card Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        placeholder="4532 0000 0000 0000"
-                        className="w-full h-9 pl-3 pr-10 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      />
-                      <CreditCard
-                        size={16}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
+                    {/* Navigation & Pay CTA */}
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(2)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <ArrowLeft size={13} />
+                        <span>Back</span>
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isProcessingCard}
+                        className="px-8 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs shadow-red-600/20 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                      >
+                        {isProcessingCard ? (
+                          <>
+                            <RefreshCw size={13} className="animate-spin" />
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <span>Pay</span>
+                        )}
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Expiry Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={cardExpiry}
-                        onChange={handleExpiryChange}
-                        placeholder="MM/YY"
-                        maxLength={5}
-                        className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        CVV / CVC <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        maxLength={4}
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))}
-                        placeholder="•••"
-                        className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-mono font-black text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Instant Settlement CTA */}
-                <button
-                  type="submit"
-                  disabled={isProcessingCard}
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                >
-                  {isProcessingCard ? (
-                    <>
-                      <RefreshCw size={14} className="animate-spin" />
-                      <span>Connecting 3D Secure Gateway...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={14} />
-                      <span>Pay {MONEY(Number(payAmount) || 0)} with 3D Secure</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
-
-            {/* ═══ Section 3C: LankaQR Instant Scan ═══════════════════════════ */}
-            {paymentMethod === "LANKA_QR" && (
-              <form onSubmit={handleSubmitBankSlip} className="space-y-4">
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    LankaQR Official Standard
-                  </span>
-
-                  {/* QR SVG visual */}
-                  <div className="w-44 h-44 bg-white p-3 rounded-2xl border-2 border-slate-900 mx-auto shadow-md flex items-center justify-center">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                        `LANKAQR|PSIONE|${selectedLoan?.loanNo}|LKR|${payAmount}`
-                      )}`}
-                      alt="LankaQR Payment Code"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-black text-slate-900 font-mono">
-                      Pay {MONEY(Number(payAmount) || 0)}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      Scan with FriMi, Genie, ComBank Q+, Flash, BOC SmartPay, iPay, or any Sri Lankan banking app.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Upload confirmation after scan */}
-                <div className="space-y-2 text-xs">
-                  <label className="text-[11px] font-bold text-slate-700 block">
-                    Attach Transaction Screenshot after scanning
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleSlipFileSelect}
-                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer"
-                  />
-                  {slipImageBase64 && (
-                    <img
-                      src={slipImageBase64}
-                      alt="QR Screenshot"
-                      className="max-h-32 rounded-xl border border-slate-200 mx-auto mt-2 shadow-2xs"
-                    />
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Bank App Used
-                    </label>
-                    <input
-                      type="text"
-                      value={slipBank}
-                      onChange={(e) => setSlipBank(e.target.value)}
-                      placeholder="e.g. ComBank Q+ / FriMi"
-                      className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl text-slate-800 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      QR Reference / Txn No
-                    </label>
-                    <input
-                      type="text"
-                      value={slipRef}
-                      onChange={(e) => setSlipRef(e.target.value)}
-                      placeholder="e.g. QR-88219"
-                      className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl font-mono text-slate-800 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle2 size={14} />
-                  <span>Confirm LankaQR Payment</span>
-                </button>
-              </form>
+                  </form>
+                )}
+              </div>
             )}
 
             {/* Footer Trust strip */}
