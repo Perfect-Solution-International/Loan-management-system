@@ -25,11 +25,15 @@ import {
   ExternalLink,
   Wallet,
   Check,
+  Upload,
+  Image as ImageIcon,
+  FileCheck,
+  XCircle,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { BrandLogo } from "@/components/brand-logo";
-import type { Payment } from "@/types";
+import type { Payment, OnlinePayment } from "@/types";
 
 function parseDateString(dateStr?: string): Date | null {
   if (!dateStr) return null;
@@ -52,7 +56,7 @@ function formatDateToYMD(date: Date): string {
 }
 
 export default function CustomerDashboardPage() {
-  const { customers, loans, repayments } = useData();
+  const { customers, loans, repayments, onlinePayments, addOnlinePayment } = useData();
 
   // Session customer state & today's date
   const [sessionCustomerId, setSessionCustomerId] = useState<string>("");
@@ -231,12 +235,161 @@ export default function CustomerDashboardPage() {
   const nextInstallmentAmount = currentLoan?.installment || (totalPayable > 0 ? Math.ceil(totalPayable / (currentLoan?.duration || 1)) : 0);
   const nextDueDate = currentLoan?.firstPaymentDate || currentLoan?.issueDate || todayStr;
 
-  // Tab state: 'schedule' (Installment Due Dates) | 'history' (Repayment History)
-  const [activeTab, setActiveTab] = useState<"schedule" | "history">("schedule");
+  // Tab state: 'schedule' (Installment Due Dates) | 'history' (Repayment History) | 'slips' (Bank Slips & Online)
+  const [activeTab, setActiveTab] = useState<"schedule" | "history" | "slips">("schedule");
 
   // Receipt & Statement Modal States
   const [receiptToPrint, setReceiptToPrint] = useState<Payment | null>(null);
   const [isStatementOpen, setIsStatementOpen] = useState(false);
+
+  // Online Bank Slip Upload Modal States
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadLoanId, setUploadLoanId] = useState("");
+  const [uploadAmount, setUploadAmount] = useState("");
+  const [uploadBank, setUploadBank] = useState("Commercial Bank of Ceylon");
+  const [uploadRef, setUploadRef] = useState("");
+  const [uploadDate, setUploadDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [uploadNotes, setUploadNotes] = useState("");
+  const [uploadSlipImage, setUploadSlipImage] = useState("");
+  const [uploadErrorMsg, setUploadErrorMsg] = useState("");
+  const [uploadSuccessMsg, setUploadSuccessMsg] = useState("");
+
+  // Viewing Slip Details Modal
+  const [viewingSlip, setViewingSlip] = useState<OnlinePayment | null>(null);
+
+  // Customer's online payment slips
+  const customerOnlinePayments = useMemo(() => {
+    if (!currentCustomer?.id) return [];
+    if (!currentLoan) {
+      return onlinePayments.filter(
+        (op) =>
+          op.customerId === currentCustomer.id ||
+          (op.customerNic && op.customerNic.toLowerCase() === currentCustomer.nic?.toLowerCase())
+      );
+    }
+    return onlinePayments.filter(
+      (op) =>
+        op.loanId === currentLoan.id ||
+        (op.customerId === currentCustomer.id && (!op.loanId || op.loanId === currentLoan.id))
+    );
+  }, [onlinePayments, currentCustomer, currentLoan]);
+
+  const SRI_LANKAN_BANKS = [
+    "Commercial Bank of Ceylon",
+    "Bank of Ceylon (BOC)",
+    "People's Bank",
+    "Sampath Bank",
+    "Hatton National Bank (HNB)",
+    "Nations Trust Bank (NTB)",
+    "Seylan Bank",
+    "DFCC Bank",
+    "National Savings Bank (NSB)",
+    "Pan Asia Bank",
+    "Union Bank",
+    "Other / Digital Transfer",
+  ];
+
+  const handleOpenUploadModal = (preselectedLoanId?: string) => {
+    const targetLoan =
+      customerLoans.find((l) => l.id === preselectedLoanId) ||
+      customerLoans.find((l) => l.id === activeLoanId) ||
+      customerLoans[0];
+
+    const targetId = targetLoan?.id || "";
+    setUploadLoanId(targetId);
+    const nextInstallment =
+      targetLoan?.installment ||
+      (targetLoan?.totalRepayment
+        ? Math.ceil(targetLoan.totalRepayment / (targetLoan.duration || 1))
+        : "");
+    setUploadAmount(nextInstallment ? String(nextInstallment) : "");
+    setUploadBank("Commercial Bank of Ceylon");
+    setUploadRef("");
+    setUploadDate(todayStr || new Date().toISOString().slice(0, 10));
+    setUploadNotes("");
+    setUploadSlipImage("");
+    setUploadErrorMsg("");
+    setIsUploadModalOpen(true);
+  };
+
+  const handleSlipFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setUploadErrorMsg("Please choose an image file (PNG, JPG, JPEG).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadErrorMsg("Image size exceeds 5MB. Please choose a smaller image.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setUploadSlipImage(reader.result);
+        setUploadErrorMsg("");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSlipSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadErrorMsg("");
+
+    const numAmount = Number(uploadAmount);
+    if (!numAmount || numAmount <= 0) {
+      setUploadErrorMsg("Please enter a valid payment amount (LKR).");
+      return;
+    }
+    if (!uploadBank.trim()) {
+      setUploadErrorMsg("Please select or enter the bank name.");
+      return;
+    }
+
+    const selectedLoan = customerLoans.find((l) => l.id === uploadLoanId) || customerLoans[0];
+    if (!selectedLoan) {
+      setUploadErrorMsg("No loan selected. Please select a valid loan facility.");
+      return;
+    }
+
+    const fallbackSlip =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360' viewBox='0 0 600 360'><rect width='100%' height='100%' fill='%23f8fafc'/><rect x='20' y='20' width='560' height='320' rx='16' fill='%23ffffff' stroke='%23cbd5e1' stroke-width='2'/><text x='50' y='70' font-family='sans-serif' font-size='20' font-weight='bold' fill='%230f172a'>BANK TRANSFER RECEIPT</text><text x='50' y='110' font-family='sans-serif' font-size='13' fill='%2364748b'>Bank: " +
+      encodeURIComponent(uploadBank) +
+      "</text><text x='50' y='140' font-family='sans-serif' font-size='13' fill='%2364748b'>Reference: " +
+      encodeURIComponent(uploadRef || "ONLINE-" + Date.now().toString().slice(-4)) +
+      "</text><text x='50' y='170' font-family='sans-serif' font-size='13' fill='%2364748b'>Date: " +
+      encodeURIComponent(uploadDate) +
+      "</text><text x='50' y='200' font-family='sans-serif' font-size='13' fill='%2364748b'>Facility: " +
+      encodeURIComponent(selectedLoan.loanNo || selectedLoan.id) +
+      "</text><text x='50' y='260' font-family='sans-serif' font-size='26' font-weight='bold' fill='%2316a34a'>LKR " +
+      encodeURIComponent(numAmount.toLocaleString()) +
+      "</text><text x='50' y='300' font-family='sans-serif' font-size='11' fill='%2394a3b8'>Customer Electronic Deposit Slip · PSI ONE</text></svg>";
+
+    const newSlip: OnlinePayment = {
+      id: `SLIP-${Date.now().toString().slice(-6)}`,
+      loanId: selectedLoan.id,
+      loanNo: selectedLoan.loanNo || selectedLoan.id,
+      customerId: currentCustomer?.id || "",
+      customerName: currentCustomer?.fullName || currentCustomer?.name || "Borrower",
+      customerNic: currentCustomer?.nic || "",
+      customerPhone: currentCustomer?.phone || "",
+      amount: numAmount,
+      paymentDate: uploadDate,
+      bankName: uploadBank,
+      referenceNumber: uploadRef.trim() || undefined,
+      slipUrl: uploadSlipImage || fallbackSlip,
+      status: "PENDING",
+      submittedAt: new Date().toISOString(),
+      notes: uploadNotes.trim() || undefined,
+    };
+
+    addOnlinePayment(newSlip);
+    setIsUploadModalOpen(false);
+    setActiveTab("slips");
+    setUploadSuccessMsg("Bank deposit slip submitted successfully! Our finance team will review and approve it shortly.");
+    setTimeout(() => setUploadSuccessMsg(""), 7000);
+  };
 
   // Installment Schedule with Due Dates
   const installmentSchedule = useMemo(() => {
@@ -455,6 +608,16 @@ export default function CustomerDashboardPage() {
 
             <button
               type="button"
+              onClick={() => handleOpenUploadModal()}
+              className="inline-flex items-center gap-1.5 px-3 h-8 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+              title="Upload bank transfer or deposit slip"
+            >
+              <Upload size={13} />
+              <span>Upload Slip</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setIsStatementOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 h-8 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer shrink-0"
             >
@@ -473,6 +636,22 @@ export default function CustomerDashboardPage() {
             </button>
           </div>
         </div>
+
+        {uploadSuccessMsg && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 flex items-center justify-between gap-3 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+              <span className="font-semibold">{uploadSuccessMsg}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUploadSuccessMsg("")}
+              className="text-emerald-700 hover:text-emerald-900 cursor-pointer p-0.5"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {!currentLoan ? (
           /* ═══════════════════════════════════════════════════════════════════
@@ -668,15 +847,26 @@ export default function CustomerDashboardPage() {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setActiveLoanId(loan.id)}
-                          className="w-full mt-4 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer group-hover:bg-red-700"
-                        >
-                          <Eye size={14} />
-                          <span>View Loan Details &amp; Schedule</span>
-                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        <div className="mt-4 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveLoanId(loan.id)}
+                            className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer group-hover:bg-red-700"
+                          >
+                            <Eye size={14} />
+                            <span>View Details</span>
+                            <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenUploadModal(loan.id)}
+                            className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                            title="Upload bank deposit slip for this loan"
+                          >
+                            <Upload size={14} className="text-red-600" />
+                            <span className="hidden sm:inline">Pay Slip</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -848,6 +1038,19 @@ export default function CustomerDashboardPage() {
                     <Receipt size={13} className={activeTab === "history" ? "text-emerald-600" : "text-slate-400"} />
                     <span>Receipts ({customerPayments.length})</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("slips")}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                      activeTab === "slips"
+                        ? "bg-white text-slate-900 shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <CreditCard size={13} className={activeTab === "slips" ? "text-blue-600" : "text-slate-400"} />
+                    <span>Bank Slips ({customerOnlinePayments.length})</span>
+                  </button>
                 </div>
               </div>
 
@@ -989,6 +1192,132 @@ export default function CustomerDashboardPage() {
                   </table>
                 </div>
               )}
+
+              {/* TAB 3: Online Bank Slips Table */}
+              {activeTab === "slips" && (
+                <div className="overflow-x-auto min-w-full">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+                      <tr>
+                        <th className="py-2.5 px-4">Slip ID</th>
+                        <th className="py-2.5 px-3">Date</th>
+                        <th className="py-2.5 px-3">Bank &amp; Ref</th>
+                        <th className="py-2.5 px-3 text-right">Amount</th>
+                        <th className="py-2.5 px-3 text-center">Verification Status</th>
+                        <th className="py-2.5 px-4 text-right">Action / Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {customerOnlinePayments.map((op) => {
+                        const isPending = op.status === "PENDING";
+                        const isApproved = op.status === "COMPLETED";
+                        const isDeclined = op.status === "REJECTED";
+
+                        return (
+                          <tr key={op.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-2.5 px-4 font-mono font-bold text-slate-900 text-xs">
+                              {op.id}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-600 text-xs">
+                              {op.paymentDate}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="font-semibold text-slate-800 block text-xs truncate max-w-[160px]">
+                                {op.bankName}
+                              </span>
+                              {op.referenceNumber && (
+                                <span className="text-[10px] font-mono text-slate-400 block">
+                                  Ref: {op.referenceNumber}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-xs">
+                              {MONEY(op.amount)}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {isPending && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                  <Clock size={10} /> Pending Review
+                                </span>
+                              )}
+                              {isApproved && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <CheckCircle2 size={10} /> Approved &amp; Credited
+                                </span>
+                              )}
+                              {isDeclined && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"
+                                  title={op.reviewNotes || "Declined by accounts team"}
+                                >
+                                  <XCircle size={10} /> Declined
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingSlip(op)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition cursor-pointer"
+                                  title="View Uploaded Bank Slip"
+                                >
+                                  <Eye size={12} className="text-slate-500 shrink-0" />
+                                  <span>View Slip</span>
+                                </button>
+                                {isApproved && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const matchingPayment: Payment = repayments.find((p) => p.receiptNo === op.receiptNo) || {
+                                        id: op.receiptNo || op.id,
+                                        loanId: op.loanId,
+                                        customerId: op.customerId,
+                                        amount: op.amount,
+                                        date: op.paymentDate,
+                                        type: "Capital",
+                                        method: "Bank Transfer",
+                                        collectedBy: op.reviewedBy || "Finance Admin",
+                                        receiptNo: op.receiptNo,
+                                      };
+                                      setReceiptToPrint(matchingPayment);
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[11px] transition cursor-pointer"
+                                    title="View Official Repayment Receipt"
+                                  >
+                                    <Receipt size={12} className="text-emerald-600 shrink-0" />
+                                    <span>Receipt</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {customerOnlinePayments.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-10 text-center text-slate-400">
+                            <Upload size={32} className="mx-auto text-slate-300 mb-1.5" />
+                            <p className="text-xs font-bold text-slate-700">No bank slips submitted yet</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              After making a bank transfer or cash deposit, upload your slip here for quick verification.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenUploadModal()}
+                              className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                            >
+                              <Upload size={12} />
+                              <span>Upload First Bank Slip</span>
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1026,6 +1355,16 @@ export default function CustomerDashboardPage() {
                   <p className="text-[11px] text-slate-600 font-mono">Acc: <strong>0145 1002 9841</strong></p>
                   <p className="text-[10px] text-slate-400">Branch: City Office, Colombo</p>
                 </div>
+
+                {/* Quick Upload Button */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenUploadModal(currentLoan?.id)}
+                  className="w-full mt-2 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Upload size={14} />
+                  <span>Upload Deposit Slip</span>
+                </button>
               </div>
             </div>
 
@@ -1225,6 +1564,323 @@ export default function CustomerDashboardPage() {
                 className="inline-flex items-center gap-1.5 px-4 h-8 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer"
               >
                 <Printer size={13} /> Print Statement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal 1: Upload Bank Transfer / Deposit Slip ─────────────────── */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-8 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <Upload size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 leading-tight">
+                    Upload Bank Deposit Slip
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Submit your online transfer receipt for instant admin verification
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {uploadErrorMsg && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                <span>{uploadErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSlipSubmit} className="space-y-3.5 text-xs">
+              {/* Select Facility */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Loan Facility <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={uploadLoanId}
+                  onChange={(e) => {
+                    const lId = e.target.value;
+                    setUploadLoanId(lId);
+                    const match = customerLoans.find((l) => l.id === lId);
+                    if (match) {
+                      const nextInst =
+                        match.installment ||
+                        (match.totalRepayment
+                          ? Math.ceil(match.totalRepayment / (match.duration || 1))
+                          : "");
+                      setUploadAmount(nextInst ? String(nextInst) : "");
+                    }
+                  }}
+                  className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                >
+                  {customerLoans.map((loan) => (
+                    <option key={loan.id} value={loan.id}>
+                      {loan.loanNo || loan.id} — Borrowed {MONEY(loan.principal || loan.amount || 0)} (Installment: {MONEY(loan.installment || 0)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount & Date Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Amount Transferred (LKR) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="any"
+                    required
+                    value={uploadAmount}
+                    onChange={(e) => setUploadAmount(e.target.value)}
+                    placeholder="e.g. 5000"
+                    className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Transfer / Deposit Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={uploadDate}
+                    onChange={(e) => setUploadDate(e.target.value)}
+                    className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              {/* Bank Name & Reference */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Deposit Bank <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={uploadBank}
+                    onChange={(e) => setUploadBank(e.target.value)}
+                    className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                  >
+                    {SRI_LANKAN_BANKS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Bank Ref / Txn ID
+                  </label>
+                  <input
+                    type="text"
+                    value={uploadRef}
+                    onChange={(e) => setUploadRef(e.target.value)}
+                    placeholder="e.g. TXN-998822"
+                    className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              {/* Slip Image File Upload */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Upload Slip Image / Receipt Screenshot
+                </label>
+                <div className="border border-dashed border-slate-300 rounded-xl p-3 bg-slate-50 text-center hover:bg-slate-100/70 transition">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="slip-image-input"
+                    className="hidden"
+                    onChange={handleSlipFileChange}
+                  />
+                  {uploadSlipImage ? (
+                    <div className="space-y-2">
+                      <img
+                        src={uploadSlipImage}
+                        alt="Deposit Slip Preview"
+                        className="max-h-36 mx-auto rounded-lg border border-slate-200 shadow-2xs object-contain"
+                      />
+                      <label
+                        htmlFor="slip-image-input"
+                        className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer block"
+                      >
+                        Change Image
+                      </label>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="slip-image-input"
+                      className="cursor-pointer flex flex-col items-center justify-center gap-1.5 py-2 text-slate-500"
+                    >
+                      <ImageIcon size={22} className="text-slate-400" />
+                      <span className="text-xs font-bold text-slate-700">Click to attach bank slip</span>
+                      <span className="text-[10px] text-slate-400">PNG, JPG, or JPEG up to 5MB</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Note / Remarks (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={uploadNotes}
+                  onChange={(e) => setUploadNotes(e.target.value)}
+                  placeholder="e.g. Paid from brother's Sampath account, installment 4"
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="px-3.5 h-8 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 h-8 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Upload size={13} />
+                  <span>Submit Slip for Approval</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal 2: Viewing Slip Modal ──────────────────────────────────── */}
+      {viewingSlip && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <CreditCard size={16} className="text-red-600" />
+                <h3 className="text-sm font-black text-slate-900">
+                  Bank Deposit Slip · {viewingSlip.id}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingSlip(null)}
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Slip Status Banner */}
+            <div
+              className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-semibold ${
+                viewingSlip.status === "COMPLETED"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : viewingSlip.status === "REJECTED"
+                  ? "bg-rose-50 border-rose-200 text-rose-800"
+                  : "bg-amber-50 border-amber-200 text-amber-800"
+              }`}
+            >
+              {viewingSlip.status === "COMPLETED" && (
+                <>
+                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                  <span>
+                    Approved &amp; Credited! Official Receipt: <b>{viewingSlip.receiptNo}</b>
+                  </span>
+                </>
+              )}
+              {viewingSlip.status === "REJECTED" && (
+                <>
+                  <XCircle size={16} className="text-rose-600 shrink-0" />
+                  <span>
+                    Slip Declined: {viewingSlip.reviewNotes || "Verification failed. Contact branch."}
+                  </span>
+                </>
+              )}
+              {viewingSlip.status === "PENDING" && (
+                <>
+                  <Clock size={16} className="text-amber-600 shrink-0" />
+                  <span>
+                    Pending Admin Verification — Your loan balance will update as soon as the accounts team approves this slip.
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Slip Image View */}
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-center">
+              <img
+                src={viewingSlip.slipUrl}
+                alt="Bank Slip"
+                className="max-h-72 mx-auto rounded-lg object-contain shadow-xs border border-slate-200/80"
+              />
+            </div>
+
+            {/* Slip metadata breakdown */}
+            <div className="bg-slate-50/70 rounded-xl p-3 border border-slate-100 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Amount:</span>
+                <span className="font-mono font-black text-slate-900 text-sm">
+                  {MONEY(viewingSlip.amount)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Bank:</span>
+                <span className="font-semibold text-slate-800">{viewingSlip.bankName}</span>
+              </div>
+              {viewingSlip.referenceNumber && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Reference No:</span>
+                  <span className="font-mono font-bold text-slate-800">{viewingSlip.referenceNumber}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500">Transfer Date:</span>
+                <span className="font-medium text-slate-800">{viewingSlip.paymentDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Facility ID:</span>
+                <span className="font-mono font-bold text-red-600">{viewingSlip.loanNo || viewingSlip.loanId}</span>
+              </div>
+              {viewingSlip.notes && (
+                <div className="pt-1.5 border-t border-slate-200/60 text-[11px] text-slate-600">
+                  <span className="text-slate-400 block font-bold">Borrower Remarks:</span>
+                  {viewingSlip.notes}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setViewingSlip(null)}
+                className="px-4 h-8 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>

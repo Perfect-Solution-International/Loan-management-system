@@ -1,10 +1,12 @@
-import type { Customer, Loan, Payment, CustomerDocument, SystemSettings, StaffUser } from "@/types";
+import type { Customer, Loan, Payment, CustomerDocument, SystemSettings, StaffUser, OnlinePayment } from "@/types";
 
 export const initialCustomers: Customer[] = [];
 
 export const initialLoans: Loan[] = [];
 
 export const initialPayments: Payment[] = [];
+
+export const initialOnlinePayments: OnlinePayment[] = [];
 
 export const initialDocuments: CustomerDocument[] = [];
 

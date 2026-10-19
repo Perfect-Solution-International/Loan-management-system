@@ -9,11 +9,14 @@ import type {
   CustomerDocument,
   SystemSettings,
   StaffUser,
+  OnlinePayment,
+  OnlinePaymentStatus,
 } from "@/types";
 import {
   initialCustomers,
   initialLoans,
   initialPayments,
+  initialOnlinePayments,
   initialDocuments,
   initialSettings,
   initialStaffUsers,
@@ -40,6 +43,10 @@ export interface DataContextValue {
   updateStaffUser: (id: string, updated: Partial<StaffUser>) => void;
   resetAllData: () => void;
   getNextReceiptNo: () => string;
+  onlinePayments: OnlinePayment[];
+  addOnlinePayment: (payment: OnlinePayment) => void;
+  approveOnlinePayment: (id: string, notes?: string, reviewer?: string) => void;
+  rejectOnlinePayment: (id: string, notes?: string, reviewer?: string) => void;
 }
 
 export function getNextReceiptNo(paymentsList: Payment[] = []): string {
@@ -90,6 +97,10 @@ const defaultState: DataContextValue = {
   updateStaffUser: () => {},
   resetAllData: () => {},
   getNextReceiptNo: () => `REC-${new Date().getFullYear()}-0001`,
+  onlinePayments: initialOnlinePayments || [],
+  addOnlinePayment: () => {},
+  approveOnlinePayment: () => {},
+  rejectOnlinePayment: () => {},
 };
 
 const DataContext = createContext<DataContextValue>(defaultState);
@@ -98,6 +109,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers || []);
   const [loans, setLoans] = useState<Loan[]>(initialLoans || []);
   const [payments, setPayments] = useState<Payment[]>(initialPayments || []);
+  const [onlinePayments, setOnlinePayments] = useState<OnlinePayment[]>(initialOnlinePayments || []);
   const [documents, setDocuments] = useState<CustomerDocument[]>(initialDocuments || []);
   const [settings, setSettings] = useState<SystemSettings>(initialSettings);
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>(initialStaffUsers || []);
@@ -114,6 +126,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("psi_customers");
         localStorage.removeItem("psi_loans");
         localStorage.removeItem("psi_payments");
+        localStorage.removeItem("psi_online_payments");
         localStorage.removeItem("psi_documents");
         localStorage.removeItem("psi_field_ptp_notes");
         localStorage.setItem("psi_staff_users", JSON.stringify(initialStaffUsers));
@@ -122,6 +135,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setCustomers([]);
         setLoans([]);
         setPayments([]);
+        setOnlinePayments([]);
         setDocuments([]);
         setStaffUsers(initialStaffUsers);
         return;
@@ -161,6 +175,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           .reverse();
         setPayments(normalized);
         localStorage.setItem("psi_payments", JSON.stringify(normalized));
+      }
+
+      const storedOnline = localStorage.getItem("psi_online_payments");
+      if (storedOnline) {
+        setOnlinePayments(JSON.parse(storedOnline));
       }
 
       const storedDocs = localStorage.getItem("psi_documents");
@@ -213,6 +232,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.error("Failed to save payments to localStorage", e);
     }
   }, [payments, isHydrated]);
+
+  React.useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem("psi_online_payments", JSON.stringify(onlinePayments));
+    } catch (e) {
+      console.error("Failed to save online payments to localStorage", e);
+    }
+  }, [onlinePayments, isHydrated]);
 
   React.useEffect(() => {
     if (!isHydrated) return;
@@ -328,11 +356,86 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const addOnlinePayment = React.useCallback((payment: OnlinePayment) => {
+    setOnlinePayments((prev) => [payment, ...prev]);
+  }, []);
+
+  const approveOnlinePayment = React.useCallback(
+    (id: string, notes?: string, reviewer?: string) => {
+      const reviewerName = reviewer || "Admin Officer";
+      const reviewDate = new Date().toISOString().slice(0, 10);
+      const generatedReceiptNo = getNextReceiptNo(payments);
+
+      let targetItem: OnlinePayment | undefined;
+
+      setOnlinePayments((prev) =>
+        prev.map((op) => {
+          if (op.id === id) {
+            targetItem = {
+              ...op,
+              status: "COMPLETED",
+              reviewedBy: reviewerName,
+              reviewedAt: reviewDate,
+              reviewNotes: notes || "Bank transfer slip verified and accepted",
+              receiptNo: generatedReceiptNo,
+            };
+            return targetItem;
+          }
+          return op;
+        })
+      );
+
+      // Create official repayment record and credit loan
+      const target = targetItem || onlinePayments.find((o) => o.id === id);
+      if (target) {
+        const newPayment: Payment = {
+          id: `PAY-${Date.now().toString().slice(-6)}`,
+          loanId: target.loanId,
+          customerId: target.customerId,
+          amount: target.amount,
+          date: target.paymentDate || reviewDate,
+          type: "Capital",
+          method: "Bank Transfer",
+          notes: `[Online Slip Approved] Ref: ${target.referenceNumber} | Bank: ${target.bankName}${
+            notes ? ` | Note: ${notes}` : ""
+          }`,
+          collectedBy: reviewerName,
+          receiptNo: generatedReceiptNo,
+        };
+
+        addPayment(newPayment);
+      }
+    },
+    [payments, onlinePayments, addPayment]
+  );
+
+  const rejectOnlinePayment = React.useCallback(
+    (id: string, notes?: string, reviewer?: string) => {
+      const reviewerName = reviewer || "Admin Officer";
+      const reviewDate = new Date().toISOString().slice(0, 10);
+      setOnlinePayments((prev) =>
+        prev.map((op) =>
+          op.id === id
+            ? {
+                ...op,
+                status: "REJECTED",
+                reviewedBy: reviewerName,
+                reviewedAt: reviewDate,
+                reviewNotes: notes || "Payment slip declined by administrator",
+              }
+            : op
+        )
+      );
+    },
+    []
+  );
+
   const resetAllData = React.useCallback(() => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("psi_customers");
       localStorage.removeItem("psi_loans");
       localStorage.removeItem("psi_payments");
+      localStorage.removeItem("psi_online_payments");
       localStorage.removeItem("psi_documents");
       localStorage.removeItem("psi_field_ptp_notes");
       localStorage.setItem("psi_staff_users", JSON.stringify(initialStaffUsers));
@@ -341,6 +444,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCustomers([]);
     setLoans([]);
     setPayments([]);
+    setOnlinePayments([]);
     setDocuments([]);
     setStaffUsers(initialStaffUsers);
   }, []);
@@ -367,6 +471,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateStaffUser,
       resetAllData,
       getNextReceiptNo: getNextReceiptNumber,
+      onlinePayments,
+      addOnlinePayment,
+      approveOnlinePayment,
+      rejectOnlinePayment,
     }),
     [
       customers,
@@ -387,6 +495,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateStaffUser,
       resetAllData,
       getNextReceiptNumber,
+      onlinePayments,
+      addOnlinePayment,
+      approveOnlinePayment,
+      rejectOnlinePayment,
     ]
   );
 

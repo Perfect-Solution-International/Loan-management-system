@@ -17,8 +17,10 @@ import {
   X,
   Receipt,
   AlertOctagon,
+  CreditCard,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
+import { useData } from '@/providers/data-provider';
 
 interface SidebarItem {
   name: string;
@@ -129,6 +131,9 @@ function isPathActive(pathname: string, href: string): boolean {
   if (href === '/repayments') {
     return pathname.startsWith('/repayments');
   }
+  if (href === '/online-payments') {
+    return pathname.startsWith('/online-payments');
+  }
   if (href === '/arrears') {
     return pathname.startsWith('/arrears');
   }
@@ -155,6 +160,98 @@ interface SidebarProps {
 export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
   const isStaff = pathname === "/staffdashboard";
+  const { onlinePayments } = useData();
+  const pendingOnlineCount = (onlinePayments || []).filter((p) => p.status === 'PENDING').length;
+
+  const dynamicNavSections = React.useMemo(() => {
+    return [
+      {
+        title: 'CORE MENU',
+        items: [
+          {
+            name: 'Dashboard',
+            href: '/dashboard',
+            icon: LayoutDashboard,
+          },
+          {
+            name: 'Customer Directory',
+            href: '/customers',
+            icon: Users,
+          },
+          {
+            name: 'Loans List',
+            href: '/loans',
+            icon: Wallet,
+          },
+          {
+            name: 'Issue New Loan',
+            href: '/loans/new',
+            icon: PlusCircle,
+            badge: 'New',
+            badgeVariant: 'red' as const,
+          },
+        ],
+      },
+      {
+        title: 'COLLECTIONS & RISK',
+        items: [
+          {
+            name: "Today's Collection",
+            href: '/collections',
+            icon: CalendarDays,
+            badge: 'Daily',
+            badgeVariant: 'amber' as const,
+          },
+          {
+            name: 'Repayments Ledger',
+            href: '/repayments',
+            icon: Receipt,
+          },
+          {
+            name: 'Online Payments',
+            href: '/online-payments',
+            icon: CreditCard,
+            badge: pendingOnlineCount > 0 ? `${pendingOnlineCount}` : undefined,
+            badgeVariant: 'amber' as const,
+          },
+          {
+            name: 'Arrears Register',
+            href: '/arrears',
+            icon: AlertTriangle,
+            badge: 'Risk',
+            badgeVariant: 'red' as const,
+          },
+          {
+            name: 'Overdue Payments',
+            href: '/overdue',
+            icon: AlertOctagon,
+            badge: 'Overdue',
+            badgeVariant: 'red' as const,
+          },
+        ],
+      },
+      {
+        title: 'SYSTEM & INSIGHTS',
+        items: [
+          {
+            name: 'Reports & Analytics',
+            href: '/reports',
+            icon: BarChart3,
+          },
+          {
+            name: 'Activity & Audit Logs',
+            href: '/audit-logs',
+            icon: Activity,
+          },
+          {
+            name: 'System Settings',
+            href: '/settings',
+            icon: Settings,
+          },
+        ],
+      },
+    ];
+  }, [pendingOnlineCount]);
 
   return (
     <aside
@@ -180,7 +277,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
 
         {/* Navigation Sections */}
         <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
-          {navSections.map((section) => (
+          {dynamicNavSections.map((section) => (
             <div key={section.title} className="space-y-1">
               <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
                 {section.title}

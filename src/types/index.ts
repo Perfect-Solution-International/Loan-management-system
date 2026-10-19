@@ -99,6 +99,32 @@ export interface Payment {
   receiptNo?: string;
 }
 
+export type OnlinePaymentStatus = "PENDING" | "COMPLETED" | "REJECTED";
+
+export interface OnlinePayment {
+  id: string;
+  loanId: string;
+  loanNo?: string;
+  customerId: string;
+  customerName: string;
+  customerPhone?: string;
+  customerNic?: string;
+  amount: number;
+  paymentDate: string;
+  submittedAt: string;
+  bankName: string;
+  referenceNumber?: string;
+  slipUrl: string;
+  slipFileName?: string;
+  slipFileType?: string;
+  status: OnlinePaymentStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  receiptNo?: string;
+  notes?: string;
+}
+
 export interface LoanCalculation {
   grossAmount: number;
   totalDeductions: number;
