@@ -496,7 +496,7 @@ export function CustomerPaymentGatewayModal({
                 }}
                 className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
               >
-                Close Gateway
+                Close
               </button>
             </div>
           </div>
