@@ -22,6 +22,7 @@ import {
   initialStaffUsers,
 } from "@/lib/demo-data";
 import { api } from "@/lib/api-client";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 export interface DataContextValue {
   customers: Customer[];
@@ -362,7 +363,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
           const totalPaidAfter = existingPaid + (Number(payment.amount) || 0);
 
-          if (totalPaidAfter >= (l.totalRepayment || 0) && l.status !== "Completed") {
+          const expectedRepayment = getLoanTotalRepayment(l);
+          if (expectedRepayment > 0 && totalPaidAfter >= expectedRepayment && l.status !== "Completed") {
             return { ...l, status: "Completed" };
           }
         }

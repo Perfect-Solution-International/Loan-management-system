@@ -208,40 +208,22 @@ export default function AuditLogsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* ── Page Header ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black uppercase tracking-widest text-red-600 font-mono">
-              SECURITY & GOVERNANCE
-            </span>
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-0.5">
-            Activity & Audit Trail
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Immutable system logs, financial collection entries, loan approvals, and staff security supervision.
-          </p>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
-          >
-            <Printer size={15} />
-            Print Report
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
-          >
-            <Download size={15} />
-            Export CSV
-          </button>
-        </div>
+      {/* ── Top Action Controls ── */}
+      <div className="flex items-center justify-end gap-2.5">
+        <button
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
+        >
+          <Printer size={15} />
+          Print Report
+        </button>
+        <button
+          onClick={handleExportCSV}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
+        >
+          <Download size={15} />
+          Export CSV
+        </button>
       </div>
 
       {/* ── KPI Metric Summary ───────────────────────────────────────────── */}

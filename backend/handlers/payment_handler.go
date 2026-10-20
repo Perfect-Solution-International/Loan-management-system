@@ -73,7 +73,7 @@ func (h *PaymentHandler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 		p.ID = "PAY-" + uuid.New().String()[:8]
 	}
 	if p.ReceiptNo == "" {
-		count, _ := h.paymentRepo.GetCount()
+		count, _ := h.payRepo.GetCount()
 		p.ReceiptNo = fmt.Sprintf("REC-%d-%04d", time.Now().Year(), count+1)
 	}
 	if p.Date == "" {
@@ -95,6 +95,20 @@ func (h *PaymentHandler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 	if err := h.payRepo.Create(&p); err != nil {
 		sendJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to record payment: " + err.Error()})
 		return
+	}
+
+	// Check if loan is now fully settled and mark Completed
+	allPayments, _ := h.payRepo.GetByLoanID(p.LoanID)
+	totalPaid := 0.0
+	for _, pay := range allPayments {
+		totalPaid += pay.Amount
+	}
+	expectedRepay := loan.TotalRepayment
+	if expectedRepay <= 0 {
+		expectedRepay = loan.Principal + loan.Interest
+	}
+	if expectedRepay > 0 && totalPaid >= expectedRepay && loan.Status != "Completed" {
+		_ = h.loanRepo.UpdateStatus(loan.ID, "Completed", "System Auto-Settlement")
 	}
 
 	// Audit Log
@@ -215,6 +229,23 @@ func (h *PaymentHandler) ApproveOnlinePayment(w http.ResponseWriter, r *http.Req
 		ReceiptNo:   req.ReceiptNo,
 	}
 	_ = h.payRepo.Create(p)
+
+	// Check if loan is now fully settled and mark Completed
+	loan, _ := h.loanRepo.GetByID(op.LoanID)
+	if loan != nil {
+		allPayments, _ := h.payRepo.GetByLoanID(op.LoanID)
+		totalPaid := 0.0
+		for _, pay := range allPayments {
+			totalPaid += pay.Amount
+		}
+		expectedRepay := loan.TotalRepayment
+		if expectedRepay <= 0 {
+			expectedRepay = loan.Principal + loan.Interest
+		}
+		if expectedRepay > 0 && totalPaid >= expectedRepay && loan.Status != "Completed" {
+			_ = h.loanRepo.UpdateStatus(loan.ID, "Completed", "System Auto-Settlement")
+		}
+	}
 
 	// Audit Log
 	_ = h.auditRepo.Create(&models.AuditLog{

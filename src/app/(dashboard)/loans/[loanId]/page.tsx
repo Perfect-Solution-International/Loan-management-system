@@ -26,6 +26,7 @@ import { MONEY } from "@/constants";
 import { parseDateString, formatDateToYMD } from "@/lib/collection-schedule";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Loan, Customer, Payment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 interface ScheduleRow {
   cycle: number;
@@ -62,7 +63,7 @@ function LoanDetailsContent() {
     const rows: ScheduleRow[] = [];
     const duration = Math.max(1, loan.duration || 1);
     const gross = Number(loan.principal || loan.amount || 0);
-    const totalRepay = Number(loan.totalRepayment || gross + (loan.interest || 0));
+    const totalRepay = getLoanTotalRepayment(loan);
     const totalInterest = Math.max(0, totalRepay - gross);
     const frequency = loan.repaymentFrequency || "Monthly";
     const repaymentType = loan.repaymentType || "Capital + Interest";
@@ -161,7 +162,8 @@ function LoanDetailsContent() {
   }
 
   const totalPaid = loanPayments.reduce((sum: number, p: Payment) => sum + (Number(p.amount) || 0), 0);
-  const balanceDue = Math.max(0, (loan.totalRepayment || 0) - totalPaid);
+  const totalRepay = getLoanTotalRepayment(loan);
+  const balanceDue = Math.max(0, Math.round((totalRepay - totalPaid) * 100) / 100);
   const repaymentScheme = loan.repaymentType || "Capital + Interest";
   const isPending = (loan.status || "").toLowerCase() === "pending";
 

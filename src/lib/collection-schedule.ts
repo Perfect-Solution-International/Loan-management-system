@@ -1,4 +1,5 @@
 import type { Loan, Customer, Payment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 export interface ScheduledCollectionItem {
   id: string; // unique item key
@@ -63,9 +64,9 @@ export function getDailyCollections(
   loans: Loan[],
   customers: Customer[],
   payments: Payment[],
-  asOfDateStr: string = "2026-10-14"
+  asOfDateStr: string = new Date().toISOString().slice(0, 10)
 ): { items: ScheduledCollectionItem[]; summary: DailyCollectionSummary } {
-  const targetDate = parseDateString(asOfDateStr) || new Date(2026, 9, 14);
+  const targetDate = parseDateString(asOfDateStr) || new Date();
   const items: ScheduledCollectionItem[] = [];
 
   const customerMap = new Map<string, Customer>();
@@ -113,9 +114,8 @@ export function getDailyCollections(
     }
     const loanPayments = paymentsByLoanId.get(loan.id) || [];
     const totalPaid = loanPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-    const totalRepayment =
-      loan.totalRepayment || (loan.principal || loan.amount || 0) + (loan.interest || 0);
-    const balanceDue = Math.max(0, totalRepayment - totalPaid);
+    const totalRepayment = getLoanTotalRepayment(loan);
+    const balanceDue = Math.max(0, Math.round((totalRepayment - totalPaid) * 100) / 100);
 
     // Look for a payment made on this specific date
     const todaysPayment = loanPayments.find(
@@ -209,10 +209,18 @@ export function getDailyCollections(
         status = "DUE_TODAY";
       }
 
-      // Total expected from borrower today
-      const amountToCollect = isCollectedToday
-        ? Number(todaysPayment?.amount) || installmentAmount
-        : Math.min(balanceDue, installmentAmount + (isScheduledForDate ? 0 : arrearsAmount));
+      // Total expected from borrower today:
+      // If collected today: payment amount.
+      // If scheduled today: installment + any past arrears (capped at balance due)
+      // If NOT scheduled today: just arrears (capped at balance due)
+      let amountToCollect = 0;
+      if (isCollectedToday) {
+        amountToCollect = Number(todaysPayment?.amount) || installmentAmount;
+      } else if (isScheduledForDate) {
+        amountToCollect = Math.min(balanceDue, installmentAmount + arrearsAmount);
+      } else {
+        amountToCollect = Math.min(balanceDue, arrearsAmount);
+      }
 
       const routeArea =
         customer?.town || customer?.village || customer?.district || "Colombo Metro";

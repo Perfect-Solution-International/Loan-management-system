@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -33,8 +33,14 @@ import type { Payment } from "@/types";
 export default function CollectionsPage() {
   const { loans, customers, payments, addPayment, getNextReceiptNo } = useData();
 
-  // Selected collection date (defaults to system date 2026-10-14)
-  const [selectedDate, setSelectedDate] = useState<string>("2026-10-14");
+  // Selected collection date (defaults dynamically to today)
+  const [selectedDate, setSelectedDate] = useState<string>("2026-10-19");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSelectedDate(new Date().toISOString().slice(0, 10));
+    }
+  }, []);
 
   // Filter and search state
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "COLLECTED" | "OVERDUE">("ALL");
@@ -115,7 +121,7 @@ export default function CollectionsPage() {
   };
 
   const handleResetToToday = () => {
-    setSelectedDate("2026-10-14");
+    setSelectedDate(new Date().toISOString().slice(0, 10));
   };
 
   const openCollectModal = (item: ScheduledCollectionItem) => {

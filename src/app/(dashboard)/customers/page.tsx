@@ -23,6 +23,7 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -67,9 +68,9 @@ export default function CustomersPage() {
     [documents, selectedCustomer]
   );
 
-  const totalRepayable = selectedLoans.reduce((s, l) => s + (l.totalRepayment || 0), 0);
+  const totalRepayable = selectedLoans.reduce((s, l) => s + getLoanTotalRepayment(l), 0);
   const totalPaid = selectedPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-  const outstanding = Math.max(0, totalRepayable - totalPaid);
+  const outstanding = Math.max(0, Math.round((totalRepayable - totalPaid) * 100) / 100);
 
   // ─── Summary counts ───────────────────────────────────────────────────────
   const activeCount = customers.filter(

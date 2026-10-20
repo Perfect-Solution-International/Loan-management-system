@@ -23,6 +23,7 @@ import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Payment, Loan, Customer } from "@/types";
+import { getLoanTotalRepayment, calculateLoanFinancials } from "@/lib/loan-financials";
 import { BrandLogo } from "@/components/brand-logo";
 
 export default function FinancialReportsPage() {
@@ -122,7 +123,7 @@ export default function FinancialReportsPage() {
   );
 
   const totalRepaymentExpected = useMemo(
-    () => loans.reduce((sum, l) => sum + (l.totalRepayment || (l.principal || l.amount || 0) + (l.interest || 0)), 0),
+    () => loans.reduce((sum, l) => sum + getLoanTotalRepayment(l), 0),
     [loans]
   );
 
@@ -141,11 +142,11 @@ export default function FinancialReportsPage() {
     return loans
       .filter((l) => (l.status || "").toLowerCase() !== "completed")
       .reduce((sum, l) => {
-        const totalRepay = l.totalRepayment || (l.principal || l.amount || 0) + (l.interest || 0);
+        const totalRepay = getLoanTotalRepayment(l);
         const paid = payments
           .filter((p) => p.loanId === l.id)
           .reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0);
-        return sum + Math.max(0, totalRepay - paid);
+        return sum + Math.max(0, Math.round((totalRepay - paid) * 100) / 100);
       }, 0);
   }, [loans, payments]);
 
@@ -196,7 +197,7 @@ export default function FinancialReportsPage() {
       ? Math.min(100, Math.round((totalCollectionsAllTime / totalRepaymentExpected) * 1000) / 10)
       : 0;
 
-  // Aging Buckets for PAR Audit
+  // Aging Buckets for PAR Audit (calculated from actual repayment history & days overdue)
   const parBuckets = useMemo(() => {
     let b1_30 = 0;
     let b31_60 = 0;
@@ -204,26 +205,29 @@ export default function FinancialReportsPage() {
     let b90Plus = 0;
 
     overdueLoansList.forEach((l) => {
-      const p = l.principal || l.amount || 0;
-      // Assign based on duration / loan profile
-      if (l.duration && l.duration <= 3) {
+      const p = Number(l.principal || l.amount || 0);
+      const fin = calculateLoanFinancials(l, payments);
+      const bucket = fin.agingBucket;
+      if (bucket === "1_30") {
         b1_30 += p;
-      } else if (l.duration && l.duration <= 6) {
+      } else if (bucket === "31_60") {
         b31_60 += p;
-      } else if (l.duration && l.duration <= 9) {
+      } else if (bucket === "61_90") {
         b61_90 += p;
-      } else {
+      } else if (bucket === "90_PLUS") {
         b90Plus += p;
+      } else {
+        b1_30 += p;
       }
     });
 
     return {
-      b1_30: b1_30 || Math.round(overduePortfolio * 0.45),
-      b31_60: b31_60 || Math.round(overduePortfolio * 0.3),
-      b61_90: b61_90 || Math.round(overduePortfolio * 0.15),
-      b90Plus: b90Plus || Math.round(overduePortfolio * 0.1),
+      b1_30,
+      b31_60,
+      b61_90,
+      b90Plus,
     };
-  }, [overdueLoansList, overduePortfolio]);
+  }, [overdueLoansList, payments]);
 
   // Expected Credit Loss (ECL) Impairment Provision:
   // 1-30d: 5%, 31-60d: 20%, 61-90d: 50%, 90+d: 100%
@@ -317,44 +321,25 @@ export default function FinancialReportsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 font-sans">
-      {/* ── Top Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black uppercase tracking-widest text-red-700 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-md">
-              Executive Audit & Analytics
-            </span>
-            <span className="text-xs text-slate-500 font-semibold">Jira Card 23</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
-            <TrendingUp className="text-red-600" size={28} />
-            Financial Reporting & Portfolio Analytics UI
-          </h1>
-          <p className="text-xs text-slate-600 font-medium mt-0.5">
-            Audit recovery journals, examine loan portfolio yields, review PAR delinquency buckets, and export compliance reports.
-          </p>
-        </div>
+      {/* ── Top Action Bar ── */}
+      <div className="flex items-center justify-end gap-2.5 pb-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={reportTab === "collections" ? exportCollectionsCsv : exportPortfolioCsv}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition shadow-xs cursor-pointer"
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
-          <button
-            type="button"
-            onClick={reportTab === "collections" ? exportCollectionsCsv : exportPortfolioCsv}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition shadow-xs cursor-pointer"
-          >
-            <Download size={14} />
-            Export CSV
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-md shadow-slate-900/20 cursor-pointer"
-          >
-            <Printer size={14} />
-            Print Audit Statement
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-md shadow-slate-900/20 cursor-pointer"
+        >
+          <Printer size={14} />
+          Print Audit Statement
+        </button>
       </div>
 
       {/* ── Aggregate Financial Metrics (5 KPI Cards) ── */}

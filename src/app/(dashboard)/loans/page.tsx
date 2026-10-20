@@ -18,77 +18,7 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Loan, Customer, Payment } from "@/types";
-
-// ── Financial Calculation Helper ──────────────────────────────────────────
-function calculateLoanFinancials(
-  loan: Loan,
-  payments: Payment[],
-  asOfDate: Date = new Date("2026-10-14")
-) {
-  const totalPaid = payments
-    .filter((p) => p.loanId === loan.id)
-    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-
-  const totalRepayment = loan.totalRepayment || ((loan.principal || loan.amount || 0) + (loan.interest || 0));
-  const balanceDue = Math.max(0, totalRepayment - totalPaid);
-
-  const statusUpper = (loan.status || "").toUpperCase();
-
-  if (statusUpper === "COMPLETED" || (totalRepayment > 0 && totalPaid >= totalRepayment)) {
-    return {
-      totalPaid,
-      balanceDue: 0,
-      arrears: 0,
-      missedInstallments: 0,
-      overdueDays: 0,
-      isDelinquent: false,
-    };
-  }
-
-  if (statusUpper === "PENDING" || statusUpper === "REJECTED") {
-    return {
-      totalPaid: 0,
-      balanceDue: totalRepayment,
-      arrears: 0,
-      missedInstallments: 0,
-      overdueDays: 0,
-      isDelinquent: false,
-    };
-  }
-
-  const startDateStr = loan.firstPaymentDate || loan.issueDate;
-  const startDate = startDateStr ? new Date(startDateStr) : null;
-  const isDateValid = startDate && !isNaN(startDate.getTime());
-
-  let rawArrears = 0;
-  let overdueDays = 0;
-
-  if (isDateValid && asOfDate >= startDate) {
-    const diffDays = Math.max(0, Math.floor((asOfDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-    let cycleDays = 30;
-    if (loan.repaymentFrequency === "Daily") cycleDays = 1;
-    else if (loan.repaymentFrequency === "Weekly") cycleDays = 7;
-
-    const cyclesElapsed = Math.min(loan.duration || 1, Math.floor(diffDays / cycleDays) + 1);
-    const expectedDue = Math.min(totalRepayment, cyclesElapsed * (loan.installment || 0));
-    rawArrears = Math.max(0, expectedDue - totalPaid);
-    overdueDays = rawArrears > 0 ? diffDays : 0;
-  }
-
-  const isOverdueStatus = statusUpper === "OVERDUE";
-  const arrears = isOverdueStatus && rawArrears <= 0 ? (loan.installment || 0) : rawArrears;
-  const missedInstallments = loan.installment > 0 && arrears > 0 ? Math.ceil(arrears / loan.installment) : 0;
-  const isDelinquent = isOverdueStatus || arrears > 0;
-
-  return {
-    totalPaid,
-    balanceDue,
-    arrears,
-    missedInstallments,
-    overdueDays,
-    isDelinquent,
-  };
-}
+import { calculateLoanFinancials, getLoanTotalRepayment } from "@/lib/loan-financials";
 
 export default function LoansListPage() {
   const router = useRouter();

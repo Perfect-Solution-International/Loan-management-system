@@ -16,6 +16,7 @@ import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Customer, Loan, Payment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 export default function RepaymentsCollectionsPage() {
   const { customers, loans, payments, addPayment, getNextReceiptNo } = useData();
@@ -62,7 +63,8 @@ export default function RepaymentsCollectionsPage() {
 
   const balanceDue = useMemo(() => {
     if (!selectedLoan) return 0;
-    return Math.max(0, (selectedLoan.totalRepayment || 0) - totalPaid);
+    const totalRepay = getLoanTotalRepayment(selectedLoan);
+    return Math.max(0, Math.round((totalRepay - totalPaid) * 100) / 100);
   }, [selectedLoan, totalPaid]);
 
   const numEnteredAmount = Number(amount) || 0;

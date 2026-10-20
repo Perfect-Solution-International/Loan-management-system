@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -90,6 +91,50 @@ func (h *LoanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 	}
 	if l.FirstPaymentDate == "" {
 		l.FirstPaymentDate = time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+	}
+
+	// Financial calculation fallbacks
+	if l.RatePeriod == "" {
+		l.RatePeriod = "Monthly"
+	}
+	if l.RepaymentFrequency == "" {
+		l.RepaymentFrequency = "Daily"
+	}
+	if l.Duration <= 0 {
+		l.Duration = 30
+	}
+	if l.TotalRepayment <= 0 {
+		periods := float64(l.Duration)
+		if l.RatePeriod == "Monthly" {
+			if l.RepaymentFrequency == "Weekly" {
+				periods = float64(l.Duration) / 4.0
+			} else if l.RepaymentFrequency == "Daily" {
+				periods = float64(l.Duration) / 30.0
+			}
+		} else if l.RatePeriod == "Weekly" {
+			if l.RepaymentFrequency == "Monthly" {
+				periods = float64(l.Duration) * 4.0
+			} else if l.RepaymentFrequency == "Daily" {
+				periods = float64(l.Duration) / 7.0
+			}
+		} else if l.RatePeriod == "Daily" {
+			if l.RepaymentFrequency == "Weekly" {
+				periods = float64(l.Duration) * 7.0
+			} else if l.RepaymentFrequency == "Monthly" {
+				periods = float64(l.Duration) * 30.0
+			}
+		} else if l.RatePeriod == "Flat" {
+			periods = 1.0
+		}
+		totalInterest := math.Round(l.Principal*(l.InterestRate/100.0)*periods*100) / 100
+		remCap := math.Max(0, l.Principal-l.CapitalDeduction)
+		remInt := math.Max(0, totalInterest-l.InterestDeduction)
+		l.Interest = totalInterest
+		l.TotalRepayment = math.Round((remCap+remInt)*100) / 100
+		l.NetDisbursement = math.Max(0, math.Round((l.Principal-(l.CapitalDeduction+l.InterestDeduction+l.OtherFees))*100)/100)
+		if l.Duration > 0 {
+			l.Installment = math.Round((l.TotalRepayment/float64(l.Duration))*100) / 100
+		}
 	}
 
 	if err := h.loanRepo.Create(&l); err != nil {

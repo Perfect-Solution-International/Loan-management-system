@@ -54,6 +54,7 @@ import {
   type ScheduledCollectionItem,
 } from "@/lib/collection-schedule";
 import type { Customer, Loan, Payment, StaffUser, OnlinePayment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import { NewLoanForm } from "@/components/forms/NewLoanForm";
 import { BrandLogo } from "@/components/brand-logo";
@@ -392,8 +393,8 @@ export default function FieldStaffPortal() {
         (sum, p) => sum + (Number(p.amount) || 0),
         0
       );
-      const totalLiability = Number(loan.totalRepayment) || Number(loan.principal) || 0;
-      const remainingBalance = Math.max(0, totalLiability - totalPaid);
+      const totalLiability = getLoanTotalRepayment(loan);
+      const remainingBalance = Math.max(0, Math.round((totalLiability - totalPaid) * 100) / 100);
 
       const sorted = [...loanPayments].sort((a, b) =>
         (b.date || "").localeCompare(a.date || "")

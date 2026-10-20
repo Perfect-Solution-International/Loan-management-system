@@ -20,6 +20,7 @@ import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { parseDateString, formatDateToYMD } from "@/lib/collection-schedule";
 import type { Loan, Customer, Payment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 interface ScheduleRow {
   cycle: number;
@@ -49,7 +50,7 @@ export default function LoanSchedulePreviewPage() {
     const rows: ScheduleRow[] = [];
     const duration = Math.max(1, loan.duration || 1);
     const gross = Number(loan.principal || loan.amount || 0);
-    const totalRepay = Number(loan.totalRepayment || gross + (loan.interest || 0));
+    const totalRepay = getLoanTotalRepayment(loan);
     const totalInterest = Math.max(0, totalRepay - gross);
     const frequency = loan.repaymentFrequency || "Monthly";
     const repaymentType = loan.repaymentType || "Capital + Interest";

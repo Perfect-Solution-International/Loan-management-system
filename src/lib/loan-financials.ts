@@ -18,21 +18,47 @@ export function parseDate(dateStr?: string): Date | null {
 }
 
 /**
+ * Standard utility: Return mathematically exact total repayable amount for any loan facility.
+ */
+export function getLoanTotalRepayment(loan: Partial<Loan>): number {
+  if (typeof loan.totalRepayment === "number" && loan.totalRepayment > 0) {
+    return loan.totalRepayment;
+  }
+  const principal = Number(loan.principal || loan.amount || 0);
+  const interest = Number(loan.interest || 0);
+  return Math.round((principal + interest) * 100) / 100;
+}
+
+/**
+ * Standard utility: Return total amount paid for a specific loan facility across ledger payments.
+ */
+export function getLoanTotalPaid(loanId: string, payments: Payment[]): number {
+  return payments
+    .filter((p) => p.loanId === loanId)
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+}
+
+/**
+ * Standard utility: Return remaining balance due for any loan facility.
+ */
+export function getLoanBalanceDue(loan: Partial<Loan>, payments: Payment[]): number {
+  const totalRepay = getLoanTotalRepayment(loan);
+  const totalPaid = loan.id ? getLoanTotalPaid(loan.id, payments) : 0;
+  return Math.max(0, Math.round((totalRepay - totalPaid) * 100) / 100);
+}
+
+/**
  * Pure calculation of loan financial standings, arrears, missed installments,
- * and aging buckets relative to asOfDate.
+ * and aging buckets relative to asOfDate. Defaults safely to real-time current date.
  */
 export function calculateLoanFinancials(
   loan: Loan,
   payments: Payment[],
-  asOfDate: Date = new Date(2026, 9, 14)
+  asOfDate: Date = new Date()
 ): LoanFinancials {
-  const totalPaid = payments
-    .filter((p) => p.loanId === loan.id)
-    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-
-  const totalRepayment =
-    loan.totalRepayment || (loan.principal || loan.amount || 0) + (loan.interest || 0);
-  const balanceDue = Math.max(0, totalRepayment - totalPaid);
+  const totalRepayment = getLoanTotalRepayment(loan);
+  const totalPaid = getLoanTotalPaid(loan.id, payments);
+  const balanceDue = Math.max(0, Math.round((totalRepayment - totalPaid) * 100) / 100);
 
   const statusUpper = (loan.status || "").toUpperCase();
 
@@ -80,8 +106,14 @@ export function calculateLoanFinancials(
       Math.floor(diffDays / cycleDays) + 1
     );
     const expectedDue = Math.min(totalRepayment, cyclesElapsed * (loan.installment || 0));
-    rawArrears = Math.max(0, expectedDue - totalPaid);
-    overdueDays = rawArrears > 0 ? diffDays : 0;
+    rawArrears = Math.max(0, Math.round((expectedDue - totalPaid) * 100) / 100);
+
+    if (rawArrears > 0) {
+      // Calculate how many days past the first missed installment cycle
+      const cyclesPaid = loan.installment > 0 ? Math.floor(totalPaid / loan.installment) : 0;
+      const missedCycleDay = cyclesPaid * cycleDays;
+      overdueDays = Math.max(1, diffDays - missedCycleDay);
+    }
   }
 
   const isOverdueStatus = statusUpper === "OVERDUE";
@@ -91,7 +123,7 @@ export function calculateLoanFinancials(
     loan.installment > 0 && arrears > 0 ? Math.ceil(arrears / loan.installment) : 0;
   const isDelinquent = isOverdueStatus || arrears > 0;
 
-  // Determine aging bucket
+  // Determine aging bucket based on exact overdue days
   let agingBucket: LoanFinancials["agingBucket"] = "CURRENT";
   if (isDelinquent) {
     const days = overdueDays > 0 ? overdueDays : 15;

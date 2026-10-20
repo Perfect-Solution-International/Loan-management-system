@@ -39,6 +39,7 @@ import {
   type ScheduledCollectionItem,
 } from "@/lib/collection-schedule";
 import type { Customer, Loan, Payment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 import ReceiptModal from "@/components/modals/ReceiptModal";
 
 interface DashboardPageProps {
@@ -89,11 +90,10 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     return loans
       .filter((l: Loan) => (l.status || "").toLowerCase() !== "completed")
       .reduce((sum, l: Loan) => {
-        const totalRepay =
-          l.totalRepayment || (l.principal || l.amount || 0) + (l.interest || 0);
+        const totalRepay = getLoanTotalRepayment(l);
         const loanPaid = payments
           .filter((p) => p.loanId === l.id)
-          .reduce((pSum, p) => pSum + (p.amount || 0), 0);
+          .reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0);
         return sum + Math.max(0, totalRepay - loanPaid);
       }, 0);
   }, [loans, payments]);
@@ -170,11 +170,18 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
       0
     );
     const totalCollected = monthPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-    // Estimated interest component (~20% of payments collected)
-    const interestIncome = monthPayments.reduce(
-      (sum, p) => sum + Math.round((Number(p.amount) || 0) * 0.2),
-      0
-    );
+
+    // Exact interest component calculated proportional to each loan's interest structure
+    const interestIncome = monthPayments.reduce((sum, p) => {
+      if (p.type === "Interest") return sum + (Number(p.amount) || 0);
+      const l = loans.find((loan) => loan.id === p.loanId);
+      if (!l) return sum;
+      const lTotal = getLoanTotalRepayment(l);
+      const lInterest = l.interest || Math.max(0, lTotal - (Number(l.principal || l.amount) || 0));
+      const ratio = lTotal > 0 ? lInterest / lTotal : 0;
+      return sum + Math.round((Number(p.amount) || 0) * ratio);
+    }, 0);
+
     const totalRevenue = docFees + interestIncome;
 
     return {

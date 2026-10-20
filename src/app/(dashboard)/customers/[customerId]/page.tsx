@@ -26,6 +26,7 @@ import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 function createDocId(): string {
   return `DOC-${Date.now()}`;
@@ -82,7 +83,7 @@ function CustomerDetailsContent() {
   );
 
   const totalRepayable = useMemo(
-    () => customerLoans.reduce((sum, l) => sum + (l.totalRepayment || 0), 0),
+    () => customerLoans.reduce((sum, l) => sum + getLoanTotalRepayment(l), 0),
     [customerLoans]
   );
 

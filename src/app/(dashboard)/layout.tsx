@@ -39,7 +39,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith("/collections")) return "Today's Collections";
     if (pathname.startsWith("/overdue")) return "Overdue Payments & Recovery";
     if (pathname.startsWith("/arrears")) return "Delinquency & Arrears";
-    if (pathname.startsWith("/reports")) return "Portfolio Analytics";
+    if (pathname.startsWith("/reports")) return "Financial Reporting";
     if (pathname.startsWith("/audit-logs")) return "Activity & Audit Trail";
     if (pathname.startsWith("/settings")) return "System Settings";
     if (pathname.startsWith("/repayments")) return "Repayment Ledger";
