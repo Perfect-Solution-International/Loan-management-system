@@ -314,47 +314,47 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-3.5 max-w-7xl mx-auto font-sans">
+    <div className="px-4 sm:px-6 lg:px-8 pt-2.5 pb-8 space-y-3 max-w-7xl mx-auto font-sans">
       {/* Toast Notification */}
       {notification && (
-        <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs">
+        <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
+            <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
             <span>{notification}</span>
           </div>
           <button
             onClick={() => setNotification("")}
-            className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer"
+            className="text-emerald-700 hover:text-emerald-900 p-0.5 cursor-pointer"
           >
-            <X size={14} />
+            <X size={13} />
           </button>
         </div>
       )}
 
       {/* ── ZONE 1: THE EXECUTIVE PULSE (HIGH-END METRIC CARDS) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: Today's Collection Performance */}
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
+        <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Today&apos;s Collections
             </span>
-            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 shrink-0">
-              <CheckCircle2 size={15} />
+            <div className="p-1 rounded-md bg-emerald-50 text-emerald-700 shrink-0">
+              <CheckCircle2 size={13} />
             </div>
           </div>
-          <div className="mt-2 space-y-1">
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+          <div className="mt-1">
+            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
               {MONEY(collectionSummary.collectedAmount)}
             </div>
-            <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
-              <span>Target: {MONEY(collectionSummary.targetAmount)}</span>
-              <span className="font-bold text-emerald-700">{collectionSummary.collectionRate}%</span>
+            <div className="flex items-center justify-between text-[10px] font-medium text-slate-500 mt-1">
+              <span className="truncate">Target: {MONEY(collectionSummary.targetAmount)}</span>
+              <span className="font-bold text-emerald-700 shrink-0 font-mono">{collectionSummary.collectionRate}%</span>
             </div>
             {/* Visual Mini Progress Bar */}
-            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
               <div
-                className="bg-emerald-600 h-1.5 rounded-full transition-all duration-500"
+                className="bg-emerald-600 h-1 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, collectionSummary.collectionRate)}%` }}
               />
             </div>
@@ -362,24 +362,24 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         </div>
 
         {/* Card 2: Active Capital in the Field */}
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
+        <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Capital in the Field
             </span>
-            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-700 shrink-0">
-              <Wallet size={15} />
+            <div className="p-1 rounded-md bg-blue-50 text-blue-700 shrink-0">
+              <Wallet size={13} />
             </div>
           </div>
-          <div className="mt-2 space-y-1">
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+          <div className="mt-1">
+            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
               {MONEY(Math.max(0, outstanding))}
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium mt-1">
               <span>
                 {loans.filter((l) => (l.status || "").toLowerCase() === "active").length} active accounts
               </span>
-              <span className="text-[10px] font-bold bg-blue-50 text-blue-800 px-1.5 py-0.2 rounded font-mono">
+              <span className="text-[9px] font-bold bg-blue-50 text-blue-800 px-1.5 py-0.2 rounded font-mono">
                 {customers.length} clients
               </span>
             </div>
@@ -387,22 +387,22 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         </div>
 
         {/* Card 3: Month-to-Date Revenue & Earnings */}
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
+        <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               This Month Revenue
             </span>
-            <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 shrink-0">
-              <TrendingUp size={15} />
+            <div className="p-1 rounded-md bg-amber-50 text-amber-700 shrink-0">
+              <TrendingUp size={13} />
             </div>
           </div>
-          <div className="mt-2 space-y-1">
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+          <div className="mt-1">
+            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
               {MONEY(monthlyMetrics.totalRevenue)}
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium mt-1">
               <span>Interest + Doc fees</span>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
                 Live Revenue
               </span>
             </div>
@@ -410,24 +410,24 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         </div>
 
         {/* Card 4: Portfolio at Risk (Overdue & Arrears) */}
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
+        <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Portfolio at Risk
             </span>
-            <div className="p-1.5 rounded-lg bg-rose-50 text-rose-700 shrink-0">
-              <AlertTriangle size={15} />
+            <div className="p-1 rounded-md bg-rose-50 text-rose-700 shrink-0">
+              <AlertTriangle size={13} />
             </div>
           </div>
-          <div className="mt-2 space-y-1">
-            <div className="text-xl sm:text-2xl font-black text-rose-600 tracking-tight leading-tight">
+          <div className="mt-1">
+            <div className="text-lg sm:text-xl font-black text-rose-600 tracking-tight leading-tight">
               {overdueLoans.length > 0 ? `${overdueLoans.length} Overdue` : "Healthy · 0 Risk"}
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium mt-1">
               <span>
                 {tabCounts.overdue > 0 ? `${tabCounts.overdue} due today delayed` : "No delinquent accounts"}
               </span>
-              <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded font-mono">
+              <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded font-mono">
                 {overdueLoans.length === 0 ? "100% Good" : "Needs Action"}
               </span>
             </div>
@@ -588,7 +588,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
               href="/collections"
               className="text-xs font-bold text-red-600 hover:text-red-700 inline-flex items-center gap-1 transition"
             >
-              Open Full Daily Collection Sheet ({todaysCollections.length} schedules) <ArrowRight size={12} />
+              Open Full Daily Collection Sheet <ArrowRight size={12} />
             </Link>
           </div>
         </div>
