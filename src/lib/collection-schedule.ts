@@ -169,9 +169,9 @@ export function getDailyCollections(
       }
     }
 
-    // Calculate arrears if delinquent
+    // Calculate past arrears: only cycles strictly prior to targetDate
     let arrearsAmount = 0;
-    if (startDate && targetDate >= startDate) {
+    if (startDate && targetDate > startDate) {
       const diffDays = Math.max(
         0,
         Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -180,16 +180,16 @@ export function getDailyCollections(
       if (frequency === "Daily") cycleDays = 1;
       else if (frequency === "Weekly") cycleDays = 7;
 
-      const cyclesElapsed = Math.min(duration, Math.floor(diffDays / cycleDays) + 1);
-      const expectedDue = Math.min(totalRepayment, cyclesElapsed * installmentAmount);
-      const rawArrears = Math.max(0, expectedDue - totalPaid);
+      const pastCycles = Math.min(duration, Math.floor(diffDays / cycleDays));
+      const expectedPastDue = Math.min(totalRepayment, pastCycles * installmentAmount);
+      const rawArrears = Math.max(0, Math.round((expectedPastDue - totalPaid) * 100) / 100);
       if (rawArrears > 0) {
-        arrearsAmount = rawArrears;
+        arrearsAmount = Math.min(balanceDue, rawArrears);
       }
     }
 
     if (statusUpper === "OVERDUE" && arrearsAmount <= 0) {
-      arrearsAmount = installmentAmount;
+      arrearsAmount = Math.min(balanceDue, installmentAmount);
     }
 
     const hasArrears = arrearsAmount > 0 || statusUpper === "OVERDUE";
@@ -255,9 +255,14 @@ export function getDailyCollections(
   let overdueCount = 0;
 
   for (const it of items) {
+    const paidToday = Number(it.todaysPayment?.amount) || 0;
     if (it.isCollectedToday) {
-      collectedAmount += it.totalDueToday;
+      const recordedPayment = paidToday > 0 ? paidToday : it.totalDueToday;
+      collectedAmount += recordedPayment;
       collectedCount++;
+      if (recordedPayment < it.totalDueToday) {
+        pendingAmount += (it.totalDueToday - recordedPayment);
+      }
     } else {
       pendingAmount += it.totalDueToday;
       pendingCount++;
@@ -265,8 +270,13 @@ export function getDailyCollections(
         overdueCount++;
       }
     }
-    targetAmount += it.totalDueToday;
+    targetAmount += Math.max(it.totalDueToday, paidToday);
   }
+
+  // Round summary figures to 2 decimal places
+  targetAmount = Math.round(targetAmount * 100) / 100;
+  collectedAmount = Math.round(collectedAmount * 100) / 100;
+  pendingAmount = Math.round(pendingAmount * 100) / 100;
 
   const collectionRate =
     targetAmount > 0 ? Math.round((collectedAmount / targetAmount) * 100) : 0;

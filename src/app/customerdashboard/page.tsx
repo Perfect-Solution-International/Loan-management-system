@@ -36,6 +36,7 @@ import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { BrandLogo } from "@/components/brand-logo";
 import { CustomerPaymentGatewayModal } from "@/components/payment/CustomerPaymentGatewayModal";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 import type { Payment, OnlinePayment } from "@/types";
 
 function parseDateString(dateStr?: string): Date | null {
@@ -158,9 +159,7 @@ export default function CustomerDashboardPage() {
     >();
 
     customerLoans.forEach((loan) => {
-      const principal = loan.principal || loan.amount || 0;
-      const interest = loan.interest || (loan.totalRepayment ? loan.totalRepayment - principal : 0);
-      const payable = loan.totalRepayment || (principal + interest);
+      const payable = getLoanTotalRepayment(loan);
 
       const loanPayments = repayments.filter(
         (p) =>
@@ -168,7 +167,7 @@ export default function CustomerDashboardPage() {
           (currentCustomer?.id && p.customerId === currentCustomer.id && !p.loanId)
       );
       const paid = loanPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-      const outstanding = Math.max(0, payable - paid);
+      const outstanding = Math.max(0, Math.round((payable - paid) * 100) / 100);
       const percent = payable > 0 ? Math.min(100, Math.round((paid / payable) * 100)) : 0;
 
       statsMap.set(loan.id, {
@@ -204,10 +203,10 @@ export default function CustomerDashboardPage() {
     return {
       activeCount: customerLoans.filter((l) => (l.status || "").toLowerCase() === "active").length,
       totalCount: customerLoans.length,
-      totalBorrowing,
-      totalPayableSum,
-      totalPaidSum,
-      totalOutstandingSum,
+      totalBorrowing: Math.round(totalBorrowing * 100) / 100,
+      totalPayableSum: Math.round(totalPayableSum * 100) / 100,
+      totalPaidSum: Math.round(totalPaidSum * 100) / 100,
+      totalOutstandingSum: Math.round(totalOutstandingSum * 100) / 100,
     };
   }, [customerLoans, loanStats]);
 
@@ -224,18 +223,23 @@ export default function CustomerDashboardPage() {
 
   // Calculate financial totals
   const totalPrincipal = currentLoan ? currentLoan.principal || currentLoan.amount || 0 : 0;
-  const totalInterest = currentLoan ? currentLoan.interest || (currentLoan.totalRepayment ? currentLoan.totalRepayment - totalPrincipal : 0) : 0;
-  const totalPayable = currentLoan ? currentLoan.totalRepayment || (totalPrincipal + totalInterest) : 0;
+  const totalPayable = currentLoan ? getLoanTotalRepayment(currentLoan) : 0;
+  const remainingGross = currentLoan ? Math.max(0, totalPrincipal - Number(currentLoan.capitalDeduction || 0)) : 0;
+  const totalInterest = currentLoan
+    ? typeof currentLoan.interest === "number" && currentLoan.interest >= 0
+      ? Math.max(0, currentLoan.interest - Number(currentLoan.interestDeduction || 0))
+      : Math.max(0, totalPayable - remainingGross)
+    : 0;
 
   const totalPaid = useMemo(() => {
     return customerPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   }, [customerPayments]);
 
-  const outstandingBalance = Math.max(0, totalPayable - totalPaid);
+  const outstandingBalance = Math.max(0, Math.round((totalPayable - totalPaid) * 100) / 100);
   const percentSettled = totalPayable > 0 ? Math.min(100, Math.round((totalPaid / totalPayable) * 100)) : 0;
 
   // Upcoming installment calculations
-  const nextInstallmentAmount = currentLoan?.installment || (totalPayable > 0 ? Math.ceil(totalPayable / (currentLoan?.duration || 1)) : 0);
+  const nextInstallmentAmount = currentLoan?.installment || (totalPayable > 0 ? Math.round((totalPayable / (currentLoan?.duration || 1)) * 100) / 100 : 0);
   const nextDueDate = currentLoan?.firstPaymentDate || currentLoan?.issueDate || todayStr;
 
   // Tab state: 'schedule' (Installment Due Dates) | 'history' (Repayment History) | 'slips' (Bank Slips & Online)
@@ -300,9 +304,14 @@ export default function CustomerDashboardPage() {
 
     const duration = Math.max(1, currentLoan.duration || 1);
     const gross = Number(currentLoan.principal || currentLoan.amount || 0);
-    const totalRepay = Number(currentLoan.totalRepayment || gross + (currentLoan.interest || 0));
-    const totalInt = Math.max(0, totalRepay - gross);
+    const totalRepay = getLoanTotalRepayment(currentLoan);
+    const remainingGross = Math.max(0, gross - Number(currentLoan.capitalDeduction || 0));
+    const totalInt =
+      typeof currentLoan.interest === "number" && currentLoan.interest >= 0
+        ? Math.max(0, currentLoan.interest - Number(currentLoan.interestDeduction || 0))
+        : Math.max(0, totalRepay - remainingGross);
     const frequency = currentLoan.repaymentFrequency || "Monthly";
+    const repaymentType = currentLoan.repaymentType || "Capital + Interest";
     const startDate = parseDateString(currentLoan.firstPaymentDate || currentLoan.issueDate) || parseDateString(todayStr)!;
     let runningBalance = totalRepay;
     let accumulatedPaid = customerPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
@@ -320,19 +329,30 @@ export default function CustomerDashboardPage() {
       }
       const dueDateStr = formatDateToYMD(dueDate);
 
-      const remainingGross = Math.max(0, gross - (currentLoan.capitalDeduction || 0));
       let installmentAmt = 0;
       let principalPortion = 0;
       let interestPortion = 0;
 
-      if (i === duration) {
-        installmentAmt = runningBalance;
-        interestPortion = Math.max(0, totalInt - Math.round(totalInt / duration) * (duration - 1));
-        principalPortion = Math.max(0, installmentAmt - interestPortion);
+      if (repaymentType === "Interest Only") {
+        if (i === duration) {
+          principalPortion = remainingGross;
+          installmentAmt = runningBalance;
+          interestPortion = Math.max(0, Math.round((installmentAmt - principalPortion) * 100) / 100);
+        } else {
+          interestPortion = Math.round((totalInt / duration) * 100) / 100;
+          principalPortion = 0;
+          installmentAmt = interestPortion;
+        }
       } else {
-        installmentAmt = Math.round(totalRepay / duration);
-        principalPortion = Math.round(remainingGross / duration);
-        interestPortion = Math.max(0, installmentAmt - principalPortion);
+        if (i === duration) {
+          installmentAmt = runningBalance;
+          interestPortion = Math.max(0, Math.round((totalInt - Math.round((totalInt / duration) * 100) / 100 * (duration - 1)) * 100) / 100);
+          principalPortion = Math.max(0, Math.round((installmentAmt - interestPortion) * 100) / 100);
+        } else {
+          installmentAmt = Math.round((totalRepay / duration) * 100) / 100;
+          principalPortion = Math.round((remainingGross / duration) * 100) / 100;
+          interestPortion = Math.max(0, Math.round((installmentAmt - principalPortion) * 100) / 100);
+        }
       }
 
       runningBalance = Math.max(0, runningBalance - installmentAmt);

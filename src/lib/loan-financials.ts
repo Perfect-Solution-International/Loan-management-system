@@ -26,7 +26,11 @@ export function getLoanTotalRepayment(loan: Partial<Loan>): number {
   }
   const principal = Number(loan.principal || loan.amount || 0);
   const interest = Number(loan.interest || 0);
-  return Math.round((principal + interest) * 100) / 100;
+  const capDed = Number(loan.capitalDeduction || 0);
+  const intDed = Number(loan.interestDeduction || 0);
+  const remCap = Math.max(0, principal - capDed);
+  const remInt = Math.max(0, interest - intDed);
+  return Math.round((remCap + remInt) * 100) / 100;
 }
 
 /**
@@ -92,7 +96,7 @@ export function calculateLoanFinancials(
   let rawArrears = 0;
   let overdueDays = 0;
 
-  if (startDate && asOfDate >= startDate) {
+  if (startDate && asOfDate > startDate) {
     const diffDays = Math.max(
       0,
       Math.floor((asOfDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -101,12 +105,13 @@ export function calculateLoanFinancials(
     if (loan.repaymentFrequency === "Daily") cycleDays = 1;
     else if (loan.repaymentFrequency === "Weekly") cycleDays = 7;
 
-    const cyclesElapsed = Math.min(
+    // Past completed cycles strictly prior to asOfDate
+    const pastCycles = Math.min(
       loan.duration || 1,
-      Math.floor(diffDays / cycleDays) + 1
+      Math.floor(diffDays / cycleDays)
     );
-    const expectedDue = Math.min(totalRepayment, cyclesElapsed * (loan.installment || 0));
-    rawArrears = Math.max(0, Math.round((expectedDue - totalPaid) * 100) / 100);
+    const expectedPastDue = Math.min(totalRepayment, pastCycles * (loan.installment || 0));
+    rawArrears = Math.max(0, Math.round((expectedPastDue - totalPaid) * 100) / 100);
 
     if (rawArrears > 0) {
       // Calculate how many days past the first missed installment cycle
@@ -117,8 +122,10 @@ export function calculateLoanFinancials(
   }
 
   const isOverdueStatus = statusUpper === "OVERDUE";
-  const arrears =
-    isOverdueStatus && rawArrears <= 0 ? loan.installment || 0 : rawArrears;
+  const arrears = Math.min(
+    balanceDue,
+    isOverdueStatus && rawArrears <= 0 ? loan.installment || 0 : rawArrears
+  );
   const missedInstallments =
     loan.installment > 0 && arrears > 0 ? Math.ceil(arrears / loan.installment) : 0;
   const isDelinquent = isOverdueStatus || arrears > 0;

@@ -359,12 +359,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       prevLoans.map((l) => {
         if (l.id === payment.loanId || String(l.id) === String(payment.loanId)) {
           const existingPaid = payments
-            .filter((p) => p.loanId === l.id)
+            .filter((p) => p.loanId === l.id || String(p.loanId) === String(l.id))
             .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-          const totalPaidAfter = existingPaid + (Number(payment.amount) || 0);
+          const totalPaidAfter = Math.round((existingPaid + (Number(payment.amount) || 0)) * 100) / 100;
 
           const expectedRepayment = getLoanTotalRepayment(l);
-          if (expectedRepayment > 0 && totalPaidAfter >= expectedRepayment && l.status !== "Completed") {
+          if (expectedRepayment > 0 && totalPaidAfter >= expectedRepayment - 0.01 && l.status !== "Completed") {
             return { ...l, status: "Completed" };
           }
         }

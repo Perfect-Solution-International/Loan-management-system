@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -105,9 +106,14 @@ func (h *PaymentHandler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 	}
 	expectedRepay := loan.TotalRepayment
 	if expectedRepay <= 0 {
-		expectedRepay = loan.Principal + loan.Interest
+		remCap := math.Max(0, loan.Principal-loan.CapitalDeduction)
+		remInt := math.Max(0, loan.Interest-loan.InterestDeduction)
+		expectedRepay = math.Round((remCap+remInt)*100) / 100
+		if expectedRepay <= 0 {
+			expectedRepay = loan.Principal + loan.Interest
+		}
 	}
-	if expectedRepay > 0 && totalPaid >= expectedRepay && loan.Status != "Completed" {
+	if expectedRepay > 0 && math.Round(totalPaid*100)/100 >= (math.Round(expectedRepay*100)/100-0.01) && loan.Status != "Completed" {
 		_ = h.loanRepo.UpdateStatus(loan.ID, "Completed", "System Auto-Settlement")
 	}
 
@@ -240,9 +246,14 @@ func (h *PaymentHandler) ApproveOnlinePayment(w http.ResponseWriter, r *http.Req
 		}
 		expectedRepay := loan.TotalRepayment
 		if expectedRepay <= 0 {
-			expectedRepay = loan.Principal + loan.Interest
+			remCap := math.Max(0, loan.Principal-loan.CapitalDeduction)
+			remInt := math.Max(0, loan.Interest-loan.InterestDeduction)
+			expectedRepay = math.Round((remCap+remInt)*100) / 100
+			if expectedRepay <= 0 {
+				expectedRepay = loan.Principal + loan.Interest
+			}
 		}
-		if expectedRepay > 0 && totalPaid >= expectedRepay && loan.Status != "Completed" {
+		if expectedRepay > 0 && math.Round(totalPaid*100)/100 >= (math.Round(expectedRepay*100)/100-0.01) && loan.Status != "Completed" {
 			_ = h.loanRepo.UpdateStatus(loan.ID, "Completed", "System Auto-Settlement")
 		}
 	}

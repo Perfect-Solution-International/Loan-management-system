@@ -133,7 +133,11 @@ func (h *LoanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 		l.TotalRepayment = math.Round((remCap+remInt)*100) / 100
 		l.NetDisbursement = math.Max(0, math.Round((l.Principal-(l.CapitalDeduction+l.InterestDeduction+l.OtherFees))*100)/100)
 		if l.Duration > 0 {
-			l.Installment = math.Round((l.TotalRepayment/float64(l.Duration))*100) / 100
+			if l.RepaymentType == "Interest Only" {
+				l.Installment = math.Round((remInt/float64(l.Duration))*100) / 100
+			} else {
+				l.Installment = math.Round((l.TotalRepayment/float64(l.Duration))*100) / 100
+			}
 		}
 	}
 

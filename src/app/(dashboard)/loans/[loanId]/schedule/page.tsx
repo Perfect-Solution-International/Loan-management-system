@@ -51,7 +51,11 @@ export default function LoanSchedulePreviewPage() {
     const duration = Math.max(1, loan.duration || 1);
     const gross = Number(loan.principal || loan.amount || 0);
     const totalRepay = getLoanTotalRepayment(loan);
-    const totalInterest = Math.max(0, totalRepay - gross);
+    const remainingGross = Math.max(0, gross - Number(loan.capitalDeduction || 0));
+    const totalInterest =
+      typeof loan.interest === "number" && loan.interest >= 0
+        ? Math.max(0, loan.interest - Number(loan.interestDeduction || 0))
+        : Math.max(0, totalRepay - remainingGross);
     const frequency = loan.repaymentFrequency || "Monthly";
     const repaymentType = loan.repaymentType || "Capital + Interest";
     const startDate = parseDateString(loan.firstPaymentDate || loan.issueDate) || new Date();
@@ -77,15 +81,13 @@ export default function LoanSchedulePreviewPage() {
       let principalPortion = 0;
       let interestPortion = 0;
 
-      const remainingGross = Math.max(0, gross - (loan.capitalDeduction || 0));
-
       if (repaymentType === "Interest Only") {
         if (i === duration) {
           principalPortion = remainingGross;
           installmentAmt = runningBalance;
-          interestPortion = Math.max(0, installmentAmt - principalPortion);
+          interestPortion = Math.max(0, Math.round((installmentAmt - principalPortion) * 100) / 100);
         } else {
-          interestPortion = Math.round(totalInterest / duration);
+          interestPortion = Math.round((totalInterest / duration) * 100) / 100;
           principalPortion = 0;
           installmentAmt = interestPortion;
         }
@@ -93,12 +95,12 @@ export default function LoanSchedulePreviewPage() {
         // Capital + Interest
         if (i === duration) {
           installmentAmt = runningBalance;
-          interestPortion = Math.max(0, totalInterest - Math.round(totalInterest / duration) * (duration - 1));
-          principalPortion = Math.max(0, installmentAmt - interestPortion);
+          interestPortion = Math.max(0, Math.round((totalInterest - Math.round((totalInterest / duration) * 100) / 100 * (duration - 1)) * 100) / 100);
+          principalPortion = Math.max(0, Math.round((installmentAmt - interestPortion) * 100) / 100);
         } else {
-          installmentAmt = Math.round(totalRepay / duration);
-          principalPortion = Math.round(remainingGross / duration);
-          interestPortion = Math.max(0, installmentAmt - principalPortion);
+          installmentAmt = Math.round((totalRepay / duration) * 100) / 100;
+          principalPortion = Math.round((remainingGross / duration) * 100) / 100;
+          interestPortion = Math.max(0, Math.round((installmentAmt - principalPortion) * 100) / 100);
         }
       }
 

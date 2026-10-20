@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { calculateLoanDetails } from "@/lib/loan-calculator";
 import type { Customer, Loan, Payment, CustomerDocument, RepaymentType } from "@/types";
 
 type WizardStep = "select" | "review" | "form" | "done";
@@ -186,87 +187,32 @@ export function NewLoanForm({
     const pFee = Number(processingFee) || 0;
     const aFee = Number(adminFee) || 0;
     const oFees = Number(otherFees) || 0;
+    const totalExtraFees = pFee + aFee + oFees;
 
-    // 1. Total Upfront Deductions
-    const totalDeductions = capDed + intDed + pFee + aFee + oFees;
-
-    // 2. Net Cash Disbursed to Borrower
-    const netDisbursement = Math.max(0, gross - totalDeductions);
-
-    // 3. Duration in rate periods:
-    const effRatePeriod = ratePeriod || "Monthly";
-    const effFrequency = frequency || "Monthly";
-    let periods = dur;
-
-    if (effRatePeriod === "Monthly") {
-      if (effFrequency === "Monthly") {
-        periods = dur;
-      } else if (effFrequency === "Weekly") {
-        periods = dur / 4; // 4 weeks = 1 month
-      } else if (effFrequency === "Daily") {
-        periods = dur / 30; // 30 days = 1 month
-      }
-    } else if (effRatePeriod === "Weekly") {
-      if (effFrequency === "Weekly") {
-        periods = dur;
-      } else if (effFrequency === "Monthly") {
-        periods = dur * 4;
-      } else if (effFrequency === "Daily") {
-        periods = dur / 7;
-      }
-    } else if (effRatePeriod === "Daily") {
-      if (effFrequency === "Daily") {
-        periods = dur;
-      } else if (effFrequency === "Weekly") {
-        periods = dur * 7;
-      } else if (effFrequency === "Monthly") {
-        periods = dur * 30;
-      }
-    } else {
-      periods = 1; // Flat rate for entire loan term
-    }
-
-    // 4. Total Interest over the loan term
-    const totalInterest = Math.round(gross * (rate / 100) * periods);
-
-    // 5. Total Repayment (subtract upfront capital and interest deductions if already deducted at disbursement)
-    const remainingCapital = Math.max(0, gross - capDed);
-    const remainingInterest = Math.max(0, totalInterest - intDed);
-    const totalRepayment = remainingCapital + remainingInterest;
-
-    // 6. Installments breakdown based on Repayment Scheme
-    let installmentAmount = 0;
-    let periodicInterest = 0;
-    let finalInstallmentAmount = 0;
-
-    if (repaymentType === "Interest Only") {
-      // Under Interest Only, regular installments only cover periodic interest.
-      // Remaining principal is repaid in the final installment at maturity.
-      periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
-      installmentAmount = periodicInterest;
-      finalInstallmentAmount = remainingCapital + periodicInterest;
-    } else {
-      // Capital + Interest: equal periodic installments
-      installmentAmount = dur > 0 ? Math.round((totalRepayment / dur) * 100) / 100 : 0;
-      periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
-      // Final installment absorbs any rounding cents/rupees
-      finalInstallmentAmount = dur > 1
-        ? Math.round((totalRepayment - installmentAmount * (dur - 1)) * 100) / 100
-        : installmentAmount;
-    }
+    const res = calculateLoanDetails(
+      gross,
+      capDed,
+      intDed,
+      rate,
+      dur,
+      (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily" | "Flat",
+      (frequency || "Daily") as "Monthly" | "Weekly" | "Daily",
+      repaymentType,
+      totalExtraFees
+    );
 
     return {
-      gross,
-      totalDeductions,
-      netDisbursement,
-      totalInterest,
-      totalRepayment,
-      installmentAmount,
-      numberOfInstallments: dur,
-      repaymentType,
-      periodicInterest,
-      capitalAtMaturity: remainingCapital,
-      finalInstallmentAmount,
+      gross: res.grossAmount,
+      totalDeductions: res.totalDeductions,
+      netDisbursement: res.netDisbursement,
+      totalInterest: res.totalInterest,
+      totalRepayment: res.totalRepayment,
+      installmentAmount: res.installmentAmount,
+      numberOfInstallments: res.numberOfInstallments,
+      repaymentType: res.repaymentType,
+      periodicInterest: res.periodicInterest,
+      capitalAtMaturity: res.capitalAtMaturity,
+      finalInstallmentAmount: res.finalInstallmentAmount,
     };
   }, [
     grossAmount,
@@ -299,9 +245,9 @@ export function NewLoanForm({
         d.setMonth(d.getMonth() + (i - 1));
       }
       const isFinal = i === calculations.numberOfInstallments;
-      const amt = isFinal
+      const amt = (isFinal
         ? calculations.finalInstallmentAmount
-        : calculations.installmentAmount;
+        : calculations.installmentAmount) ?? calculations.installmentAmount ?? 0;
       const typeLabel = repaymentType === "Interest Only"
         ? (isFinal ? "Capital + Interest" : "Interest Only")
         : (isFinal ? "Final Installment" : "Principal + Interest");
@@ -1551,7 +1497,7 @@ export function NewLoanForm({
                           )}
                         </div>
                         <div className="text-right">
-                          <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
+                          <span className="font-bold text-rose-300">{MONEY(item.amount || 0)}</span>
                           {repaymentType === "Interest Only" && (
                             <span className="block text-[8px] text-slate-400 font-sans">
                               {item.typeLabel}

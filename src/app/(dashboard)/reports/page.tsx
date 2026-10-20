@@ -62,11 +62,10 @@ export default function FinancialReportsPage() {
       if (timePeriod === "daily") {
         if (p.date !== todayStr) return false;
       } else if (timePeriod === "weekly") {
-        const today = new Date(todayStr);
-        const pDate = new Date(p.date);
-        const diffTime = Math.abs(today.getTime() - pDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays > 7) return false;
+        const today = new Date(todayStr + "T00:00:00");
+        const pDate = new Date(p.date + "T00:00:00");
+        const diffDays = Math.floor((today.getTime() - pDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0 || diffDays > 7) return false;
       } else if (timePeriod === "monthly") {
         const currentYearMonth = todayStr.slice(0, 7);
         if (!p.date.startsWith(currentYearMonth)) return false;
