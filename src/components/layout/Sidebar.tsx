@@ -18,6 +18,7 @@ import {
   Receipt,
   AlertOctagon,
   CreditCard,
+  UserCheck,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { useData } from '@/providers/data-provider';
@@ -44,6 +45,11 @@ const navSections = [
         name: 'Customer Directory',
         href: '/customers',
         icon: Users,
+      },
+      {
+        name: 'Staff Members',
+        href: '/staff',
+        icon: UserCheck,
       },
       {
         name: 'Loans List',
@@ -125,6 +131,9 @@ function isPathActive(pathname: string, href: string): boolean {
   if (href === '/customers') {
     return pathname === '/customers' || (pathname.startsWith('/customers/') && pathname !== '/customers/new');
   }
+  if (href === '/staff') {
+    return pathname.startsWith('/staff');
+  }
   if (href === '/collections') {
     return pathname.startsWith('/collections');
   }
@@ -177,6 +186,11 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             name: 'Customer Directory',
             href: '/customers',
             icon: Users,
+          },
+          {
+            name: 'Staff Members',
+            href: '/staff',
+            icon: UserCheck,
           },
           {
             name: 'Loans List',

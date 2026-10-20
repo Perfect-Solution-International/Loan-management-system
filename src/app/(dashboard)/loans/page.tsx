@@ -153,7 +153,7 @@ export default function LoansListPage() {
                   onClick={() => setStatusFilter(tab.id)}
                   className={`h-9 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     statusFilter === tab.id
-                      ? "bg-slate-900 text-white shadow-xs"
+                      ? "bg-red-600 text-white shadow-xs shadow-red-600/20"
                       : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
@@ -161,7 +161,7 @@ export default function LoansListPage() {
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                       statusFilter === tab.id
-                        ? "bg-white/20 text-white"
+                        ? "bg-white/25 text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >

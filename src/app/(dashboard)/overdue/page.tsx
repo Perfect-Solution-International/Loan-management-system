@@ -464,7 +464,7 @@ export default function OverduePage() {
                 onClick={() => setAgingFilter(btn.id)}
                 className={`h-8 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer shrink-0 ${
                   agingFilter === btn.id
-                    ? "bg-slate-900 text-white shadow-2xs"
+                    ? "bg-red-600 text-white shadow-2xs shadow-red-600/20"
                     : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                 }`}
               >

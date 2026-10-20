@@ -573,7 +573,7 @@ export default function RepaymentsCollectionsPage() {
                   onClick={() => setTypeFilter(t)}
                   className={`h-9 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
                     typeFilter === t
-                      ? "bg-slate-900 text-white shadow-xs"
+                      ? "bg-red-600 text-white shadow-xs shadow-red-600/20"
                       : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                 >

@@ -363,7 +363,7 @@ export default function CollectionsPage() {
                 onClick={() => setStatusFilter(tab.id as typeof statusFilter)}
                 className={`h-8 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   statusFilter === tab.id
-                    ? "bg-slate-900 text-white shadow-2xs"
+                    ? "bg-red-600 text-white shadow-2xs shadow-red-600/20"
                     : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                 }`}
               >
