@@ -45,6 +45,7 @@ import {
   Calculator,
   Image as ImageIcon,
   Menu,
+  Users,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -169,7 +170,7 @@ export default function FieldStaffPortal() {
 
   // ── 3. Navigation Tabs ────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<
-    "route" | "quickpay" | "receipts" | "online_slips"
+    "route" | "quickpay" | "receipts" | "online_slips" | "customers" | "loans"
   >("route");
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
@@ -177,6 +178,15 @@ export default function FieldStaffPortal() {
   const [showNewLoanModal, setShowNewLoanModal] = useState<boolean>(false);
   const [showNewCustomerModal, setShowNewCustomerModal] = useState<boolean>(false);
   const [preselectedCustomerForLoan, setPreselectedCustomerForLoan] = useState<string | undefined>(undefined);
+
+  // Directory Views (Customers & Loans for Staff)
+  const [staffCustSearch, setStaffCustSearch] = useState<string>("");
+  const [staffCustFilter, setStaffCustFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [selectedStaffCustomer, setSelectedStaffCustomer] = useState<Customer | null>(null);
+
+  const [staffLoanSearch, setStaffLoanSearch] = useState<string>("");
+  const [staffLoanFilter, setStaffLoanFilter] = useState<"ALL" | "ACTIVE" | "OVERDUE" | "PENDING" | "COMPLETED">("ALL");
+  const [selectedStaffLoan, setSelectedStaffLoan] = useState<Loan | null>(null);
 
   // Full Repayments Ledger View Controls
   const [receiptsViewMode, setReceiptsViewMode] = useState<"my_today" | "all_system">("my_today");
@@ -407,6 +417,108 @@ export default function FieldStaffPortal() {
     return map;
   }, [loans, payments]);
 
+  // Pre-calculate per-customer loan aggregates for staff directory
+  const customerFinancialsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        totalLoans: number;
+        activeLoans: number;
+        totalRepayable: number;
+        totalPaid: number;
+        totalOutstanding: number;
+      }
+    >();
+
+    for (const c of customers) {
+      const custLoans = loans.filter((l) => l.customerId === c.id);
+      let activeCount = 0;
+      let totalRepayable = 0;
+      let totalPaid = 0;
+      let totalOutstanding = 0;
+
+      for (const l of custLoans) {
+        if (l.status === "Active" || l.status === "Overdue") {
+          activeCount++;
+        }
+        const repayable = getLoanTotalRepayment(l);
+        const stats = loanStatsMap.get(l.id);
+        const paid = stats ? stats.totalPaid : 0;
+        const outstanding = stats ? stats.remainingBalance : Math.max(0, repayable - paid);
+
+        totalRepayable += repayable;
+        totalPaid += paid;
+        totalOutstanding += outstanding;
+      }
+
+      map.set(c.id, {
+        totalLoans: custLoans.length,
+        activeLoans: activeCount,
+        totalRepayable: Math.round(totalRepayable * 100) / 100,
+        totalPaid: Math.round(totalPaid * 100) / 100,
+        totalOutstanding: Math.round(totalOutstanding * 100) / 100,
+      });
+    }
+
+    return map;
+  }, [customers, loans, loanStatsMap]);
+
+  // Filtered Customers for Staff Directory
+  const filteredStaffCustomers = useMemo(() => {
+    return customers.filter((c) => {
+      const statusUpper = (c.status || "ACTIVE").toUpperCase();
+      if (staffCustFilter === "ACTIVE" && statusUpper !== "ACTIVE") return false;
+      if (staffCustFilter === "INACTIVE" && statusUpper === "ACTIVE") return false;
+
+      if (!staffCustSearch.trim()) return true;
+      const q = staffCustSearch.toLowerCase().trim();
+      const name = (c.fullName || c.name || "").toLowerCase();
+      const nic = (c.nic || "").toLowerCase();
+      const phone = (c.phone || "").toLowerCase();
+      const town = (c.town || "").toLowerCase();
+      const village = (c.village || "").toLowerCase();
+      const district = (c.district || "").toLowerCase();
+      const id = (c.id || "").toLowerCase();
+
+      return (
+        name.includes(q) ||
+        nic.includes(q) ||
+        phone.includes(q) ||
+        town.includes(q) ||
+        village.includes(q) ||
+        district.includes(q) ||
+        id.includes(q)
+      );
+    });
+  }, [customers, staffCustFilter, staffCustSearch]);
+
+  // Filtered Loans for Staff Directory
+  const filteredStaffLoans = useMemo(() => {
+    return loans.filter((l) => {
+      if (staffLoanFilter === "ACTIVE" && l.status !== "Active") return false;
+      if (staffLoanFilter === "OVERDUE" && l.status !== "Overdue") return false;
+      if (staffLoanFilter === "PENDING" && l.status !== "Pending") return false;
+      if (staffLoanFilter === "COMPLETED" && l.status !== "Completed") return false;
+
+      if (!staffLoanSearch.trim()) return true;
+      const q = staffLoanSearch.toLowerCase().trim();
+      const cust = customers.find((c) => c.id === l.customerId);
+      const custName = (cust?.fullName || cust?.name || l.customerName || "").toLowerCase();
+      const custNic = (cust?.nic || "").toLowerCase();
+      const custPhone = (cust?.phone || "").toLowerCase();
+      const loanNo = (l.loanNo || "").toLowerCase();
+      const id = (l.id || "").toLowerCase();
+
+      return (
+        custName.includes(q) ||
+        custNic.includes(q) ||
+        custPhone.includes(q) ||
+        loanNo.includes(q) ||
+        id.includes(q)
+      );
+    });
+  }, [loans, customers, staffLoanFilter, staffLoanSearch]);
+
   // Search & Status Filters for Route
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "pending" | "collected" | "overdue">("all");
@@ -467,6 +579,39 @@ export default function FieldStaffPortal() {
     );
     setCollectMethod("Cash");
     setCollectNotes("");
+  };
+
+  const handleQuickPayForLoan = (loan: Loan) => {
+    const existing = routeItems.find((r) => r.loan.id === loan.id);
+    if (existing) {
+      openCollectModal(existing);
+    } else {
+      const cust = customers.find((c) => c.id === loan.customerId);
+      const stats = loanStatsMap.get(loan.id);
+      const dueAmount =
+        stats && stats.remainingBalance > 0
+          ? Math.min(stats.remainingBalance, loan.installment || 0)
+          : (loan.installment || 0);
+
+      const syntheticItem: ScheduledCollectionItem = {
+        id: `synthetic-${loan.id}`,
+        loan,
+        customer: cust,
+        cycleNumber: 1,
+        totalCycles: loan.duration || 1,
+        dueDate: todayStr,
+        installmentAmount: loan.installment || 0,
+        arrearsAmount: 0,
+        totalDueToday: dueAmount > 0 ? dueAmount : loan.installment || 0,
+        repaymentFrequency: loan.repaymentFrequency || "Daily",
+        isDueToday: true,
+        hasArrears: false,
+        isCollectedToday: false,
+        status: "DUE_TODAY",
+        routeArea: cust?.town || cust?.village || "Main Route",
+      };
+      openCollectModal(syntheticItem);
+    }
   };
 
   const handleRecordPayment = (e: React.FormEvent) => {
@@ -694,6 +839,82 @@ export default function FieldStaffPortal() {
                   </button>
                 </nav>
               </div>
+
+              {/* Directory & Records */}
+              <div className="space-y-1">
+                <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                  DIRECTORY & RECORDS
+                </p>
+                <nav className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("customers");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                      activeTab === "customers"
+                        ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Users
+                        size={18}
+                        className={`shrink-0 transition-colors ${
+                          activeTab === "customers" ? "text-white" : "text-slate-400 group-hover:text-white"
+                        }`}
+                      />
+                      <span className="truncate">Customers</span>
+                    </div>
+                    {customers.length > 0 && (
+                      <span
+                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          activeTab === "customers"
+                            ? "bg-white/25 text-white"
+                            : "bg-slate-700 text-white border border-slate-600"
+                        }`}
+                      >
+                        {customers.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("loans");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                      activeTab === "loans"
+                        ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Wallet
+                        size={18}
+                        className={`shrink-0 transition-colors ${
+                          activeTab === "loans" ? "text-white" : "text-slate-400 group-hover:text-white"
+                        }`}
+                      />
+                      <span className="truncate">Loans</span>
+                    </div>
+                    {loans.length > 0 && (
+                      <span
+                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          activeTab === "loans"
+                            ? "bg-white/25 text-white"
+                            : "bg-slate-700 text-white border border-slate-600"
+                        }`}
+                      >
+                        {loans.length}
+                      </span>
+                    )}
+                  </button>
+                </nav>
+              </div>
             </div>
 
             {/* Footer Officer Profile & Status */}
@@ -888,6 +1109,76 @@ export default function FieldStaffPortal() {
                 </button>
               </nav>
             </div>
+
+            {/* Directory & Records */}
+            <div className="space-y-1">
+              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                DIRECTORY & RECORDS
+              </p>
+              <nav className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("customers")}
+                  className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                    activeTab === "customers"
+                      ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                      : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Users
+                      size={18}
+                      className={`shrink-0 transition-colors ${
+                        activeTab === "customers" ? "text-white" : "text-slate-400 group-hover:text-white"
+                      }`}
+                    />
+                    <span className="truncate">Customers</span>
+                  </div>
+                  {customers.length > 0 && (
+                    <span
+                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        activeTab === "customers"
+                          ? "bg-white/25 text-white"
+                          : "bg-slate-700 text-white border border-slate-600"
+                      }`}
+                    >
+                      {customers.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("loans")}
+                  className={`w-full group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer ${
+                    activeTab === "loans"
+                      ? "bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30"
+                      : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Wallet
+                      size={18}
+                      className={`shrink-0 transition-colors ${
+                        activeTab === "loans" ? "text-white" : "text-slate-400 group-hover:text-white"
+                      }`}
+                    />
+                    <span className="truncate">Loans</span>
+                  </div>
+                  {loans.length > 0 && (
+                    <span
+                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        activeTab === "loans"
+                          ? "bg-white/25 text-white"
+                          : "bg-slate-700 text-white border border-slate-600"
+                      }`}
+                    >
+                      {loans.length}
+                    </span>
+                  )}
+                </button>
+              </nav>
+            </div>
           </div>
         </div>
 
@@ -967,6 +1258,8 @@ export default function FieldStaffPortal() {
                   {activeTab === "quickpay" && "Rapid Cash Collection Desk"}
                   {activeTab === "receipts" && "Repayments Ledger & Receipts"}
                   {activeTab === "online_slips" && "Customer Online Slips Verification"}
+                  {activeTab === "customers" && "Customer Directory"}
+                  {activeTab === "loans" && "Loan Portfolio Directory"}
                 </h1>
               </div>
             </div>
@@ -2228,6 +2521,625 @@ export default function FieldStaffPortal() {
           </div>
         )}
 
+        {/* TAB 5: ALL CUSTOMERS DIRECTORY */}
+        {activeTab === "customers" && (
+          <div className="space-y-4">
+            {/* Top Stat Metrics */}
+            <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Users size={14} className="text-red-600" />
+                  Total Customers
+                </span>
+                <h3 className="text-2xl font-black text-slate-900 font-mono mt-1">
+                  {customers.length}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Registered in system</p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <UserCheck size={14} className="text-emerald-600" />
+                  Active Borrowers
+                </span>
+                <h3 className="text-2xl font-black text-emerald-700 font-mono mt-1">
+                  {customers.filter((c) => (customerFinancialsMap.get(c.id)?.activeLoans || 0) > 0).length}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">With running loans</p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Wallet size={14} className="text-blue-600" />
+                  Active Loan Facilities
+                </span>
+                <h3 className="text-2xl font-black text-blue-700 font-mono mt-1">
+                  {loans.filter((l) => l.status === "Active" || l.status === "Overdue").length}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Out in field</p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Coins size={14} className="text-amber-600" />
+                  Total Balance Due
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1 truncate">
+                  {MONEY(
+                    Array.from(customerFinancialsMap.values()).reduce(
+                      (sum, item) => sum + item.totalOutstanding,
+                      0
+                    )
+                  )}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Portfolio outstanding</p>
+              </div>
+            </section>
+
+            {/* Filter & Search Bar */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 space-y-3 shadow-2xs">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    value={staffCustSearch}
+                    onChange={(e) => setStaffCustSearch(e.target.value)}
+                    placeholder="Search by customer name, NIC, phone number, town, district..."
+                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                  {staffCustSearch && (
+                    <button
+                      onClick={() => setStaffCustSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Pills & Add Button */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                  <div className="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold shrink-0">
+                    <button
+                      onClick={() => setStaffCustFilter("ALL")}
+                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffCustFilter === "ALL"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      All ({customers.length})
+                    </button>
+                    <button
+                      onClick={() => setStaffCustFilter("ACTIVE")}
+                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffCustFilter === "ACTIVE"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      Active ({customers.filter((c) => (c.status || "ACTIVE").toUpperCase() === "ACTIVE").length})
+                    </button>
+                    <button
+                      onClick={() => setStaffCustFilter("INACTIVE")}
+                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffCustFilter === "INACTIVE"
+                          ? "bg-slate-800 text-white shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      Inactive ({customers.filter((c) => (c.status || "ACTIVE").toUpperCase() !== "ACTIVE").length})
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCustomerModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shrink-0 shadow-xs cursor-pointer"
+                  >
+                    <UserPlus size={14} />
+                    <span>+ New Customer</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table / List Container */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider select-none">
+                    <tr>
+                      <th className="py-3 px-3.5">Customer</th>
+                      <th className="py-3 px-3.5">NIC & Contact</th>
+                      <th className="py-3 px-3.5 hidden md:table-cell">Town & Area</th>
+                      <th className="py-3 px-3.5 text-center">Loans</th>
+                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Repayable</th>
+                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Paid</th>
+                      <th className="py-3 px-3.5 text-right">Balance Due</th>
+                      <th className="py-3 px-3.5 text-center">Status</th>
+                      <th className="py-3 px-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredStaffCustomers.map((cust) => {
+                      const financials = customerFinancialsMap.get(cust.id) || {
+                        totalLoans: 0,
+                        activeLoans: 0,
+                        totalRepayable: 0,
+                        totalPaid: 0,
+                        totalOutstanding: 0,
+                      };
+                      const displayName = cust.fullName || cust.name;
+                      const initial = displayName.charAt(0).toUpperCase();
+
+                      return (
+                        <tr
+                          key={cust.id}
+                          className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                          onClick={() => setSelectedStaffCustomer(cust)}
+                        >
+                          <td className="py-3 px-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                                {initial}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-900 truncate group-hover:text-red-600 transition-colors">
+                                  {displayName}
+                                </p>
+                                <span className="text-[10px] font-mono text-slate-400 font-semibold block">
+                                  {cust.id}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-3.5">
+                            <div className="min-w-0">
+                              <span className="font-mono font-bold text-slate-800 block text-[11px]">
+                                {cust.nic || "No NIC"}
+                              </span>
+                              {cust.phone ? (
+                                <a
+                                  href={`tel:${cust.phone}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 font-mono mt-0.5"
+                                >
+                                  <Phone size={10} />
+                                  {cust.phone}
+                                </a>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic">No Phone</span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-3.5 hidden md:table-cell">
+                            <div className="text-slate-600">
+                              <span className="font-medium block truncate max-w-[140px]">
+                                {cust.town || cust.village || cust.address || "—"}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block">
+                                {cust.district || "Sri Lanka"}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-center">
+                            <span
+                              className={`inline-block font-mono font-black text-[11px] px-2 py-0.5 rounded-md ${
+                                financials.activeLoans > 0
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {financials.activeLoans} / {financials.totalLoans}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-700 hidden sm:table-cell">
+                            {MONEY(financials.totalRepayable)}
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-semibold text-emerald-700 hidden sm:table-cell">
+                            {MONEY(financials.totalPaid)}
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-black text-slate-900">
+                            {financials.totalOutstanding > 0 ? (
+                              <span className="text-red-600">
+                                {MONEY(financials.totalOutstanding)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">Rs 0.00</span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-3.5 text-center">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                (cust.status || "ACTIVE").toUpperCase() === "ACTIVE"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {cust.status || "ACTIVE"}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStaffCustomer(cust)}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                                title="View Customer Profile"
+                              >
+                                View
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreselectedCustomerForLoan(cust.id);
+                                  setShowNewLoanModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                title="Issue a new loan to this customer"
+                              >
+                                <PlusCircle size={11} />
+                                <span>+ Loan</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredStaffCustomers.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="py-10 text-center text-slate-400">
+                          <Users size={32} className="mx-auto mb-2 opacity-40" />
+                          <p className="text-xs font-bold text-slate-600">No customers found</p>
+                          <p className="text-[11px] text-slate-400">
+                            Try adjusting your search query or status filter.
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: ALL LOANS DIRECTORY */}
+        {activeTab === "loans" && (
+          <div className="space-y-4">
+            {/* Top Stat Metrics */}
+            <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Wallet size={14} className="text-red-600" />
+                  Total Loans
+                </span>
+                <h3 className="text-2xl font-black text-slate-900 font-mono mt-1">
+                  {loans.length}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">All time facilities</p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  Active Facilities
+                </span>
+                <h3 className="text-2xl font-black text-emerald-700 font-mono mt-1">
+                  {loans.filter((l) => l.status === "Active").length}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Currently running</p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="text-rose-600" />
+                  Overdue Loans
+                </span>
+                <h3 className="text-2xl font-black text-rose-600 font-mono mt-1">
+                  {loans.filter((l) => l.status === "Overdue").length}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Requires follow-up</p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Coins size={14} className="text-amber-600" />
+                  Total Outstanding
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1 truncate">
+                  {MONEY(
+                    Array.from(loanStatsMap.values()).reduce(
+                      (sum, item) => sum + item.remainingBalance,
+                      0
+                    )
+                  )}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Remaining to collect</p>
+              </div>
+            </section>
+
+            {/* Filter & Search Bar */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 space-y-3 shadow-2xs">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    value={staffLoanSearch}
+                    onChange={(e) => setStaffLoanSearch(e.target.value)}
+                    placeholder="Search by loan number, borrower name, NIC, phone..."
+                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                  />
+                  {staffLoanSearch && (
+                    <button
+                      onClick={() => setStaffLoanSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Status Pills & Add Loan Button */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                  <div className="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold shrink-0">
+                    <button
+                      onClick={() => setStaffLoanFilter("ALL")}
+                      className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffLoanFilter === "ALL"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      All ({loans.length})
+                    </button>
+                    <button
+                      onClick={() => setStaffLoanFilter("ACTIVE")}
+                      className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffLoanFilter === "ACTIVE"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      Active ({loans.filter((l) => l.status === "Active").length})
+                    </button>
+                    <button
+                      onClick={() => setStaffLoanFilter("OVERDUE")}
+                      className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffLoanFilter === "OVERDUE"
+                          ? "bg-rose-600 text-white shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      Overdue ({loans.filter((l) => l.status === "Overdue").length})
+                    </button>
+                    <button
+                      onClick={() => setStaffLoanFilter("PENDING")}
+                      className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffLoanFilter === "PENDING"
+                          ? "bg-amber-500 text-slate-950 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      Pending ({loans.filter((l) => l.status === "Pending").length})
+                    </button>
+                    <button
+                      onClick={() => setStaffLoanFilter("COMPLETED")}
+                      className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer ${
+                        staffLoanFilter === "COMPLETED"
+                          ? "bg-slate-800 text-white shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      Done ({loans.filter((l) => l.status === "Completed").length})
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreselectedCustomerForLoan(undefined);
+                      setShowNewLoanModal(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl text-xs font-bold transition shrink-0 shadow-xs cursor-pointer"
+                  >
+                    <PlusCircle size={14} />
+                    <span>+ Issue Loan</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table / Responsive List Container */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider select-none">
+                    <tr>
+                      <th className="py-3 px-3.5">Loan No</th>
+                      <th className="py-3 px-3.5">Borrower</th>
+                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Principal</th>
+                      <th className="py-3 px-3.5 text-right hidden md:table-cell">Installment</th>
+                      <th className="py-3 px-3.5 text-right">Repayable</th>
+                      <th className="py-3 px-3.5 text-right">Balance Due</th>
+                      <th className="py-3 px-3.5 hidden lg:table-cell">Collection Progress</th>
+                      <th className="py-3 px-3.5 text-center">Status</th>
+                      <th className="py-3 px-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredStaffLoans.map((loan) => {
+                      const cust = customers.find((c) => c.id === loan.customerId);
+                      const custName = cust?.fullName || cust?.name || loan.customerName || "Customer";
+                      const stats = loanStatsMap.get(loan.id) || {
+                        totalPaid: 0,
+                        remainingBalance: 0,
+                      };
+                      const totalRepayment = getLoanTotalRepayment(loan);
+                      const progressPct =
+                        totalRepayment > 0
+                          ? Math.min(100, Math.round((stats.totalPaid / totalRepayment) * 100))
+                          : 0;
+
+                      return (
+                        <tr
+                          key={loan.id}
+                          className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                          onClick={() => setSelectedStaffLoan(loan)}
+                        >
+                          <td className="py-3 px-3.5">
+                            <span className="font-mono font-black text-slate-900 bg-slate-100 px-2 py-1 rounded-md text-[11px] group-hover:bg-red-50 group-hover:text-red-600 transition">
+                              {loan.loanNo || loan.id}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block font-mono mt-0.5">
+                              {loan.issueDate || "—"}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5">
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-900 truncate group-hover:text-red-600 transition-colors">
+                                {custName}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
+                                <span>{cust?.nic || loan.guarantorNic || "No NIC"}</span>
+                                {cust?.phone && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{cust.phone}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-bold text-slate-800 hidden sm:table-cell">
+                            {MONEY(loan.principal)}
+                            <span className="text-[10px] text-slate-400 font-normal block">
+                              {loan.interestRate}% {loan.repaymentFrequency}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-bold text-slate-900 hidden md:table-cell">
+                            {MONEY(loan.installment)}
+                            <span className="text-[10px] text-slate-400 font-normal block">
+                              per {loan.repaymentFrequency?.toLowerCase() || "cycle"}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-700">
+                            {MONEY(totalRepayment)}
+                            <span className="text-[10px] text-emerald-700 font-normal block hidden sm:block">
+                              Paid: {MONEY(stats.totalPaid)}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right font-mono font-black text-slate-900">
+                            {stats.remainingBalance > 0 ? (
+                              <span className="text-red-600">
+                                {MONEY(stats.remainingBalance)}
+                              </span>
+                            ) : (
+                              <span className="text-emerald-700">Settled</span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-3.5 hidden lg:table-cell">
+                            <div className="w-28 space-y-1">
+                              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                                <span>{progressPct}%</span>
+                                <span>{MONEY(stats.totalPaid)}</span>
+                              </div>
+                              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    progressPct >= 100
+                                      ? "bg-emerald-500"
+                                      : progressPct > 50
+                                      ? "bg-blue-500"
+                                      : "bg-red-500"
+                                  }`}
+                                  style={{ width: `${progressPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-center">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                loan.status === "Active"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : loan.status === "Overdue"
+                                  ? "bg-rose-100 text-rose-800"
+                                  : loan.status === "Completed"
+                                  ? "bg-slate-100 text-slate-700"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {loan.status}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStaffLoan(loan)}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                                title="View Loan Details"
+                              >
+                                Details
+                              </button>
+                              {loan.status !== "Completed" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickPayForLoan(loan)}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                  title="Record Cash Collection for this Loan"
+                                >
+                                  <Coins size={11} />
+                                  <span>Pay</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredStaffLoans.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="py-10 text-center text-slate-400">
+                          <Wallet size={32} className="mx-auto mb-2 opacity-40" />
+                          <p className="text-xs font-bold text-slate-600">No loans found</p>
+                          <p className="text-[11px] text-slate-400">
+                            Try adjusting your search query or status filter.
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
       </div>
 
@@ -3157,6 +4069,509 @@ export default function FieldStaffPortal() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Customer Profile & Associated Loans ──────────────────────── */}
+      {selectedStaffCustomer && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
+          onClick={() => setSelectedStaffCustomer(null)}
+        >
+          <div
+            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                  {(selectedStaffCustomer.fullName || selectedStaffCustomer.name).charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                      {selectedStaffCustomer.fullName || selectedStaffCustomer.name}
+                    </h3>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        (selectedStaffCustomer.status || "ACTIVE").toUpperCase() === "ACTIVE"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {selectedStaffCustomer.status || "ACTIVE"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                    Customer ID: {selectedStaffCustomer.id} • NIC: {selectedStaffCustomer.nic || "N/A"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStaffCustomer(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+              {/* Financial Snapshot Card */}
+              {(() => {
+                const fin = customerFinancialsMap.get(selectedStaffCustomer.id) || {
+                  totalLoans: 0,
+                  activeLoans: 0,
+                  totalRepayable: 0,
+                  totalPaid: 0,
+                  totalOutstanding: 0,
+                };
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Active Loans</span>
+                      <span className="font-mono font-black text-slate-900 text-sm">{fin.activeLoans} of {fin.totalLoans}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Repayable</span>
+                      <span className="font-mono font-bold text-slate-800 text-xs">{MONEY(fin.totalRepayable)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Collected</span>
+                      <span className="font-mono font-bold text-emerald-700 text-xs">{MONEY(fin.totalPaid)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Current Balance</span>
+                      <span className="font-mono font-black text-red-600 text-xs">{MONEY(fin.totalOutstanding)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Personal & Contact Information */}
+              <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                  <User size={13} className="text-red-600" />
+                  Contact & Residence
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Primary Phone</span>
+                    {selectedStaffCustomer.phone ? (
+                      <a
+                        href={`tel:${selectedStaffCustomer.phone}`}
+                        className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        <Phone size={11} />
+                        {selectedStaffCustomer.phone}
+                      </a>
+                    ) : (
+                      <span className="text-slate-400 italic">None</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Alternate Phone</span>
+                    <span className="font-mono text-slate-700">{selectedStaffCustomer.alternatePhone || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Monthly Income</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {selectedStaffCustomer.monthlyIncome ? MONEY(selectedStaffCustomer.monthlyIncome) : "—"}
+                    </span>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="text-[10px] text-slate-400 font-medium block">Residential Address</span>
+                    <span className="text-slate-800 font-medium">
+                      {selectedStaffCustomer.address || "—"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Town & District</span>
+                    <span className="text-slate-800 font-medium">
+                      {[selectedStaffCustomer.town, selectedStaffCustomer.district].filter(Boolean).join(", ") || "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guarantor Info */}
+              {(selectedStaffCustomer.guarantorName || selectedStaffCustomer.guarantorPhone || selectedStaffCustomer.guarantorNic) && (
+                <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <UserCheck size={13} className="text-red-600" />
+                    Guarantor Information
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">Name & Relation</span>
+                      <span className="font-bold text-slate-800">
+                        {selectedStaffCustomer.guarantorName || "—"}{" "}
+                        {selectedStaffCustomer.guarantorRelationship && (
+                          <span className="text-slate-500 font-normal">({selectedStaffCustomer.guarantorRelationship})</span>
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">NIC</span>
+                      <span className="font-mono text-slate-800">{selectedStaffCustomer.guarantorNic || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">Phone</span>
+                      {selectedStaffCustomer.guarantorPhone ? (
+                        <a
+                          href={`tel:${selectedStaffCustomer.guarantorPhone}`}
+                          className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <Phone size={11} />
+                          {selectedStaffCustomer.guarantorPhone}
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Customer Loan Facilities */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Wallet size={13} className="text-red-600" />
+                    Loan Facilities ({loans.filter((l) => l.customerId === selectedStaffCustomer.id).length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreselectedCustomerForLoan(selectedStaffCustomer.id);
+                      setShowNewLoanModal(true);
+                    }}
+                    className="text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <PlusCircle size={12} />
+                    <span>Issue Another Loan</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {loans
+                    .filter((l) => l.customerId === selectedStaffCustomer.id)
+                    .map((loan) => {
+                      const stats = loanStatsMap.get(loan.id) || { totalPaid: 0, remainingBalance: 0 };
+                      const totalRepay = getLoanTotalRepayment(loan);
+                      return (
+                        <div
+                          key={loan.id}
+                          className="p-3 bg-white border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs shadow-2xs"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">
+                                {loan.loanNo || loan.id}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                  loan.status === "Active"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : loan.status === "Overdue"
+                                    ? "bg-rose-100 text-rose-800"
+                                    : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
+                                {loan.status}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-mono mt-1">
+                              Principal: <b>{MONEY(loan.principal)}</b> • Repayable: <b>{MONEY(totalRepay)}</b> • Installment: <b>{MONEY(loan.installment)}</b> ({loan.repaymentFrequency})
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between w-full sm:w-auto gap-3 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                            <div className="text-right">
+                              <span className="text-[10px] text-slate-400 block uppercase font-bold">Balance Due</span>
+                              <span className="font-mono font-black text-red-600">
+                                {MONEY(stats.remainingBalance)}
+                              </span>
+                            </div>
+
+                            {loan.status !== "Completed" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedStaffCustomer(null);
+                                  handleQuickPayForLoan(loan);
+                                }}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                              >
+                                <Coins size={12} />
+                                <span>Collect</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {loans.filter((l) => l.customerId === selectedStaffCustomer.id).length === 0 && (
+                    <div className="p-4 bg-slate-50 rounded-2xl text-center text-slate-400 text-xs">
+                      No loan accounts currently associated with this customer.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreselectedCustomerForLoan(selectedStaffCustomer.id);
+                  setShowNewLoanModal(true);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <PlusCircle size={14} />
+                <span>Issue Loan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedStaffCustomer(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Loan Facility Details & Terms Inspection ─────────────────── */}
+      {selectedStaffLoan && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
+          onClick={() => setSelectedStaffLoan(null)}
+        >
+          <div
+            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                  <Wallet size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                      {selectedStaffLoan.loanNo || selectedStaffLoan.id}
+                    </h3>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        selectedStaffLoan.status === "Active"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : selectedStaffLoan.status === "Overdue"
+                          ? "bg-rose-100 text-rose-800"
+                          : selectedStaffLoan.status === "Completed"
+                          ? "bg-slate-100 text-slate-700"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {selectedStaffLoan.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                    Issued: {selectedStaffLoan.issueDate || "—"} • Duration: {selectedStaffLoan.duration} {selectedStaffLoan.repaymentFrequency?.toLowerCase()} cycles
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStaffLoan(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+              {/* Financial Terms Grid */}
+              {(() => {
+                const stats = loanStatsMap.get(selectedStaffLoan.id) || { totalPaid: 0, remainingBalance: 0 };
+                const totalRepay = getLoanTotalRepayment(selectedStaffLoan);
+                const progressPct =
+                  totalRepay > 0 ? Math.min(100, Math.round((stats.totalPaid / totalRepay) * 100)) : 0;
+
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Principal</span>
+                        <span className="font-mono font-black text-slate-900 text-sm">
+                          {MONEY(selectedStaffLoan.principal)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Interest Rate</span>
+                        <span className="font-mono font-bold text-slate-800 text-sm">
+                          {selectedStaffLoan.interestRate}% {selectedStaffLoan.repaymentFrequency}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Installment</span>
+                        <span className="font-mono font-bold text-emerald-700 text-sm">
+                          {MONEY(selectedStaffLoan.installment)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Repayable</span>
+                        <span className="font-mono font-black text-slate-900 text-sm">
+                          {MONEY(totalRepay)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar Card */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-700">Repayment Collection Status</span>
+                        <span className="font-mono font-bold text-slate-900">
+                          {MONEY(stats.totalPaid)} of {MONEY(totalRepay)} ({progressPct}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            progressPct >= 100
+                              ? "bg-emerald-500"
+                              : progressPct > 50
+                              ? "bg-blue-500"
+                              : "bg-red-500"
+                          }`}
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] font-mono pt-0.5">
+                        <span className="text-emerald-700 font-bold">Collected: {MONEY(stats.totalPaid)}</span>
+                        <span className="text-red-600 font-bold">Remaining: {MONEY(stats.remainingBalance)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Borrower Details Card */}
+              {(() => {
+                const cust = customers.find((c) => c.id === selectedStaffLoan.customerId);
+                return (
+                  <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                      <User size={13} className="text-red-600" />
+                      Borrower Information
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-medium block">Name</span>
+                        <span className="font-bold text-slate-900">
+                          {cust?.fullName || cust?.name || selectedStaffLoan.customerName || "Customer"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-medium block">NIC Number</span>
+                        <span className="font-mono font-bold text-slate-800">{cust?.nic || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-medium block">Phone Contact</span>
+                        {cust?.phone ? (
+                          <a
+                            href={`tel:${cust.phone}`}
+                            className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <Phone size={11} />
+                            {cust.phone}
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </div>
+                      <div className="sm:col-span-3">
+                        <span className="text-[10px] text-slate-400 font-medium block">Address</span>
+                        <span className="text-slate-800 font-medium">
+                          {[cust?.address, cust?.town, cust?.district].filter(Boolean).join(", ") || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Guarantor Details */}
+              {(selectedStaffLoan.guarantorName || selectedStaffLoan.guarantorPhone || selectedStaffLoan.guarantorNic) && (
+                <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <UserCheck size={13} className="text-red-600" />
+                    Guarantor on File
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">Guarantor Name</span>
+                      <span className="font-bold text-slate-800">{selectedStaffLoan.guarantorName || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">Guarantor NIC</span>
+                      <span className="font-mono text-slate-800">{selectedStaffLoan.guarantorNic || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">Guarantor Phone</span>
+                      {selectedStaffLoan.guarantorPhone ? (
+                        <a
+                          href={`tel:${selectedStaffLoan.guarantorPhone}`}
+                          className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <Phone size={11} />
+                          {selectedStaffLoan.guarantorPhone}
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+              {selectedStaffLoan.status !== "Completed" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const l = selectedStaffLoan;
+                    setSelectedStaffLoan(null);
+                    handleQuickPayForLoan(l);
+                  }}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Coins size={14} />
+                  <span>Collect Payment Now</span>
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <button
+                type="button"
+                onClick={() => setSelectedStaffLoan(null)}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
