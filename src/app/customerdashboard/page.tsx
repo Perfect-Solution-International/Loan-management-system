@@ -249,7 +249,13 @@ export default function CustomerDashboardPage() {
   const [gatewayLoanId, setGatewayLoanId] = useState<string>("");
 
   const handleOpenGateway = (targetLoanId?: string) => {
-    setGatewayLoanId(targetLoanId || activeLoanId || customerLoans[0]?.id || "");
+    const loanIdToUse = targetLoanId || activeLoanId || customerLoans[0]?.id || "";
+    const loanStat = loanIdToUse ? loanStats.get(loanIdToUse) : null;
+    const due = loanStat ? loanStat.outstanding : portfolioSummary.totalOutstandingSum;
+    if (due <= 0 && portfolioSummary.totalOutstandingSum <= 0) {
+      return;
+    }
+    setGatewayLoanId(loanIdToUse);
     setIsGatewayOpen(true);
   };
 
@@ -483,11 +489,21 @@ export default function CustomerDashboardPage() {
 
             <button
               type="button"
+              disabled={portfolioSummary.totalOutstandingSum <= 0}
               onClick={() => handleOpenGateway()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs shadow-red-600/20 cursor-pointer"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
+                portfolioSummary.totalOutstandingSum > 0
+                  ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/20 cursor-pointer"
+                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+              }`}
+              title={
+                portfolioSummary.totalOutstandingSum > 0
+                  ? "Pay outstanding installments now"
+                  : "No outstanding balance due"
+              }
             >
-              <CreditCard size={13} />
-              <span className="hidden sm:inline">Payment Method</span>
+              <CreditCard size={13} className={portfolioSummary.totalOutstandingSum > 0 ? "text-white" : "text-slate-400"} />
+              <span className="hidden sm:inline">Pay Now</span>
               <span className="sm:hidden">Pay</span>
             </button>
 
@@ -697,11 +713,21 @@ export default function CustomerDashboardPage() {
 
                 <button
                   type="button"
+                  disabled={portfolioSummary.totalOutstandingSum <= 0}
                   onClick={() => handleOpenGateway()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto shrink-0"
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs self-start sm:self-auto shrink-0 ${
+                    portfolioSummary.totalOutstandingSum > 0
+                      ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/20 cursor-pointer"
+                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                  }`}
+                  title={
+                    portfolioSummary.totalOutstandingSum > 0
+                      ? "Pay outstanding installments now"
+                      : "No outstanding balance due"
+                  }
                 >
-                  <CreditCard size={13} />
-                  <span>Payment Method</span>
+                  <CreditCard size={13} className={portfolioSummary.totalOutstandingSum > 0 ? "text-white" : "text-slate-400"} />
+                  <span>Pay Now</span>
                 </button>
               </div>
 
@@ -789,11 +815,21 @@ export default function CustomerDashboardPage() {
                             </button>
                             <button
                               type="button"
+                              disabled={(stats.outstanding || 0) <= 0}
                               onClick={() => handleOpenGateway(loan.id)}
-                              className="py-3 px-5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                              className={`py-3 px-5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shrink-0 ${
+                                (stats.outstanding || 0) > 0
+                                  ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer"
+                                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                              }`}
+                              title={
+                                (stats.outstanding || 0) > 0
+                                  ? "Pay installment for this facility"
+                                  : "Facility fully settled"
+                              }
                             >
-                              <CreditCard size={15} className="text-red-600" />
-                              <span>Payment Method</span>
+                              <CreditCard size={15} className={(stats.outstanding || 0) > 0 ? "text-white" : "text-slate-400"} />
+                              <span>Pay Now</span>
                             </button>
                           </div>
                         </div>
@@ -965,12 +1001,21 @@ export default function CustomerDashboardPage() {
                           </button>
                           <button
                             type="button"
+                            disabled={(stats?.outstanding || 0) <= 0}
                             onClick={() => handleOpenGateway(loan.id)}
-                            className="py-2.5 px-3.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                            title="Select payment method for this facility"
+                            className={`py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 ${
+                              (stats?.outstanding || 0) > 0
+                                ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer"
+                                : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                            }`}
+                            title={
+                              (stats?.outstanding || 0) > 0
+                                ? "Pay now for this facility"
+                                : "Facility fully settled"
+                            }
                           >
-                            <CreditCard size={14} className="text-red-600" />
-                            <span>Payment Method</span>
+                            <CreditCard size={14} className={(stats?.outstanding || 0) > 0 ? "text-white" : "text-slate-400"} />
+                            <span>Pay Now</span>
                           </button>
                         </div>
                       </div>
@@ -1034,11 +1079,21 @@ export default function CustomerDashboardPage() {
                 )}
                 <button
                   type="button"
+                  disabled={outstandingBalance <= 0}
                   onClick={() => handleOpenGateway(currentLoan?.id)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
+                    outstandingBalance > 0
+                      ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/25 cursor-pointer"
+                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                  }`}
+                  title={
+                    outstandingBalance > 0
+                      ? "Pay installment now"
+                      : "No outstanding balance due"
+                  }
                 >
-                  <CreditCard size={13} />
-                  <span>Payment Method</span>
+                  <CreditCard size={13} className={outstandingBalance > 0 ? "text-white" : "text-slate-400"} />
+                  <span>Pay Now</span>
                 </button>
               </div>
             </div>
@@ -1340,11 +1395,21 @@ export default function CustomerDashboardPage() {
                     </p>
                     <button
                       type="button"
+                      disabled={(currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) <= 0}
                       onClick={() => handleOpenGateway(currentLoan?.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs shrink-0 ${
+                        (currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0
+                          ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/25 cursor-pointer"
+                          : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                      }`}
+                      title={
+                        (currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0
+                          ? "Pay online or upload deposit slip"
+                          : "No outstanding balance due"
+                      }
                     >
-                      <CreditCard size={12} />
-                      <span>Payment Method</span>
+                      <CreditCard size={12} className={(currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0 ? "text-white" : "text-slate-400"} />
+                      <span>Pay Now</span>
                     </button>
                   </div>
                   <table className="w-full text-left text-xs whitespace-nowrap">
@@ -1456,11 +1521,21 @@ export default function CustomerDashboardPage() {
                             </p>
                             <button
                               type="button"
+                              disabled={(currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) <= 0}
                               onClick={() => handleOpenGateway()}
-                              className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                              className={`mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-xs ${
+                                (currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0
+                                  ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/25 cursor-pointer"
+                                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                              }`}
+                              title={
+                                (currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0
+                                  ? "Pay online or upload slip"
+                                  : "No outstanding balance due"
+                              }
                             >
-                              <CreditCard size={12} />
-                              <span>Payment Method</span>
+                              <CreditCard size={12} className={(currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0 ? "text-white" : "text-slate-400"} />
+                              <span>Pay Now</span>
                             </button>
                           </td>
                         </tr>
@@ -1510,11 +1585,21 @@ export default function CustomerDashboardPage() {
                 {/* Quick Upload Button */}
                 <button
                   type="button"
+                  disabled={(currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) <= 0}
                   onClick={() => handleOpenGateway(currentLoan?.id)}
-                  className="w-full mt-2 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  className={`w-full mt-2 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs ${
+                    (currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0
+                      ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/25 cursor-pointer"
+                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                  }`}
+                  title={
+                    (currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0
+                      ? "Pay online or submit slip"
+                      : "No outstanding balance due"
+                  }
                 >
-                  <CreditCard size={14} />
-                  <span>Payment Method</span>
+                  <CreditCard size={14} className={(currentLoan ? outstandingBalance : portfolioSummary.totalOutstandingSum) > 0 ? "text-white" : "text-slate-400"} />
+                  <span>Pay Now</span>
                 </button>
               </div>
             </div>
