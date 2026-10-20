@@ -1235,16 +1235,16 @@ export default function FieldStaffPortal() {
       <div className="lg:pl-64 flex flex-col flex-1 min-w-0">
         {/* Top Navbar */}
         <header className="sticky top-0 z-20 bg-white border-b border-slate-200/90 shadow-2xs">
-          <div className="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
+          <div className="px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="lg:hidden p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 title="Open Sidebar"
                 aria-label="Open Sidebar Menu"
               >
-                <Menu size={20} />
+                <Menu size={18} />
               </button>
 
               <div>
@@ -1272,20 +1272,20 @@ export default function FieldStaffPortal() {
                   setPreselectedCustomerForLoan(undefined);
                   setShowNewLoanModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                 title="Create a new loan facility"
               >
-                <PlusCircle size={14} />
+                <PlusCircle size={13} />
                 <span>+ Issue Loan</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowNewCustomerModal(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                 title="Register a new customer"
               >
-                <UserPlus size={14} />
+                <UserPlus size={13} />
                 <span>+ Customer</span>
               </button>
             </div>
@@ -1388,7 +1388,7 @@ export default function FieldStaffPortal() {
       )}
 
       {/* ── Main Responsive Content Container (Mobile, Tablet, Desktop) ────── */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 space-y-5">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 space-y-2.5">
         {/* Toast Alert */}
         {toastMessage && (
           <div className="fixed top-16 left-4 right-4 z-50 max-w-lg mx-auto bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-emerald-500 animate-in slide-in-from-top duration-200">
@@ -1404,54 +1404,54 @@ export default function FieldStaffPortal() {
 
         {/* TAB 1: ROUTE (RESPONSIVE MASTER-DETAIL SPLIT VIEW ON DESKTOP/TABLET) */}
         {activeTab === "route" && (
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {/* ── Officer Shift & Cash Summary Grid (Shown ONLY on Today's Collections) ── */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
               {/* Card 1: Cash In Hand */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+              <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all">
                 <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                    <Wallet size={14} className="text-emerald-600" />
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
+                    <Wallet size={12} className="text-emerald-600" />
                     Physical Cash In Hand
                   </span>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
 
-                <div className="my-2">
-                  <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                <div className="mt-1">
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight leading-tight">
                     {MONEY(myCashInHand)}
                   </h2>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 text-[11px]">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                  <span className="text-slate-500">
                     {myTodayPayments.length} receipts logged
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
                     Physical Cash
                   </span>
                 </div>
               </div>
 
               {/* Card 2: Today's Route Target */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+              <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all">
                 <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                    <Calendar size={14} className="text-slate-600" />
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
+                    <Calendar size={12} className="text-slate-600" />
                     Route Target Today
                   </span>
-                  <span className="text-[11px] font-mono text-slate-400">
+                  <span className="text-[10px] font-mono text-slate-400">
                     {todayStr}
                   </span>
                 </div>
 
-                <div className="my-2">
-                  <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                <div className="mt-1">
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight leading-tight">
                     {MONEY(totalTargetToday)}
                   </h2>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
                   <span>Branch</span>
                   <span className="font-bold text-slate-800 font-mono">
                     {currentOfficer?.branch || "Colombo Central"}
@@ -1460,26 +1460,26 @@ export default function FieldStaffPortal() {
               </div>
 
               {/* Card 3: Collected Today */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+              <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all">
                 <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                    <CheckCircle2 size={14} className="text-emerald-600" />
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
+                    <CheckCircle2 size={12} className="text-emerald-600" />
                     Collected Today
                   </span>
-                  <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
                     {totalTargetToday > 0
                       ? `${Math.round((totalMyCollectedToday / totalTargetToday) * 100)}%`
                       : "0%"}
                   </span>
                 </div>
 
-                <div className="my-2">
-                  <h2 className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
+                <div className="mt-1">
+                  <h2 className="text-lg sm:text-xl font-black text-emerald-700 font-mono tracking-tight leading-tight">
                     {MONEY(totalMyCollectedToday)}
                   </h2>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
                   <span>Bank/Online</span>
                   <span className="font-mono font-bold text-blue-700">
                     {MONEY(myBankTransfersToday)}
@@ -1488,10 +1488,10 @@ export default function FieldStaffPortal() {
               </div>
 
               {/* Card 4: Route Visits Progress */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+              <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all">
                 <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                    <Clock size={14} className="text-slate-600" />
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
+                    <Clock size={12} className="text-slate-600" />
                     Borrower Visits
                   </span>
                   <span className="text-[10px] font-mono font-bold text-slate-500">
@@ -1499,35 +1499,39 @@ export default function FieldStaffPortal() {
                   </span>
                 </div>
 
-                <div className="my-2">
-                  <h2 className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                <div className="mt-1 flex items-baseline justify-between">
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight leading-tight">
                     {routeCompletedCount}{" "}
-                    <span className="text-sm text-slate-400 font-normal">/ {routeItems.length}</span>
+                    <span className="text-xs text-slate-400 font-normal">/ {routeItems.length}</span>
                   </h2>
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
-                    <div
-                      className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${
-                          routeItems.length > 0
-                            ? Math.min(100, Math.round((routeCompletedCount / routeItems.length) * 100))
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
+                  <span className="text-[10px] font-bold text-amber-700">
+                    {routeItems.length - routeCompletedCount} pending
+                  </span>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Remaining</span>
-                  <span className="font-bold text-amber-700">
-                    {routeItems.length - routeCompletedCount} pending
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                  <div
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${
+                        routeItems.length > 0
+                          ? Math.min(100, Math.round((routeCompletedCount / routeItems.length) * 100))
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                  <span>Completed</span>
+                  <span className="font-bold text-emerald-700">
+                    {routeItems.length > 0 ? Math.round((routeCompletedCount / routeItems.length) * 100) : 0}% Done
                   </span>
                 </div>
               </div>
             </section>
             {/* Search & Filter Bar */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-2.5">
               {/* Search Bar */}
               <div className="relative w-full sm:w-80 md:w-96">
                 <Search

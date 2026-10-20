@@ -190,12 +190,12 @@ export default function OnlinePaymentsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-3 sm:p-5 max-w-7xl mx-auto space-y-3">
       {/* ── Notification Feedback Toast ────────────────────────────────────── */}
       {notificationMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-sm animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 size={18} className="text-emerald-700 shrink-0" />
+        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-2xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
             <span>{notificationMsg}</span>
           </div>
           <button
@@ -207,84 +207,91 @@ export default function OnlinePaymentsPage() {
         </div>
       )}
 
-      {/* ── Page Actions ────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-2.5 flex-wrap">
+      {/* ── Top Bar Header & Action ────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+            Online Payment Slips &amp; Bank Transfers
+          </h1>
+          <p className="text-[11px] text-slate-500">
+            Review customer deposit slips, verify ledger accounts, and credit repayments directly.
+          </p>
+        </div>
+
         <Link
           href="/repayments"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition shadow-2xs"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition shadow-2xs"
         >
-          <Receipt size={14} /> Repayments Ledger
+          <Receipt size={13} />
+          <span>Repayments Ledger</span>
         </Link>
       </div>
 
       {/* ── Summary KPI Cards ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
         {/* Pending Card */}
-        <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/80 p-5 rounded-2xl shadow-2xs">
+        <div className="bg-gradient-to-br from-amber-50/90 via-white to-amber-50/40 border border-amber-200/90 p-2.5 sm:p-3 rounded-xl shadow-2xs hover:border-amber-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Clock size={12} className="text-amber-700" />
               Pending Review
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
-              <Clock size={16} />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-slate-950 font-mono mt-2">
-            {MONEY(summaryMetrics.pendingTotal)}
-          </p>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-200/60 text-xs">
-            <span className="text-slate-600 font-medium">Slips Awaiting Sign-Off</span>
-            <span className="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-full bg-amber-200/80">
+            <span className="font-mono font-bold text-amber-900 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200">
               {counts.pending} Pending
             </span>
+          </div>
+          <p className="text-lg sm:text-xl font-black text-slate-950 font-mono tracking-tight leading-tight mt-1">
+            {MONEY(summaryMetrics.pendingTotal)}
+          </p>
+          <div className="flex items-center justify-between mt-1 pt-1 border-t border-amber-200/60 text-[10px]">
+            <span className="text-slate-500">Slips Awaiting Sign-Off</span>
+            <span className="font-bold text-amber-800">Awaiting Action</span>
           </div>
         </div>
 
         {/* Completed Card */}
-        <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-300/80 p-5 rounded-2xl shadow-2xs">
+        <div className="bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/40 border border-emerald-200/90 p-2.5 sm:p-3 rounded-xl shadow-2xs hover:border-emerald-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-              Approved & Reconciled
+            <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+              <CheckCircle2 size={12} className="text-emerald-700" />
+              Approved &amp; Reconciled
             </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800">
-              <CheckCircle2 size={16} />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-slate-950 font-mono mt-2">
-            {MONEY(summaryMetrics.completedTotal)}
-          </p>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-200/60 text-xs">
-            <span className="text-slate-600 font-medium">Credited to Loan Accounts</span>
-            <span className="font-mono font-bold text-emerald-900 px-2 py-0.5 rounded-full bg-emerald-200/80">
+            <span className="font-mono font-bold text-emerald-900 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">
               {counts.completed} Approved
             </span>
+          </div>
+          <p className="text-lg sm:text-xl font-black text-slate-950 font-mono tracking-tight leading-tight mt-1">
+            {MONEY(summaryMetrics.completedTotal)}
+          </p>
+          <div className="flex items-center justify-between mt-1 pt-1 border-t border-emerald-200/60 text-[10px]">
+            <span className="text-slate-500">Credited to Loan Accounts</span>
+            <span className="font-bold text-emerald-700">Reconciled</span>
           </div>
         </div>
 
         {/* Total Submitted */}
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs">
+        <div className="bg-white border border-slate-200/90 p-2.5 sm:p-3 rounded-xl shadow-2xs hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <CreditCard size={12} className="text-slate-600" />
               Total Online Volume
             </span>
-            <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
-              <CreditCard size={16} />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-slate-950 font-mono mt-2">
-            {MONEY(summaryMetrics.totalSubmitted)}
-          </p>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-            <span className="text-slate-600 font-medium">Total Online Slip Records</span>
-            <span className="font-mono font-bold text-slate-800 px-2 py-0.5 rounded-full bg-slate-100">
+            <span className="font-mono font-bold text-slate-800 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
               {counts.all} Total
             </span>
+          </div>
+          <p className="text-lg sm:text-xl font-black text-slate-950 font-mono tracking-tight leading-tight mt-1">
+            {MONEY(summaryMetrics.totalSubmitted)}
+          </p>
+          <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-100 text-[10px]">
+            <span className="text-slate-500">Total Online Slip Records</span>
+            <span className="font-bold text-slate-700">All Slips</span>
           </div>
         </div>
       </div>
 
       {/* ── Filter Tabs & Search Bar ───────────────────────────────────────── */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+      <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
         {/* Status Tabs */}
         <div className="flex items-center gap-2 border-b border-slate-100 pb-3 overflow-x-auto">
           <button
