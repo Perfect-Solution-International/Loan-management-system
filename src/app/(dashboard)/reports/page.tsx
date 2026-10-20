@@ -55,7 +55,24 @@ export default function FinancialReportsPage() {
     }
   }, []);
 
-  // Filtered Payments based on timeframe & search
+  // Fast Lookup Maps for instant O(1) search and retrieval
+  const customerMap = useMemo(() => {
+    const map = new Map<string, (typeof customers)[0]>();
+    for (const c of customers) {
+      map.set(String(c.id), c);
+    }
+    return map;
+  }, [customers]);
+
+  const loanMap = useMemo(() => {
+    const map = new Map<string, (typeof loans)[0]>();
+    for (const l of loans) {
+      map.set(String(l.id), l);
+    }
+    return map;
+  }, [loans]);
+
+  // Filtered Payments based on timeframe & search (O(1) cached lookups)
   const filteredPayments = useMemo(() => {
     return payments.filter((p) => {
       // Date filter
@@ -76,8 +93,8 @@ export default function FinancialReportsPage() {
       // Search term
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
-        const c = customers.find((cust) => cust.id === p.customerId);
-        const l = loans.find((loan) => loan.id === p.loanId);
+        const c = customerMap.get(String(p.customerId));
+        const l = loanMap.get(String(p.loanId));
         const cName = (c?.fullName || c?.name || "").toLowerCase();
         const lNo = (l?.loanNo || p.loanId || "").toLowerCase();
         const rNo = (p.receiptNo || "").toLowerCase();
@@ -89,7 +106,7 @@ export default function FinancialReportsPage() {
 
       return true;
     });
-  }, [payments, timePeriod, todayStr, startDateStr, endDateStr, searchTerm, customers, loans]);
+  }, [payments, timePeriod, todayStr, startDateStr, endDateStr, searchTerm, customerMap, loanMap]);
 
   // Filtered Loans based on status & search
   const filteredLoans = useMemo(() => {
@@ -102,7 +119,7 @@ export default function FinancialReportsPage() {
 
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
-        const c = customers.find((cust) => cust.id === l.customerId);
+        const c = customerMap.get(String(l.customerId));
         const cName = (c?.fullName || c?.name || l.customerName || "").toLowerCase();
         const lNo = (l.loanNo || l.id || "").toLowerCase();
         const nic = (c?.nic || "").toLowerCase();
@@ -113,7 +130,7 @@ export default function FinancialReportsPage() {
 
       return true;
     });
-  }, [loans, statusFilter, searchTerm, customers]);
+  }, [loans, statusFilter, searchTerm, customerMap]);
 
   // Aggregate Portfolio Financials
   const totalDisbursed = useMemo(
@@ -136,34 +153,42 @@ export default function FinancialReportsPage() {
     [filteredPayments]
   );
 
-  // Mathematically exact outstanding balance across active facilities
+  // Mathematically exact outstanding balance across active facilities - Linear O(N+M)
   const outstandingReceivable = useMemo(() => {
-    return loans
-      .filter((l) => (l.status || "").toLowerCase() !== "completed")
-      .reduce((sum, l) => {
-        const totalRepay = getLoanTotalRepayment(l);
-        const paid = payments
-          .filter((p) => p.loanId === l.id)
-          .reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0);
-        return sum + Math.max(0, Math.round((totalRepay - paid) * 100) / 100);
-      }, 0);
+    const paidByLoan = new Map<string, number>();
+    for (const p of payments) {
+      if (!p.loanId) continue;
+      const id = String(p.loanId);
+      paidByLoan.set(id, (paidByLoan.get(id) || 0) + (Number(p.amount) || 0));
+    }
+
+    let sum = 0;
+    for (const l of loans) {
+      if ((l.status || "").toLowerCase() === "completed") continue;
+      const totalRepay = getLoanTotalRepayment(l);
+      const paid = paidByLoan.get(String(l.id)) || 0;
+      sum += Math.max(0, Math.round((totalRepay - paid) * 100) / 100);
+    }
+    return Math.round(sum * 100) / 100;
   }, [loans, payments]);
 
-  // Revenue Breakdown
-  const capitalCollected = useMemo(
-    () => filteredPayments.filter((p) => p.type === "Capital").reduce((s, p) => s + (Number(p.amount) || 0), 0),
-    [filteredPayments]
-  );
-
-  const interestCollected = useMemo(
-    () => filteredPayments.filter((p) => p.type === "Interest").reduce((s, p) => s + (Number(p.amount) || 0), 0),
-    [filteredPayments]
-  );
-
-  const otherFeesCollected = useMemo(
-    () => filteredPayments.filter((p) => p.type === "Other").reduce((s, p) => s + (Number(p.amount) || 0), 0),
-    [filteredPayments]
-  );
+  // Single-pass Revenue Breakdown
+  const { capitalCollected, interestCollected, otherFeesCollected } = useMemo(() => {
+    let capital = 0;
+    let interest = 0;
+    let other = 0;
+    for (const p of filteredPayments) {
+      const amt = Number(p.amount) || 0;
+      if (p.type === "Capital") capital += amt;
+      else if (p.type === "Interest") interest += amt;
+      else if (p.type === "Other") other += amt;
+    }
+    return {
+      capitalCollected: capital,
+      interestCollected: interest,
+      otherFeesCollected: other,
+    };
+  }, [filteredPayments]);
 
   const totalPeriodInterestAndFees = interestCollected + otherFeesCollected;
 

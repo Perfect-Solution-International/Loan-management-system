@@ -267,12 +267,7 @@ function CustomerDetailsContent() {
               <span>
                 Phone: <strong className="text-slate-800">{customer.phone}</strong>
               </span>
-              <span>
-                Town: <strong className="text-slate-800">{customer.town || "—"}</strong>
-              </span>
-              <span>
-                District: <strong className="text-slate-800">{customer.district || "—"}</strong>
-              </span>
+              {customer.address && <span>Address: <strong className="text-slate-800">{customer.address}</strong></span>}
             </p>
           </div>
         </div>
@@ -406,11 +401,7 @@ function CustomerDetailsContent() {
                 <span className="font-semibold text-slate-800 mt-0.5 block">
                   {customer.address}
                 </span>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Village: <strong>{customer.village || "—"}</strong> · Town:{" "}
-                  <strong>{customer.town || "—"}</strong> · District:{" "}
-                  <strong>{customer.district || "—"}</strong>
-                </p>
+                
               </div>
             </div>
           </div>

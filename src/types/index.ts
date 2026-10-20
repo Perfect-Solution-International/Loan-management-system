@@ -25,9 +25,9 @@ export interface Customer {
   gender?: string;
   primaryContact?: string;
   address: string;
-  village: string;
-  town: string;
-  district: string;
+  village?: string;
+  town?: string;
+  district?: string;
   occupation?: string;
   monthlyIncome: number;
   emergencyContact?: string;

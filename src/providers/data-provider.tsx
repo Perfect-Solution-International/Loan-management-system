@@ -34,9 +34,12 @@ export interface DataContextValue {
   staffUsers: StaffUser[];
   addCustomer: (customer: Customer) => void;
   updateCustomer: (id: string | number, updated: Partial<Customer>) => void;
+  deleteCustomer: (id: string | number) => void;
   addLoan: (loan: Loan) => void;
   updateLoan: (id: string | number, updated: Partial<Loan>) => void;
   addPayment: (payment: Payment) => void;
+  updatePayment: (id: string, updated: Partial<Payment>) => void;
+  deletePayment: (id: string) => void;
   addRepayment: (payment: Payment) => void;
   addDocument: (doc: CustomerDocument) => void;
   deleteDocument: (id: string) => void;
@@ -88,9 +91,12 @@ const defaultState: DataContextValue = {
   staffUsers: initialStaffUsers || [],
   addCustomer: () => {},
   updateCustomer: () => {},
+  deleteCustomer: () => {},
   addLoan: () => {},
   updateLoan: () => {},
   addPayment: () => {},
+  updatePayment: () => {},
+  deletePayment: () => {},
   addRepayment: () => {},
   addDocument: () => {},
   deleteDocument: () => {},
@@ -110,6 +116,8 @@ const DataContext = createContext<DataContextValue>(defaultState);
 export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers || []);
   const [loans, setLoans] = useState<Loan[]>(initialLoans || []);
+  const loansRef = React.useRef(loans);
+  loansRef.current = loans;
   const [payments, setPayments] = useState<Payment[]>(initialPayments || []);
   const [onlinePayments, setOnlinePayments] = useState<OnlinePayment[]>(initialOnlinePayments || []);
   const [documents, setDocuments] = useState<CustomerDocument[]>(initialDocuments || []);
@@ -315,6 +323,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCustomers((prev) => [customer, ...prev]);
   }, []);
 
+  const deleteCustomer = React.useCallback((id: string | number) => {
+    const idStr = String(id);
+    setCustomers((prev) => prev.filter((item) => item.id !== id && String(item.id) !== idStr));
+    api.deleteCustomer(idStr).catch(() => {});
+  }, []);
+
   const updateCustomer = React.useCallback((id: string | number, updated: Partial<Customer>) => {
     setCustomers((prev) =>
       prev.map((item: Customer) =>
@@ -372,6 +386,68 @@ export function DataProvider({ children }: { children: ReactNode }) {
       })
     );
   }, [payments]);
+
+  const updatePayment = React.useCallback((id: string, updated: Partial<Payment>) => {
+    setPayments((prev) => {
+      const nextPayments = prev.map((p) => (p.id === id ? { ...p, ...updated } : p));
+      const targetPayment = nextPayments.find((p) => p.id === id);
+      if (targetPayment) {
+        const loanId = targetPayment.loanId;
+        const currentLoan = loansRef.current.find((l) => l.id === loanId || String(l.id) === String(loanId));
+        if (currentLoan) {
+          const expectedRepayment = getLoanTotalRepayment(currentLoan);
+          const totalPaidAfter = nextPayments
+            .filter((p) => p.loanId === loanId || String(p.loanId) === String(loanId))
+            .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+          setLoans((prevLoans) =>
+            prevLoans.map((l) => {
+              if (l.id === loanId || String(l.id) === String(loanId)) {
+                if (expectedRepayment > 0 && totalPaidAfter >= expectedRepayment - 0.01) {
+                  return { ...l, status: "Completed" };
+                } else if (l.status === "Completed") {
+                  return { ...l, status: "Active" };
+                }
+              }
+              return l;
+            })
+          );
+        }
+      }
+      return nextPayments;
+    });
+    api.updatePayment(id, updated).catch(() => {});
+  }, []);
+
+  const deletePayment = React.useCallback((id: string) => {
+    setPayments((prev) => {
+      const targetPayment = prev.find((p) => p.id === id);
+      const nextPayments = prev.filter((p) => p.id !== id);
+      if (targetPayment) {
+        const loanId = targetPayment.loanId;
+        const currentLoan = loansRef.current.find((l) => l.id === loanId || String(l.id) === String(loanId));
+        if (currentLoan) {
+          const expectedRepayment = getLoanTotalRepayment(currentLoan);
+          const totalPaidAfter = nextPayments
+            .filter((p) => p.loanId === loanId || String(p.loanId) === String(loanId))
+            .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+          setLoans((prevLoans) =>
+            prevLoans.map((l) => {
+              if (l.id === loanId || String(l.id) === String(loanId)) {
+                if (expectedRepayment > 0 && totalPaidAfter < expectedRepayment - 0.01 && l.status === "Completed") {
+                  return { ...l, status: "Active" };
+                }
+              }
+              return l;
+            })
+          );
+        }
+      }
+      return nextPayments;
+    });
+    api.deletePayment(id).catch(() => {});
+  }, []);
 
   const getNextReceiptNumber = React.useCallback(() => {
     return getNextReceiptNo(payments);
@@ -517,9 +593,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       staffUsers,
       addCustomer,
       updateCustomer,
+      deleteCustomer,
       addLoan,
       updateLoan,
       addPayment,
+      updatePayment,
+      deletePayment,
       addRepayment: addPayment,
       addDocument,
       deleteDocument,
@@ -542,9 +621,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       staffUsers,
       addCustomer,
       updateCustomer,
+      deleteCustomer,
       addLoan,
       updateLoan,
       addPayment,
+      updatePayment,
+      deletePayment,
       addDocument,
       deleteDocument,
       updateSettings,

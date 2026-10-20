@@ -60,6 +60,25 @@ export const api = {
     return res.json();
   },
 
+  async updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer> {
+    const res = await fetch(`${API_BASE_URL}/customers/${id}`, {
+      method: "PUT",
+      headers: getAuthHeader(),
+      body: JSON.stringify(customer),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async deleteCustomer(id: string): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/customers/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeader(),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   // Loans
   async getLoans(customerId?: string): Promise<Loan[]> {
     const url = customerId
@@ -106,6 +125,25 @@ export const api = {
       method: "POST",
       headers: getAuthHeader(),
       body: JSON.stringify(payment),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async updatePayment(id: string, payment: Partial<Payment>): Promise<Payment> {
+    const res = await fetch(`${API_BASE_URL}/payments/${id}`, {
+      method: "PUT",
+      headers: getAuthHeader(),
+      body: JSON.stringify(payment),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async deletePayment(id: string): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/payments/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeader(),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();

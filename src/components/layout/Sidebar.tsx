@@ -42,14 +42,9 @@ const navSections = [
         icon: LayoutDashboard,
       },
       {
-        name: 'Customer Directory',
-        href: '/customers',
+        name: 'User Management',
+        href: '/users',
         icon: Users,
-      },
-      {
-        name: 'Staff Members',
-        href: '/staff',
-        icon: UserCheck,
       },
       {
         name: 'Loans List',
@@ -128,6 +123,9 @@ function isPathActive(pathname: string, href: string): boolean {
   if (href === '/loans/new') {
     return pathname === '/loans/new';
   }
+  if (href === '/users') {
+    return pathname.startsWith('/users') || pathname.startsWith('/customers') || pathname.startsWith('/staff');
+  }
   if (href === '/customers') {
     return pathname === '/customers' || (pathname.startsWith('/customers/') && pathname !== '/customers/new');
   }
@@ -183,14 +181,9 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             icon: LayoutDashboard,
           },
           {
-            name: 'Customer Directory',
-            href: '/customers',
+            name: 'User Management',
+            href: '/users',
             icon: Users,
-          },
-          {
-            name: 'Staff Members',
-            href: '/staff',
-            icon: UserCheck,
           },
           {
             name: 'Loans List',

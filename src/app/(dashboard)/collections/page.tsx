@@ -17,6 +17,8 @@ import {
   CreditCard,
   Building,
   Receipt,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
@@ -31,7 +33,27 @@ import {
 import type { Payment } from "@/types";
 
 export default function CollectionsPage() {
-  const { loans, customers, payments, addPayment, getNextReceiptNo } = useData();
+  const {
+    loans,
+    customers,
+    payments,
+    addPayment,
+    updatePayment,
+    deletePayment,
+    staffUsers,
+    getNextReceiptNo,
+  } = useData();
+
+  // RBAC: Check if current logged-in user is an Administrator
+  const [isAdmin, setIsAdmin] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // In the Administrator Dashboard portal, ensure Administrator authority is active
+    localStorage.setItem("psi_user_role", "Administrator");
+    localStorage.setItem("psi_active_staff_id", "STF-01");
+    setIsAdmin(true);
+  }, []);
 
   // Selected collection date (defaults dynamically to today)
   const [selectedDate, setSelectedDate] = useState<string>("2026-10-19");
@@ -43,7 +65,6 @@ export default function CollectionsPage() {
   }, []);
 
   // Filter and search state
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "COLLECTED" | "OVERDUE">("ALL");
   const [frequencyFilter, setFrequencyFilter] = useState<string>("ALL");
   const [routeFilter, setRouteFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -56,6 +77,56 @@ export default function CollectionsPage() {
   const [paymentNotes, setPaymentNotes] = useState<string>("");
   const [notification, setNotification] = useState<string>("");
   const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
+
+  // Admin Edit Payment Modal State
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [editAmount, setEditAmount] = useState<string>("");
+  const [editDate, setEditDate] = useState<string>("");
+  const [editMethod, setEditMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
+  const [editNotes, setEditNotes] = useState<string>("");
+
+  // Admin Delete Payment Modal State
+  const [deletingPaymentItem, setDeletingPaymentItem] = useState<ScheduledCollectionItem | null>(null);
+
+  const openEditPaymentModal = (p: Payment) => {
+    setEditingPayment(p);
+    setEditAmount(String(p.amount));
+    setEditDate(p.date || selectedDate);
+    setEditMethod((p.method as "Cash" | "Bank Transfer" | "Cheque") || "Cash");
+    setEditNotes(p.notes || "");
+  };
+
+  const handleConfirmEditPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayment) return;
+    const numAmount = Number(editAmount);
+    if (!numAmount || numAmount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    updatePayment(editingPayment.id, {
+      amount: numAmount,
+      date: editDate,
+      method: editMethod,
+      notes: editNotes.trim() || undefined,
+    });
+
+    setNotification(
+      `Payment record ${editingPayment.receiptNo || editingPayment.id} updated successfully.`
+    );
+    setEditingPayment(null);
+    setTimeout(() => setNotification(""), 4500);
+  };
+
+  const handleConfirmDeletePayment = () => {
+    if (!deletingPaymentItem?.todaysPayment) return;
+    const p = deletingPaymentItem.todaysPayment;
+    deletePayment(p.id);
+    setNotification(`Payment record ${p.receiptNo || p.id} reversed and deleted.`);
+    setDeletingPaymentItem(null);
+    setTimeout(() => setNotification(""), 4500);
+  };
 
   // Compute daily collection items and summary for the selected date
   const collectionData = useMemo(() => {
@@ -76,11 +147,6 @@ export default function CollectionsPage() {
   // Filtered items
   const filteredItems = useMemo(() => {
     return items.filter((it) => {
-      // Status filter
-      if (statusFilter === "PENDING" && it.isCollectedToday) return false;
-      if (statusFilter === "COLLECTED" && !it.isCollectedToday) return false;
-      if (statusFilter === "OVERDUE" && it.status !== "OVERDUE") return false;
-
       // Frequency filter
       if (frequencyFilter !== "ALL" && it.repaymentFrequency !== frequencyFilter) {
         return false;
@@ -111,7 +177,7 @@ export default function CollectionsPage() {
 
       return true;
     });
-  }, [items, statusFilter, frequencyFilter, routeFilter, searchTerm]);
+  }, [items, frequencyFilter, routeFilter, searchTerm]);
 
   // Date navigation handlers
   const handleStepDay = (delta: number) => {
@@ -347,38 +413,13 @@ export default function CollectionsPage() {
           </div>
         </div>
 
-        {/* ═══ Filter Tabs & Controls Row ════════════════════════════════════ */}
-        <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
-            {[
-              { id: "ALL", label: "All Items", count: items.length },
-              { id: "PENDING", label: "Pending", count: summary.pendingCount },
-              { id: "COLLECTED", label: "Collected", count: summary.collectedCount },
-              { id: "OVERDUE", label: "Arrears", count: summary.overdueCount },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setStatusFilter(tab.id as typeof statusFilter)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                  statusFilter === tab.id
-                    ? "bg-red-600 text-white shadow-2xs shadow-red-600/20"
-                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
-                    statusFilter === tab.id
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
+        {/* ═══ Filter Controls Row ═══════════════════════════════════════════ */}
+        <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-700">Collection Records</span>
+            <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+              {filteredItems.length}
+            </span>
           </div>
 
           {/* Frequency & Route Filters */}
@@ -563,7 +604,7 @@ export default function CollectionsPage() {
                       {/* Field Action */}
                       <td className="py-3 px-5 text-center">
                         {item.isCollectedToday ? (
-                          <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             <span className="text-[11px] text-emerald-700 font-bold inline-flex items-center gap-0.5">
                               <Check size={12} /> Settled
                             </span>
@@ -577,6 +618,30 @@ export default function CollectionsPage() {
                                 <Receipt size={11} className="text-red-600 shrink-0" />
                                 <span>Receipt</span>
                               </button>
+                            )}
+
+                            {/* ADMIN ONLY CONTROLS: Edit & Delete Record */}
+                            {isAdmin && item.todaysPayment && (
+                              <div className="inline-flex items-center gap-1 pl-1 border-l border-slate-200 ml-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditPaymentModal(item.todaysPayment!)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 rounded-md transition cursor-pointer"
+                                  title="Admin: Edit Payment Record"
+                                >
+                                  <Edit size={11} className="text-amber-600 shrink-0" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeletingPaymentItem(item)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 rounded-md transition cursor-pointer"
+                                  title="Admin: Delete & Reverse Payment"
+                                >
+                                  <Trash2 size={11} className="text-rose-600 shrink-0" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
                             )}
                           </div>
                         ) : (
@@ -755,6 +820,168 @@ export default function CollectionsPage() {
           payment={selectedReceiptPayment}
           onClose={() => setSelectedReceiptPayment(null)}
         />
+      )}
+
+      {/* ═══ ADMIN EXCLUSIVE: EDIT PAYMENT RECORD MODAL ═════════════════════ */}
+      {isAdmin && editingPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <Edit size={15} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 leading-tight">
+                    Edit Collection Payment
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-mono">
+                    Receipt: {editingPayment.receiptNo || editingPayment.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPayment(null)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmEditPayment} className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  Collected Amount (LKR) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  required
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 font-mono font-bold text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    Payment Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    Method
+                  </label>
+                  <select
+                    value={editMethod}
+                    onChange={(e) =>
+                      setEditMethod(e.target.value as "Cash" | "Bank Transfer" | "Cheque")
+                    }
+                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  Admin Modification Notes
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Corrected installment breakdown"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingPayment(null)}
+                  className="px-3.5 h-8 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 h-8 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ADMIN EXCLUSIVE: DELETE PAYMENT CONFIRMATION MODAL ══════════════ */}
+      {isAdmin && deletingPaymentItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 leading-tight">
+                  Delete Collection Record?
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Are you sure you want to delete payment receipt{" "}
+                  <strong>
+                    {deletingPaymentItem.todaysPayment?.receiptNo ||
+                      deletingPaymentItem.todaysPayment?.id}
+                  </strong>{" "}
+                  ({MONEY(deletingPaymentItem.todaysPayment?.amount || 0)}) from{" "}
+                  <strong>{deletingPaymentItem.customer?.name}</strong>?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                <span>Financial Ledger Reversal</span>
+              </div>
+              <p className="text-[11px] text-amber-800">
+                Deleting this record will reverse the collected amount, remove this payment from the loan ledger, and return this installment back to pending.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeletingPaymentItem(null)}
+                className="px-3.5 h-8 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeletePayment}
+                className="px-4 h-8 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

@@ -473,8 +473,7 @@ function LoanDetailsContent() {
 
               <div className="space-y-1.5 text-xs text-slate-700 pt-2 border-t border-slate-100">
                 <p><strong>Phone:</strong> {customer.phone}</p>
-                <p><strong>Address:</strong> {customer.address}, {customer.town || customer.village || "Sri Lanka"}</p>
-                <p><strong>District:</strong> {customer.district || "Colombo"}</p>
+                <p><strong>Address:</strong> {customer.address || "—"}</p>
               </div>
 
               <div className="pt-2">

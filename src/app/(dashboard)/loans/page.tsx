@@ -174,7 +174,7 @@ export default function LoansListPage() {
             {/* Issue Credit Facility Button */}
             <button
               type="button"
-              onClick={() => router.push("/loans/new")}
+              onClick={() => router.push(`/loans/new?fresh=${Date.now()}`)}
               className="inline-flex items-center justify-center gap-1.5 px-3.5 h-9 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer shrink-0"
             >
               <Plus size={14} />

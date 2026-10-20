@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -43,8 +43,44 @@ interface AttachedDoc {
   fileUrl: string;
 }
 
-export default function NewCustomerPage() {
+const INITIAL_FORM = {
+  photoUrl: "",
+  fullName: "",
+  nic: "",
+  dob: "",
+  gender: "" as "Male" | "Female" | "Other" | "",
+  address: "",
+  village: "",
+  town: "",
+  district: "",
+  phone: "",
+  alternatePhone: "",
+  email: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  emergencyContactRelationship: "",
+  emergencyContactRelationshipCustom: "",
+  status: "Active" as CustomerStatus,
+  hasExistingLoan: false,
+  existingLoanNo: "",
+  existingLoanPrincipal: "",
+  existingInterestRate: "",
+  existingDuration: "",
+  existingFrequency: "Monthly" as "Daily" | "Weekly" | "Monthly",
+  existingIssueDate: "",
+  existingPurpose: "",
+  previousAmountPaid: "",
+  previousInstallmentsPaid: "",
+  previousLastPaymentDate: "",
+  previousPaymentMethod: "Cash" as "Cash" | "Bank Transfer" | "Cheque",
+  previousRepaymentNotes: "",
+  customOutstandingBalance: "",
+};
+
+function CustomerRegistrationContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const freshKey = searchParams.get("fresh");
   const { customers, addCustomer, addDocument, addLoan, addPayment, getNextReceiptNo } = useData();
 
   // Helper to generate sequential Customer ID starting from CUS-001, CUS-002, etc.
@@ -126,52 +162,7 @@ export default function NewCustomerPage() {
   };
   
   // 1. Core Profile Details (Clean defaults with NO unwanted auto-fill or dummy data)
-  const [form, setForm] = useState({
-    // Photograph
-    photoUrl: "",
-    
-    // Identity
-    fullName: "",
-    nic: "",
-    dob: "",
-    gender: "" as "Male" | "Female" | "Other" | "",
-    
-    // Residential address & Location
-    address: "",
-    village: "",
-    town: "",
-    district: "",
-    
-    // Contact
-    phone: "",
-    alternatePhone: "",
-    email: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    emergencyContactRelationship: "",
-    emergencyContactRelationshipCustom: "",
-    
-    // Customer Status
-    status: "Active" as CustomerStatus,
-
-    // Existing Loan Details
-    hasExistingLoan: false,
-    existingLoanNo: "",
-    existingLoanPrincipal: "",
-    existingInterestRate: "",
-    existingDuration: "",
-    existingFrequency: "Monthly" as "Daily" | "Weekly" | "Monthly",
-    existingIssueDate: "",
-    existingPurpose: "",
-    
-    // Outstanding balance & Previous Repayment History
-    previousAmountPaid: "",
-    previousInstallmentsPaid: "",
-    previousLastPaymentDate: "",
-    previousPaymentMethod: "Cash" as "Cash" | "Bank Transfer" | "Cheque",
-    previousRepaymentNotes: "",
-    customOutstandingBalance: "",
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   // Dedicated NIC Front and Back upload state
   const [nicFrontUrl, setNicFrontUrl] = useState("");
@@ -195,7 +186,38 @@ export default function NewCustomerPage() {
 
   // Submission feedback
   const [submitted, setSubmitted] = useState(false);
+  const [registeredCustomer, setRegisteredCustomer] = useState<{ id: string; name: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // ── RESET FORM TO CLEAN NEW REGISTRATION ────────────────────────────────
+  const resetForm = useCallback(() => {
+    setCustomerId(generateCustomerId());
+    setCurrentStep(1);
+    setSubmitted(false);
+    setRegisteredCustomer(null);
+    setErrorMsg("");
+    setForm(INITIAL_FORM);
+    setNicFrontUrl("");
+    setNicFrontFileName("");
+    setNicFrontFileSize("");
+    setNicBackUrl("");
+    setNicBackFileName("");
+    setNicBackFileSize("");
+    setAttachedDocs([]);
+    setNewDocTitle("");
+    setNewDocFileName("");
+    setNewDocFileUrl("");
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [generateCustomerId]);
+
+  // Reset when navigating with fresh search parameter or arriving fresh
+  useEffect(() => {
+    if (freshKey) {
+      resetForm();
+    }
+  }, [freshKey, resetForm]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -389,9 +411,9 @@ export default function NewCustomerPage() {
       dob: form.dob || undefined,
       gender: (form.gender as "Male" | "Female" | "Other") || "Male",
       address: form.address.trim() || "Main Road",
-      village: form.village.trim() || form.town.trim() || "Village Area",
-      town: form.town.trim() || "Colombo",
-      district: form.district || "Colombo",
+      village: undefined,
+      town: undefined,
+      district: undefined,
       phone: form.phone.trim(),
       alternatePhone: form.alternatePhone.trim() || undefined,
       email: form.email.trim() || undefined,
@@ -522,10 +544,11 @@ export default function NewCustomerPage() {
       }
     }
 
+    setRegisteredCustomer({ id: newCustomer.id, name: newCustomer.name });
     setSubmitted(true);
-    setTimeout(() => {
-      router.push(`/customers/${newCustomer.id}`);
-    }, 1200);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
@@ -544,22 +567,61 @@ export default function NewCustomerPage() {
         </h1>
       </div>
 
-      {submitted && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold animate-fade-in shadow-xs">
-          <CheckCircle2 className="text-emerald-600 shrink-0" size={22} />
-          <span>
-            Customer registered successfully with documents, loans & repayment history! Redirecting to profile...
-          </span>
-        </div>
-      )}
+      {submitted && registeredCustomer ? (
+        <div className="bg-white rounded-3xl border border-emerald-200/80 p-8 sm:p-12 text-center shadow-lg animate-in fade-in zoom-in-95 duration-200 space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-inner ring-8 ring-emerald-50/50">
+            <CheckCircle2 size={36} />
+          </div>
 
-      {errorMsg && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold">
-          {errorMsg}
-        </div>
-      )}
+          <div className="space-y-2 max-w-lg mx-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full text-xs font-bold text-emerald-800 font-mono">
+              <span>Customer ID: {registeredCustomer.id}</span>
+              <span>•</span>
+              <span className="text-emerald-700 font-sans font-semibold">Active Customer Dossier</span>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Customer Registered Successfully!
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              <strong>{registeredCustomer.name}</strong> has been enrolled into the system with all dossier documents and configurations.
+            </p>
+          </div>
 
-      {/* ── MULTI-STEP PROGRESS STEPPER ── */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="w-full sm:w-auto px-5 h-11 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 shadow-xs shadow-red-600/30 transition cursor-pointer"
+            >
+              <UserPlus size={16} />
+              <span>+ Register Another Customer</span>
+            </button>
+
+            <Link
+              href={`/customers/${registeredCustomer.id}`}
+              className="w-full sm:w-auto px-5 h-11 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 shadow-2xs transition"
+            >
+              <Eye size={15} />
+              <span>View Customer Profile</span>
+            </Link>
+
+            <Link
+              href="/users"
+              className="w-full sm:w-auto px-4 h-11 text-slate-500 hover:text-slate-800 rounded-xl text-xs font-semibold inline-flex items-center justify-center transition"
+            >
+              User Management
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
+          {errorMsg && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* ── MULTI-STEP PROGRESS STEPPER ── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs">
         <div className="flex items-center justify-between max-w-md mx-auto">
           {[1, 2, 3].map((stepNum, idx) => {
@@ -1237,8 +1299,7 @@ export default function NewCustomerPage() {
                     <div className="sm:col-span-2 md:col-span-3 pt-2 border-t border-slate-200/70">
                       <span className="text-slate-500 block font-medium">Residential Address</span>
                       <span className="font-semibold text-slate-800 mt-0.5 block break-words">
-                        {[form.address, form.village, form.town, form.district].filter(Boolean).join(", ") ||
-                          "Main Road, Colombo"}
+                        {form.address || "Not provided"}
                       </span>
                     </div>
                   </div>
@@ -1319,7 +1380,17 @@ export default function NewCustomerPage() {
             </div>
           </div>
         )}
-      </form>
+            </form>
+        </>
+      )}
     </div>
+  );
+}
+
+export default function NewCustomerPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading customer registration...</div>}>
+      <CustomerRegistrationContent />
+    </Suspense>
   );
 }

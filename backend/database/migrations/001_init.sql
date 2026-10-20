@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS loans (
 CREATE INDEX IF NOT EXISTS idx_loans_customer_id ON loans(customer_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
 CREATE INDEX IF NOT EXISTS idx_loans_loan_no ON loans(loan_no);
+CREATE INDEX IF NOT EXISTS idx_loans_issue_date ON loans(issue_date);
+CREATE INDEX IF NOT EXISTS idx_loans_first_payment_date ON loans(first_payment_date);
 
 -- 4. REPAYMENTS / PAYMENTS TABLE
 CREATE TABLE IF NOT EXISTS payments (
@@ -125,6 +127,7 @@ CREATE INDEX IF NOT EXISTS idx_payments_loan_id ON payments(loan_id);
 CREATE INDEX IF NOT EXISTS idx_payments_customer_id ON payments(customer_id);
 CREATE INDEX IF NOT EXISTS idx_payments_date ON payments(date);
 CREATE INDEX IF NOT EXISTS idx_payments_receipt_no ON payments(receipt_no);
+CREATE INDEX IF NOT EXISTS idx_payments_loan_date ON payments(loan_id, date);
 
 -- 5. AUDIT LOGS TABLE
 CREATE TABLE IF NOT EXISTS audit_logs (

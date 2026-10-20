@@ -85,17 +85,23 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     [loans]
   );
 
-  // Mathematically exact active outstanding balance (repayment minus payments per loan)
+  // Mathematically exact active outstanding balance (repayment minus payments per loan) - Linear O(N+M)
   const outstanding = useMemo(() => {
-    return loans
-      .filter((l: Loan) => (l.status || "").toLowerCase() !== "completed")
-      .reduce((sum, l: Loan) => {
-        const totalRepay = getLoanTotalRepayment(l);
-        const loanPaid = payments
-          .filter((p) => p.loanId === l.id)
-          .reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0);
-        return sum + Math.max(0, totalRepay - loanPaid);
-      }, 0);
+    const paidByLoan = new Map<string, number>();
+    for (const p of payments) {
+      if (!p.loanId) continue;
+      const id = String(p.loanId);
+      paidByLoan.set(id, (paidByLoan.get(id) || 0) + (Number(p.amount) || 0));
+    }
+
+    let sum = 0;
+    for (const l of loans) {
+      if ((l.status || "").toLowerCase() === "completed") continue;
+      const totalRepay = getLoanTotalRepayment(l);
+      const loanPaid = paidByLoan.get(String(l.id)) || 0;
+      sum += Math.max(0, totalRepay - loanPaid);
+    }
+    return Math.round(sum * 100) / 100;
   }, [loans, payments]);
 
   // Compute today's collection items and metrics
@@ -120,13 +126,25 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     return todaysCollections;
   }, [todaysCollections, collectionFilter]);
 
-  // Tab counts
+  // Tab counts in single O(n) pass
   const tabCounts = useMemo(() => {
+    let pending = 0;
+    let collected = 0;
+    let overdue = 0;
+    for (const c of todaysCollections) {
+      if (c.isCollectedToday) {
+        collected++;
+      } else if (c.status === "OVERDUE") {
+        overdue++;
+      } else {
+        pending++;
+      }
+    }
     return {
       all: todaysCollections.length,
-      pending: todaysCollections.filter((c) => !c.isCollectedToday && c.status !== "OVERDUE").length,
-      collected: todaysCollections.filter((c) => c.isCollectedToday).length,
-      overdue: todaysCollections.filter((c) => c.status === "OVERDUE" && !c.isCollectedToday).length,
+      pending,
+      collected,
+      overdue,
     };
   }, [todaysCollections]);
 
@@ -819,7 +837,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         <div className="flex gap-2 flex-wrap pt-0.5">
           <Link
             className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
-            href="/loans/new"
+            href="/loans/new?fresh=true"
           >
             <Plus size={14} /> Issue New Loan
           </Link>

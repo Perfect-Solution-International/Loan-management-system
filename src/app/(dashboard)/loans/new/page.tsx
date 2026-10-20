@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Calculator,
   PlusCircle,
+  RefreshCw,
   Search,
   MapPin,
   FileText,
@@ -54,6 +55,7 @@ function IssueNewLoanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("customerId") || "";
+  const freshKey = searchParams.get("fresh");
 
   const { customers, loans, payments, documents, addLoan, settings } = useData();
 
@@ -117,6 +119,66 @@ function IssueNewLoanContent() {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [submittedLoanId, setSubmittedLoanId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ── RESET LOAN WIZARD TO FRESH STATE ──────────────────────────────────────
+  const resetLoanForm = React.useCallback(
+    (targetCustomerId?: string) => {
+      const custId = targetCustomerId !== undefined ? targetCustomerId : preselectedId;
+      setSelectedCustomerId(custId);
+      setStep(custId ? "review" : "select");
+      setCustomerSearch("");
+      setGrossAmount("");
+      setInterestRate("10");
+      setRatePeriod("Monthly");
+      setFrequency("Daily");
+      setRepaymentType("Capital + Interest");
+      setDuration("30");
+      setPurpose("");
+      setIssueDate(todayStr);
+      setFirstPaymentDate(defaultFirstPaymentStr);
+      setDisbursementMethod("Cash");
+      setCapitalDeduction("");
+      setInterestDeduction("");
+      setProcessingFee("");
+      setAdminFee("");
+      setOtherFees("");
+      setHasGuarantor(false);
+      setGuarantorName("");
+      setGuarantorNic("");
+      setGuarantorPhone("");
+      setGuarantorRelationship("");
+      setGuarantorAddress("");
+      setNotes("");
+      setErrorMsg("");
+      setSubmittedLoanId("");
+      setIsSubmitting(false);
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+    [preselectedId, todayStr, defaultFirstPaymentStr]
+  );
+
+  // Reset when navigating with fresh search param or if customerId param changes
+  React.useEffect(() => {
+    if (freshKey) {
+      resetLoanForm();
+    }
+  }, [freshKey, resetLoanForm]);
+
+  React.useEffect(() => {
+    // If arriving at /loans/new and the form is in "done" state, auto-reset to clean wizard
+    if (step === "done") {
+      resetLoanForm();
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (preselectedId) {
+      setSelectedCustomerId(preselectedId);
+      setStep("review");
+    }
+  }, [preselectedId]);
 
   // ── Derived Selected Customer ─────────────────────────────────────────────
   const selectedCustomer = useMemo(
@@ -408,10 +470,15 @@ function IssueNewLoanContent() {
     addLoan(newLoan);
     setSubmittedLoanId(newId);
     setStep("done");
+    setIsSubmitting(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     setTimeout(() => {
+      resetLoanForm();
       router.push(`/loans/${newId}`);
-    }, 1600);
+    }, 1200);
   };
 
   return (
@@ -501,6 +568,17 @@ function IssueNewLoanContent() {
                 </div>
               )}
             </div>
+
+            {/* Reset / Clean Form Button */}
+            <button
+              type="button"
+              onClick={() => resetLoanForm("")}
+              className="inline-flex items-center gap-1.5 px-3 h-9 bg-white border border-slate-200/90 text-slate-600 hover:text-red-600 hover:bg-slate-50 text-xs font-semibold rounded-xl shadow-xs transition shrink-0 cursor-pointer"
+              title="Reset to clean new loan form"
+            >
+              <RefreshCw size={13} />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
           </div>
         )}
 
@@ -525,7 +603,7 @@ function IssueNewLoanContent() {
               </div>
 
               <Link
-                href="/customers/new"
+                href="/customers/new?fresh=true"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition"
               >
                 + Register New Customer
@@ -650,7 +728,7 @@ function IssueNewLoanContent() {
                               </h4>
                               <p className="text-[11px] text-slate-500 font-mono">NIC: {c.nic}</p>
                               <p className="text-[11px] text-slate-600 truncate">
-                                {c.town || c.village || "Sri Lanka"} · {c.phone}
+                                {c.address ? `${c.address} · ` : ""}{c.phone}
                               </p>
                             </div>
                           </div>
@@ -837,29 +915,14 @@ function IssueNewLoanContent() {
                 </div>
 
                 {/* Residential Location */}
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
                     <MapPin size={14} className="text-rose-700" /> Residential Address
                   </h4>
-                  <div className="space-y-1.5">
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Street / House:</span>
-                      <span className="font-bold text-slate-900">{selectedCustomer.address || "Main Street"}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200">
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Village / GN:</span>
-                        <span className="font-bold text-slate-800">{selectedCustomer.village || "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Town:</span>
-                        <span className="font-bold text-slate-800">{selectedCustomer.town || "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">District:</span>
-                        <span className="font-bold text-slate-800">{selectedCustomer.district || "Colombo"}</span>
-                      </div>
-                    </div>
+                  <div>
+                    <span className="font-bold text-slate-900 text-xs break-words">
+                      {selectedCustomer.address || "—"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1595,7 +1658,7 @@ function IssueNewLoanContent() {
                       className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <PlusCircle size={16} />
-                      <span>Disburse &amp; Activate Loan</span>
+                      <span>Active Loan</span>
                     </button>
 
                     <button
@@ -1647,7 +1710,9 @@ function IssueNewLoanContent() {
                 </span>
               </div>
             </div>
-            <p className="text-[11px] text-slate-400">Redirecting to loan detail page...</p>
+            <p className="text-xs text-slate-400 font-medium animate-pulse">
+              Redirecting to loan contract...
+            </p>
           </div>
         )}
       </div>

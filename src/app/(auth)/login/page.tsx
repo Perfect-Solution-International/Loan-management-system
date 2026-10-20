@@ -82,6 +82,8 @@ export default function LoginPage() {
       // Valid Administrator credentials
       if (typeof window !== "undefined") {
         localStorage.setItem("psi_active_staff_id", adminUser?.id || "STF-01");
+        localStorage.setItem("psi_user_role", "Administrator");
+        localStorage.setItem("psi_logged_staff_name", "System Administrator");
       }
       router.push("/dashboard");
       return;

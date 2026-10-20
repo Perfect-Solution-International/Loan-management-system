@@ -71,11 +71,29 @@ func main() {
 	// Health Check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"status": "UP", "service": "Loan Management Backend", "version": "1.0.0"}`)
+		dbStatus := "CONNECTED"
+		if db == nil {
+			dbStatus = "DISCONNECTED"
+		}
+		fmt.Fprintf(w, `{"status": "UP", "service": "Loan Management Backend", "database": "%s", "version": "1.0.0"}`, dbStatus)
 	})
+
+	// Database availability middleware for API endpoints
+	dbCheck := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if db == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusServiceUnavailable)
+				fmt.Fprintf(w, `{"error": "PostgreSQL database is currently disconnected or unavailable"}`)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 
 	// Public Routes
 	r.Route("/api", func(api chi.Router) {
+		api.Use(dbCheck)
 		// Auth
 		api.Post("/auth/login", authHandler.Login)
 

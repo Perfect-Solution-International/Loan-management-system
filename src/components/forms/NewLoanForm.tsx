@@ -590,7 +590,7 @@ export function NewLoanForm({
                         </h4>
                         <p className="text-[11px] text-slate-500 font-mono">NIC: {c.nic}</p>
                         <p className="text-[11px] text-slate-600 truncate">
-                          {c.town || c.village || "Sri Lanka"} · {c.phone}
+                          {c.address ? `${c.address} · ` : ""}{c.phone}
                         </p>
                       </div>
                     </div>
@@ -760,29 +760,14 @@ export function NewLoanForm({
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                 <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
                   <MapPin size={14} className="text-red-600" /> Residential Address
                 </h4>
-                <div className="space-y-1.5">
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Street / House:</span>
-                    <span className="font-bold text-slate-900">{selectedCustomer.address || "Main Street"}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200">
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Village / GN:</span>
-                      <span className="font-bold text-slate-800">{selectedCustomer.village || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Town:</span>
-                      <span className="font-bold text-slate-800">{selectedCustomer.town || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">District:</span>
-                      <span className="font-bold text-slate-800">{selectedCustomer.district || "Colombo"}</span>
-                    </div>
-                  </div>
+                <div>
+                  <span className="font-bold text-slate-900 text-xs break-words">
+                    {selectedCustomer.address || "—"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1517,7 +1502,7 @@ export function NewLoanForm({
                     className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <PlusCircle size={16} />
-                    <span>Disburse &amp; Activate Loan</span>
+                    <span>Active Loan</span>
                   </button>
 
                   <button
