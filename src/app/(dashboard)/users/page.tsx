@@ -168,7 +168,7 @@ function UserManagementContent() {
     email: "",
     address: "",
     town: "",
-    district: "Colombo",
+    district: "",
     village: "",
     occupation: "",
     monthlyIncome: 0,
@@ -189,7 +189,7 @@ function UserManagementContent() {
       email: c.email || "",
       address: c.address || "",
       town: c.town || "",
-      district: c.district || "Colombo",
+      district: c.district || "",
       village: c.village || "",
       occupation: c.occupation || "",
       monthlyIncome: c.monthlyIncome || 0,
@@ -835,9 +835,11 @@ function UserManagementContent() {
                               <p className="font-bold text-slate-900 text-xs leading-tight truncate">
                                 {displayName}
                               </p>
-                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                                {c.address || "Registered Customer"}
-                              </p>
+                              {c.occupation ? (
+                                <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                  {c.occupation}
+                                </p>
+                              ) : null}
                             </div>
                           </div>
                         </td>
@@ -869,10 +871,9 @@ function UserManagementContent() {
                           {c.nic || "—"}
                         </td>
 
-                        {/* Town / District */}
-                        <td className="py-2.5 px-4 text-slate-600 font-medium">
-                          <span>{c.town || "—"}</span>
-                          {c.district && <span className="text-slate-400">, {c.district}</span>}
+                        {/* Address */}
+                        <td className="py-2.5 px-4 text-slate-700 font-medium">
+                          <span>{c.address || c.town || "—"}</span>
                         </td>
 
                         {/* Status */}

@@ -207,17 +207,8 @@ export default function OnlinePaymentsPage() {
         </div>
       )}
 
-      {/* ── Top Bar Header & Action ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
-            Online Payment Slips &amp; Bank Transfers
-          </h1>
-          <p className="text-[11px] text-slate-500">
-            Review customer deposit slips, verify ledger accounts, and credit repayments directly.
-          </p>
-        </div>
-
+      {/* ── Top Action ────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-end">
         <Link
           href="/repayments"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition shadow-2xs"

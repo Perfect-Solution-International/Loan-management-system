@@ -42,6 +42,7 @@ import type { Payment, OnlinePayment, Loan } from "@/types";
 
 export interface LoanDueInfo {
   isSettled: boolean;
+  isTodayPaid: boolean;
   cycle: number;
   totalCycles: number;
   dueDate: string;
@@ -105,6 +106,7 @@ export function getLoanNextDueInfo(
   if ((loan.status || "").toLowerCase() === "completed" || outstanding <= 0) {
     return {
       isSettled: true,
+      isTodayPaid: false,
       cycle: duration,
       totalCycles: duration,
       dueDate: "-",
@@ -171,6 +173,10 @@ export function getLoanNextDueInfo(
     const todayTime = new Date(`${todayStr}T00:00:00Z`).getTime();
     const diffDays = Math.round((dueTime - todayTime) / (1000 * 60 * 60 * 24));
 
+    const isDaily = frequency.toLowerCase() === "daily";
+    const hasPaymentToday = loanPayments.some((p) => p.date === todayStr);
+    const isTodayPaid = hasPaymentToday || (isDaily && diffDays === 1 && i > 1);
+
     let status: "OVERDUE" | "DUE_TODAY" | "DUE_TOMORROW" | "UPCOMING" = "UPCOMING";
     let badgeText = "";
 
@@ -183,14 +189,15 @@ export function getLoanNextDueInfo(
       badgeText = "Due Today";
     } else if (diffDays === 1) {
       status = "DUE_TOMORROW";
-      badgeText = "Due Tomorrow";
+      badgeText = isTodayPaid ? "Paid Today" : "Due Tomorrow";
     } else {
       status = "UPCOMING";
-      badgeText = `Due in ${diffDays} days`;
+      badgeText = isTodayPaid ? "Paid Today" : `Due in ${diffDays} days`;
     }
 
     return {
       isSettled: false,
+      isTodayPaid,
       cycle: i,
       totalCycles: duration,
       dueDate: dueDateStr,
@@ -204,6 +211,7 @@ export function getLoanNextDueInfo(
 
   return {
     isSettled: true,
+    isTodayPaid: false,
     cycle: duration,
     totalCycles: duration,
     dueDate: "-",
@@ -787,7 +795,9 @@ export default function CustomerDashboardPage() {
             {urgentDueInfo ? (
               <div
                 className={`rounded-2xl border p-3.5 sm:p-4.5 shadow-xs transition-all relative overflow-hidden ${
-                  urgentDueInfo.due.status === "OVERDUE"
+                  urgentDueInfo.due.isTodayPaid
+                    ? "bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white border-emerald-300 ring-1 ring-emerald-200"
+                    : urgentDueInfo.due.status === "OVERDUE"
                     ? "bg-gradient-to-br from-rose-50 via-red-50/50 to-white border-rose-300 ring-1 ring-rose-200"
                     : urgentDueInfo.due.status === "DUE_TODAY"
                     ? "bg-gradient-to-br from-red-50 via-amber-50/50 to-white border-red-300 ring-1 ring-red-200"
@@ -802,7 +812,9 @@ export default function CustomerDashboardPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wide uppercase ${
-                          urgentDueInfo.due.status === "OVERDUE"
+                          urgentDueInfo.due.isTodayPaid
+                            ? "bg-emerald-600 text-white shadow-xs shadow-emerald-600/30"
+                            : urgentDueInfo.due.status === "OVERDUE"
                             ? "bg-rose-600 text-white shadow-xs shadow-rose-600/30 animate-pulse"
                             : urgentDueInfo.due.status === "DUE_TODAY"
                             ? "bg-red-600 text-white shadow-xs shadow-red-600/30 animate-pulse"
@@ -811,8 +823,17 @@ export default function CustomerDashboardPage() {
                             : "bg-slate-800 text-white"
                         }`}
                       >
-                        <Clock size={13} className="shrink-0" />
-                        <span>{urgentDueInfo.due.badgeText}</span>
+                        {urgentDueInfo.due.isTodayPaid ? (
+                          <>
+                            <CheckCircle2 size={13} className="shrink-0" />
+                            <span>Paid for Today &bull; අද දින ගෙවා ඇත</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock size={13} className="shrink-0" />
+                            <span>{urgentDueInfo.due.badgeText}</span>
+                          </>
+                        )}
                       </span>
 
                       <span className="text-xs font-bold text-slate-700 bg-white/90 border border-slate-200 px-2.5 py-0.5 rounded-lg shadow-2xs">
@@ -820,32 +841,48 @@ export default function CustomerDashboardPage() {
                       </span>
 
                       <span className="text-xs font-semibold text-slate-600 bg-white/90 border border-slate-200 px-2 py-0.5 rounded-lg">
-                        {urgentDueInfo.loan.repaymentFrequency || "Daily"} &bull; Cycle #{urgentDueInfo.due.cycle} of {urgentDueInfo.due.totalCycles}
+                        {urgentDueInfo.loan.repaymentFrequency || "Daily"} &bull;{" "}
+                        {urgentDueInfo.due.isTodayPaid && urgentDueInfo.due.cycle > 1
+                          ? `Cycle #${urgentDueInfo.due.cycle - 1} Paid &bull; Next: Cycle #${urgentDueInfo.due.cycle}`
+                          : `Cycle #${urgentDueInfo.due.cycle} of ${urgentDueInfo.due.totalCycles}`}
                       </span>
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 pt-0.5">
                       <div className="flex items-baseline gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          Next Due Installment:
+                          {urgentDueInfo.due.isTodayPaid ? "Today's Status:" : "Next Due Installment:"}
                         </span>
-                        <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 tracking-tight">
-                          {MONEY(urgentDueInfo.due.installmentAmount)}
-                        </span>
+                        {urgentDueInfo.due.isTodayPaid ? (
+                          <span className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight flex items-center gap-1.5">
+                            <Check size={26} className="text-emerald-600 stroke-[3]" />
+                            PAID
+                          </span>
+                        ) : (
+                          <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 tracking-tight">
+                            {MONEY(urgentDueInfo.due.installmentAmount)}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                        <Calendar size={15} className="text-red-600 shrink-0" />
+                        <Calendar size={15} className={urgentDueInfo.due.isTodayPaid ? "text-emerald-600 shrink-0" : "text-red-600 shrink-0"} />
                         <span>
-                          Due Date: <b className="font-mono text-red-700 text-sm sm:text-base">{urgentDueInfo.due.dueDate}</b>
+                          {urgentDueInfo.due.isTodayPaid ? "Next Installment Due:" : "Due Date:"}{" "}
+                          <b className="font-mono text-slate-900 text-sm sm:text-base">{urgentDueInfo.due.dueDate}</b>
                           <span className="text-slate-500 font-medium ml-1.5 hidden sm:inline">
-                            ({formatFriendlyDate(urgentDueInfo.due.dueDate)})
+                            ({formatFriendlyDate(urgentDueInfo.due.dueDate)}){urgentDueInfo.due.isTodayPaid ? ` &bull; ${MONEY(urgentDueInfo.due.installmentAmount)} Due Tomorrow` : ""}
                           </span>
                         </span>
                       </div>
                     </div>
 
                     <p className="text-[11px] text-slate-500 font-medium flex items-center gap-2 flex-wrap">
+                      {urgentDueInfo.due.isTodayPaid && (
+                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Today&apos;s daily collection payment is received and credited.
+                        </span>
+                      )}
                       <span>
                         Remaining Balance: <b className="font-mono text-slate-800">{MONEY(loanStats.get(urgentDueInfo.loan.id)?.outstanding || 0)}</b>
                       </span>
@@ -1014,19 +1051,30 @@ export default function CustomerDashboardPage() {
                           {loan.repaymentFrequency || "Daily"}
                         </span>
                         {!dueInfo.isSettled && (
-                          <span
-                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-                              dueInfo.status === "OVERDUE"
-                                ? "bg-rose-100 text-rose-800 border-rose-300"
-                                : dueInfo.status === "DUE_TODAY"
-                                ? "bg-red-100 text-red-800 border-red-300 animate-pulse"
-                                : dueInfo.status === "DUE_TOMORROW"
-                                ? "bg-amber-100 text-amber-800 border-amber-300"
-                                : "bg-slate-100 text-slate-800 border-slate-300"
-                            }`}
-                          >
-                            <Calendar size={11} /> Next Due: {dueInfo.dueDate} ({dueInfo.badgeText})
-                          </span>
+                          dueInfo.isTodayPaid ? (
+                            <>
+                              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1 shadow-2xs">
+                                <CheckCircle2 size={11} className="text-emerald-600" /> Paid Today &bull; අද දින ගෙවා ඇත
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-200 flex items-center gap-1">
+                                <Calendar size={11} className="text-slate-500" /> Next Due: {dueInfo.dueDate}
+                              </span>
+                            </>
+                          ) : (
+                            <span
+                              className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                                dueInfo.status === "OVERDUE"
+                                  ? "bg-rose-100 text-rose-800 border-rose-300"
+                                  : dueInfo.status === "DUE_TODAY"
+                                  ? "bg-red-100 text-red-800 border-red-300 animate-pulse"
+                                  : dueInfo.status === "DUE_TOMORROW"
+                                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                                  : "bg-slate-100 text-slate-800 border-slate-300"
+                              }`}
+                            >
+                              <Calendar size={11} /> Next Due: {dueInfo.dueDate} ({dueInfo.badgeText})
+                            </span>
+                          )
                         )}
                         {loan.purpose && (
                           <span className="text-xs text-slate-600 font-medium hidden md:inline ml-1">
@@ -1038,15 +1086,33 @@ export default function CustomerDashboardPage() {
                       {/* Action Buttons in Header */}
                       <div className="flex items-center gap-2 shrink-0">
                         {hasDue ? (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenGateway(loan.id)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer active:scale-[0.99]"
-                            title={`Pay installment of ${MONEY(dueInfo.installmentAmount || loan.installment || 0)}`}
-                          >
-                            <CreditCard size={13} className="text-white" />
-                            <span>Pay Now</span>
-                          </button>
+                          dueInfo.isTodayPaid ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs">
+                                <CheckCircle2 size={13} className="text-emerald-600" />
+                                <span>Paid for Today</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenGateway(loan.id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
+                                title="Pay next installment in advance"
+                              >
+                                <CreditCard size={12} className="text-slate-400" />
+                                <span>Pay Advance</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenGateway(loan.id)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer active:scale-[0.99]"
+                              title={`Pay installment of ${MONEY(dueInfo.installmentAmount || loan.installment || 0)}`}
+                            >
+                              <CreditCard size={13} className="text-white" />
+                              <span>Pay Now</span>
+                            </button>
+                          )
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
                             <CheckCircle2 size={13} className="text-emerald-600" />
@@ -1070,7 +1136,9 @@ export default function CustomerDashboardPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                       <div
                         className={`rounded-xl p-2.5 sm:p-3 border transition-all ${
-                          !dueInfo.isSettled && dueInfo.status === "OVERDUE"
+                          dueInfo.isTodayPaid
+                            ? "bg-emerald-50/70 border-emerald-200 ring-1 ring-emerald-100"
+                            : !dueInfo.isSettled && dueInfo.status === "OVERDUE"
                             ? "bg-rose-50/80 border-rose-200"
                             : !dueInfo.isSettled && (dueInfo.status === "DUE_TODAY" || dueInfo.status === "DUE_TOMORROW")
                             ? "bg-amber-50/80 border-amber-200"
@@ -1078,10 +1146,14 @@ export default function CustomerDashboardPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Installment Due
+                          <span className={`text-[10px] font-bold uppercase tracking-wider block ${dueInfo.isTodayPaid ? "text-emerald-800" : "text-slate-400"}`}>
+                            {dueInfo.isTodayPaid ? "Daily Installment" : "Installment Due"}
                           </span>
-                          {!dueInfo.isSettled && (
+                          {dueInfo.isTodayPaid ? (
+                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 flex items-center gap-0.5">
+                              <Check size={9} className="stroke-[3]" /> PAID TODAY
+                            </span>
+                          ) : !dueInfo.isSettled && (
                             <span
                               className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded ${
                                 dueInfo.status === "OVERDUE"
@@ -1097,12 +1169,18 @@ export default function CustomerDashboardPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-base sm:text-lg font-black font-mono text-slate-900 mt-0.5">
+                        <p className={`text-base sm:text-lg font-black font-mono mt-0.5 ${dueInfo.isTodayPaid ? "text-emerald-700" : "text-slate-900"}`}>
                           {MONEY(dueInfo.installmentAmount || loan.installment || 0)}
                         </p>
                         <div className="text-[10px] text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
-                          <Calendar size={11} className="text-slate-400 shrink-0" />
-                          <span>Due: <b className="font-mono text-slate-900">{dueInfo.dueDate}</b></span>
+                          <Calendar size={11} className={dueInfo.isTodayPaid ? "text-emerald-600 shrink-0" : "text-slate-400 shrink-0"} />
+                          <span>
+                            {dueInfo.isTodayPaid ? (
+                              <>Next Due: <b className="font-mono text-slate-900">{dueInfo.dueDate}</b> (Tomorrow)</>
+                            ) : (
+                              <>Due: <b className="font-mono text-slate-900">{dueInfo.dueDate}</b></>
+                            )}
+                          </span>
                         </div>
                       </div>
 
@@ -1209,7 +1287,9 @@ export default function CustomerDashboardPage() {
                               {!dueInfo.isSettled && (
                                 <span
                                   className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-                                    dueInfo.status === "OVERDUE"
+                                    dueInfo.isTodayPaid
+                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                      : dueInfo.status === "OVERDUE"
                                       ? "bg-rose-100 text-rose-800 border-rose-200"
                                       : dueInfo.status === "DUE_TODAY"
                                       ? "bg-red-100 text-red-800 border-red-200 animate-pulse"
@@ -1218,7 +1298,15 @@ export default function CustomerDashboardPage() {
                                       : "bg-slate-100 text-slate-700 border-slate-200"
                                   }`}
                                 >
-                                  <Clock size={10} /> {dueInfo.badgeText}
+                                  {dueInfo.isTodayPaid ? (
+                                    <>
+                                      <CheckCircle2 size={10} className="text-emerald-600" /> Paid Today
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock size={10} /> {dueInfo.badgeText}
+                                    </>
+                                  )}
                                 </span>
                               )}
                             </div>
@@ -1234,7 +1322,9 @@ export default function CustomerDashboardPage() {
                           {!dueInfo.isSettled ? (
                             <div
                               className={`p-2.5 rounded-xl border text-xs flex items-center justify-between transition-all ${
-                                dueInfo.status === "OVERDUE"
+                                dueInfo.isTodayPaid
+                                  ? "bg-emerald-50/70 border-emerald-200"
+                                  : dueInfo.status === "OVERDUE"
                                   ? "bg-rose-50/80 border-rose-200"
                                   : dueInfo.status === "DUE_TODAY" || dueInfo.status === "DUE_TOMORROW"
                                   ? "bg-amber-50/80 border-amber-200"
@@ -1242,19 +1332,28 @@ export default function CustomerDashboardPage() {
                               }`}
                             >
                               <div className="space-y-0.5">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                  <Calendar size={11} className="text-red-600" /> Next Due Date
+                                <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${dueInfo.isTodayPaid ? "text-emerald-800" : "text-slate-500"}`}>
+                                  <Calendar size={11} className={dueInfo.isTodayPaid ? "text-emerald-600" : "text-red-600"} />
+                                  {dueInfo.isTodayPaid ? "Today's Installment" : "Next Due Date"}
                                 </span>
                                 <div className="font-bold font-mono text-slate-900 text-xs">
-                                  {dueInfo.dueDate}
-                                  <span className="text-[10px] text-slate-500 font-normal ml-1">
-                                    (Cycle #{dueInfo.cycle})
-                                  </span>
+                                  {dueInfo.isTodayPaid ? (
+                                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                      <Check size={12} className="stroke-[3]" /> PAID TODAY
+                                    </span>
+                                  ) : (
+                                    <>
+                                      {dueInfo.dueDate}
+                                      <span className="text-[10px] text-slate-500 font-normal ml-1">
+                                        (Cycle #{dueInfo.cycle})
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                               <div className="text-right">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                  Installment
+                                  {dueInfo.isTodayPaid ? `Next: ${dueInfo.dueDate}` : "Installment"}
                                 </span>
                                 <span className="font-bold font-mono text-slate-900 text-xs">
                                   {MONEY(dueInfo.installmentAmount || loan.installment || 0)}
@@ -1457,7 +1556,9 @@ export default function CustomerDashboardPage() {
           {/* Card 2: Upcoming Installment */}
           <div
             className={`rounded-xl border p-3 sm:p-3.5 shadow-xs flex items-center gap-3 transition-all ${
-              currentLoanDue?.status === "OVERDUE"
+              currentLoanDue?.isTodayPaid
+                ? "bg-emerald-50/60 border-emerald-200"
+                : currentLoanDue?.status === "OVERDUE"
                 ? "bg-rose-50/60 border-rose-200"
                 : currentLoanDue?.status === "DUE_TODAY" || currentLoanDue?.status === "DUE_TOMORROW"
                 ? "bg-amber-50/60 border-amber-200"
@@ -1466,24 +1567,28 @@ export default function CustomerDashboardPage() {
           >
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                currentLoanDue?.status === "OVERDUE"
+                currentLoanDue?.isTodayPaid
+                  ? "bg-emerald-100 text-emerald-600"
+                  : currentLoanDue?.status === "OVERDUE"
                   ? "bg-rose-100 text-rose-600"
                   : currentLoanDue?.status === "DUE_TODAY" || currentLoanDue?.status === "DUE_TOMORROW"
                   ? "bg-amber-100 text-amber-600"
                   : "bg-amber-100 text-amber-600"
               }`}
             >
-              <Calendar size={16} />
+              {currentLoanDue?.isTodayPaid ? <CheckCircle2 size={16} /> : <Calendar size={16} />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Next Installment
+                  {currentLoanDue?.isTodayPaid ? "Today's Installment" : "Next Installment"}
                 </p>
                 {currentLoanDue && !currentLoanDue.isSettled && (
                   <span
                     className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                      currentLoanDue.status === "OVERDUE"
+                      currentLoanDue.isTodayPaid
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        : currentLoanDue.status === "OVERDUE"
                         ? "bg-rose-100 text-rose-700 border border-rose-200"
                         : currentLoanDue.status === "DUE_TODAY"
                         ? "bg-red-100 text-red-700 border border-red-200 animate-pulse"
@@ -1492,17 +1597,18 @@ export default function CustomerDashboardPage() {
                         : "bg-slate-100 text-slate-700 border border-slate-200"
                     }`}
                   >
-                    {currentLoanDue.badgeText}
+                    {currentLoanDue.isTodayPaid ? "PAID TODAY" : currentLoanDue.badgeText}
                   </span>
                 )}
               </div>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className={`text-lg sm:text-xl font-black font-mono leading-tight ${currentLoanDue?.isTodayPaid ? "text-emerald-700" : "text-slate-900"}`}>
                 {MONEY(currentLoanDue?.installmentAmount || nextInstallmentAmount)}
               </p>
               <p className="text-[10px] font-semibold truncate flex items-center gap-1 mt-0.5 text-slate-700">
                 <Clock size={10} className="text-slate-400" />
                 <span>
-                  Due <b className="font-mono text-slate-900">{currentLoanDue?.dueDate || nextDueDate}</b>
+                  {currentLoanDue?.isTodayPaid ? "Next Due " : "Due "}
+                  <b className="font-mono text-slate-900">{currentLoanDue?.dueDate || nextDueDate}</b>
                 </span>
                 {currentLoanDue && !currentLoanDue.isSettled && (
                   <span className="text-slate-400 font-normal">

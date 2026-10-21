@@ -344,93 +344,93 @@ export default function FinancialReportsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 font-sans">
+    <div className="p-3 sm:p-4 max-w-7xl mx-auto space-y-2.5 sm:space-y-3 font-sans">
       {/* ── Top Action Bar ── */}
-      <div className="flex items-center justify-end gap-2.5 pb-2 border-b border-slate-200">
+      <div className="flex items-center justify-end gap-2">
         <button
           type="button"
           onClick={reportTab === "collections" ? exportCollectionsCsv : exportPortfolioCsv}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition shadow-xs cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition shadow-2xs cursor-pointer"
         >
-          <Download size={14} />
+          <Download size={13} />
           Export CSV
         </button>
 
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-md shadow-slate-900/20 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-2xs shadow-slate-900/20 cursor-pointer"
         >
-          <Printer size={14} />
+          <Printer size={13} />
           Print Audit Statement
         </button>
       </div>
 
       {/* ── Aggregate Financial Metrics (5 KPI Cards) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3">
         {/* Card 1: Total Disbursed */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Total Disbursed Capital
           </span>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-slate-900 font-mono">{MONEY(totalDisbursed)}</h3>
-            <p className="text-[11px] text-slate-600 font-medium mt-0.5">{loans.length} loan accounts</p>
+          <div className="mt-1">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 font-mono leading-tight">{MONEY(totalDisbursed)}</h3>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">{loans.length} loan accounts</p>
           </div>
         </div>
 
         {/* Card 2: Period Collections */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Period Collections ({timePeriod.toUpperCase()})
           </span>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-emerald-600 font-mono">{MONEY(totalPeriodCollections)}</h3>
-            <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
+          <div className="mt-1">
+            <h3 className="text-base sm:text-lg font-black text-emerald-600 font-mono leading-tight">{MONEY(totalPeriodCollections)}</h3>
+            <p className="text-[10px] text-emerald-800 font-semibold mt-0.5">
               {filteredPayments.length} receipts logged
             </p>
           </div>
         </div>
 
         {/* Card 3: Outstanding Receivable */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Active Outstanding
           </span>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-slate-900 font-mono">{MONEY(outstandingReceivable)}</h3>
-            <p className="text-[11px] text-slate-600 font-medium mt-0.5">Principal + earned interest</p>
+          <div className="mt-1">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 font-mono leading-tight">{MONEY(outstandingReceivable)}</h3>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Principal + earned interest</p>
           </div>
         </div>
 
         {/* Card 4: Overdue Default Portfolio */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Overdue Default Portfolio
           </span>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-red-600 font-mono">{MONEY(overduePortfolio)}</h3>
-            <p className="text-[11px] text-red-700 font-semibold mt-0.5">
+          <div className="mt-1">
+            <h3 className="text-base sm:text-lg font-black text-red-600 font-mono leading-tight">{MONEY(overduePortfolio)}</h3>
+            <p className="text-[10px] text-red-700 font-semibold mt-0.5">
               PAR Rate: {parRate}%
             </p>
           </div>
         </div>
 
         {/* Card 5: Recovery Efficiency */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Recovery Efficiency
           </span>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-emerald-600 font-mono">{collectionEfficiency}%</h3>
-            <p className="text-[11px] text-slate-600 font-medium mt-0.5">Settlement against expected</p>
+          <div className="mt-1">
+            <h3 className="text-base sm:text-lg font-black text-emerald-600 font-mono leading-tight">{collectionEfficiency}%</h3>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Settlement against expected</p>
           </div>
         </div>
       </div>
 
       {/* ── Main Report Module Tabs (4 Core Modules) ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-100 pb-3">
           {/* Main 4 Tabs */}
           <div className="flex flex-wrap gap-2">
             <button

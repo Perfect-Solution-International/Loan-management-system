@@ -207,58 +207,58 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3 max-w-7xl mx-auto">
       {/* ── Top Action Controls ── */}
-      <div className="flex items-center justify-end gap-2.5">
+      <div className="flex items-center justify-end gap-2">
         <button
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
         >
-          <Printer size={15} />
+          <Printer size={13} />
           Print Report
         </button>
         <button
           onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
         >
-          <Download size={15} />
+          <Download size={13} />
           Export CSV
         </button>
       </div>
 
       {/* ── KPI Metric Summary ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
-          <p className="text-[11px] font-bold text-slate-500 uppercase">Total Audit Events</p>
-          <h3 className="text-2xl font-black text-slate-900 mt-1">{auditEntries.length}</h3>
-          <p className="text-[11px] text-slate-400 mt-1">Logged across all operations</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Audit Events</p>
+          <h3 className="text-xl font-black text-slate-900 mt-0.5 leading-tight">{auditEntries.length}</h3>
+          <p className="text-[10px] text-slate-400 mt-0.5">Logged across all operations</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
-          <p className="text-[11px] font-bold text-slate-500 uppercase">Financial Collections</p>
-          <h3 className="text-2xl font-black text-emerald-700 mt-1">
+        <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Financial Collections</p>
+          <h3 className="text-xl font-black text-emerald-700 mt-0.5 leading-tight">
             {auditEntries.filter((e) => e.category === "PAYMENT").length}
           </h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Payment receipts recorded</p>
+          <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Payment receipts recorded</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
-          <p className="text-[11px] font-bold text-slate-500 uppercase">Loan Facility Audits</p>
-          <h3 className="text-2xl font-black text-blue-700 mt-1">
+        <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Loan Facility Audits</p>
+          <h3 className="text-xl font-black text-blue-700 mt-0.5 leading-tight">
             {auditEntries.filter((e) => e.category === "LOAN").length}
           </h3>
-          <p className="text-[11px] text-blue-600 font-medium mt-1">Issued & approved facilities</p>
+          <p className="text-[10px] text-blue-600 font-medium mt-0.5">Issued & approved facilities</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
-          <p className="text-[11px] font-bold text-slate-500 uppercase">Supervised Staff</p>
-          <h3 className="text-2xl font-black text-purple-700 mt-1">{staffUsers.length}</h3>
-          <p className="text-[11px] text-purple-600 font-medium mt-1">Active operational personnel</p>
+        <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Supervised Staff</p>
+          <h3 className="text-xl font-black text-purple-700 mt-0.5 leading-tight">{staffUsers.length}</h3>
+          <p className="text-[10px] text-purple-600 font-medium mt-0.5">Active operational personnel</p>
         </div>
       </div>
 
       {/* ── Search and Filter Controls ───────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-2xs space-y-3">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs space-y-2.5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative w-full md:w-96">
