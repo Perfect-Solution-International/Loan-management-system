@@ -149,7 +149,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
-            PORTFOLIO / EDIT CUSTOMER
+            CUSTOMER PROFILE / EDIT
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
             Edit Customer Profile
@@ -381,46 +381,18 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             <h2 className="text-sm font-bold text-slate-900">Personal Identity & NIC</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Full Name</label>
+          <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Residential Address</label>
               <input
                 type="text"
-                name="fullName"
-                value={form.fullName}
+                name="address"
+                value={form.address}
                 onChange={handleChange}
-                required
+                placeholder="Full residential address"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
               />
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">NIC Number</label>
-              <input
-                type="text"
-                name="nic"
-                value={form.nic}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Gender</label>
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
           </div>
-        </div>
 
         {/* Residential Location */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
@@ -428,7 +400,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <MapPin size={18} />
             </div>
-            <h2 className="text-sm font-bold text-slate-900">Residential Address, Village & Town</h2>
+            <h2 className="text-sm font-bold text-slate-900">Residential Address</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

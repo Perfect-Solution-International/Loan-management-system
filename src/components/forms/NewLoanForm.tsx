@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { calculateLoanDetails } from "@/lib/loan-calculator";
 import type { Customer, Loan, Payment, CustomerDocument, RepaymentType } from "@/types";
 
 type WizardStep = "select" | "review" | "form" | "done";
@@ -32,6 +33,28 @@ interface NewLoanFormProps {
   onSuccess?: (loanId: string) => void;
   onCancel?: () => void;
   isModal?: boolean;
+}
+
+function getNextRepaymentDate(dateStr: string, freq: "Monthly" | "Weekly" | "Daily"): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return "";
+  const [year, month, day] = parts;
+  const d = new Date(year, month - 1, day);
+  if (isNaN(d.getTime())) return "";
+
+  if (freq === "Daily") {
+    d.setDate(d.getDate() + 1);
+  } else if (freq === "Weekly") {
+    d.setDate(d.getDate() + 7);
+  } else if (freq === "Monthly") {
+    d.setMonth(d.getMonth() + 1);
+  }
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dt = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dt}`;
 }
 
 export function NewLoanForm({
@@ -67,6 +90,20 @@ export function NewLoanForm({
   const [issueDate, setIssueDate] = useState<string>(todayStr);
   const [firstPaymentDate, setFirstPaymentDate] = useState<string>(defaultFirstPaymentStr);
   const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
+
+  const handleIssueDateChange = (val: string) => {
+    setIssueDate(val);
+    if (val) {
+      setFirstPaymentDate(getNextRepaymentDate(val, frequency));
+    }
+  };
+
+  const handleFrequencyChange = (newFreq: "Monthly" | "Weekly" | "Daily") => {
+    setFrequency(newFreq);
+    if (issueDate) {
+      setFirstPaymentDate(getNextRepaymentDate(issueDate, newFreq));
+    }
+  };
 
   // ── Upfront Deductions & Fees (Completely blank initial values) ────────────
   const [capitalDeduction, setCapitalDeduction] = useState<string>("");
@@ -150,83 +187,32 @@ export function NewLoanForm({
     const pFee = Number(processingFee) || 0;
     const aFee = Number(adminFee) || 0;
     const oFees = Number(otherFees) || 0;
+    const totalExtraFees = pFee + aFee + oFees;
 
-    // 1. Total Upfront Deductions
-    const totalDeductions = capDed + intDed + pFee + aFee + oFees;
-
-    // 2. Net Cash Disbursed to Borrower
-    const netDisbursement = Math.max(0, gross - totalDeductions);
-
-    // 3. Duration in rate periods:
-    const effRatePeriod = ratePeriod || "Monthly";
-    const effFrequency = frequency || "Monthly";
-    let periods = dur;
-
-    if (effRatePeriod === "Monthly") {
-      if (effFrequency === "Monthly") {
-        periods = dur;
-      } else if (effFrequency === "Weekly") {
-        periods = dur / 4; // 4 weeks = 1 month
-      } else if (effFrequency === "Daily") {
-        periods = dur / 30; // 30 days = 1 month
-      }
-    } else if (effRatePeriod === "Weekly") {
-      if (effFrequency === "Weekly") {
-        periods = dur;
-      } else if (effFrequency === "Monthly") {
-        periods = dur * 4;
-      } else if (effFrequency === "Daily") {
-        periods = dur / 7;
-      }
-    } else if (effRatePeriod === "Daily") {
-      if (effFrequency === "Daily") {
-        periods = dur;
-      } else if (effFrequency === "Weekly") {
-        periods = dur * 7;
-      } else if (effFrequency === "Monthly") {
-        periods = dur * 30;
-      }
-    } else {
-      periods = 1; // Flat rate for entire loan term
-    }
-
-    // 4. Total Interest over the loan term
-    const totalInterest = Math.round(gross * (rate / 100) * periods);
-
-    // 5. Total Repayment (subtract upfront interest deduction if already deducted at disbursement)
-    const remainingInterest = Math.max(0, totalInterest - intDed);
-    const totalRepayment = gross + remainingInterest;
-
-    // 6. Installments breakdown based on Repayment Scheme
-    let installmentAmount = 0;
-    let periodicInterest = 0;
-    let finalInstallmentAmount = 0;
-
-    if (repaymentType === "Interest Only") {
-      // Under Interest Only, regular installments only cover periodic interest.
-      // Entire principal is paid back in the final installment at maturity.
-      periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
-      installmentAmount = periodicInterest;
-      finalInstallmentAmount = gross + periodicInterest;
-    } else {
-      // Capital + Interest: equal periodic installments of principal and interest
-      installmentAmount = dur > 0 ? Math.round((totalRepayment / dur) * 100) / 100 : 0;
-      periodicInterest = dur > 0 ? Math.round((remainingInterest / dur) * 100) / 100 : 0;
-      finalInstallmentAmount = installmentAmount;
-    }
+    const res = calculateLoanDetails(
+      gross,
+      capDed,
+      intDed,
+      rate,
+      dur,
+      (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily" | "Flat",
+      (frequency || "Daily") as "Monthly" | "Weekly" | "Daily",
+      repaymentType,
+      totalExtraFees
+    );
 
     return {
-      gross,
-      totalDeductions,
-      netDisbursement,
-      totalInterest,
-      totalRepayment,
-      installmentAmount,
-      numberOfInstallments: dur,
-      repaymentType,
-      periodicInterest,
-      capitalAtMaturity: gross,
-      finalInstallmentAmount,
+      gross: res.grossAmount,
+      totalDeductions: res.totalDeductions,
+      netDisbursement: res.netDisbursement,
+      totalInterest: res.totalInterest,
+      totalRepayment: res.totalRepayment,
+      installmentAmount: res.installmentAmount,
+      numberOfInstallments: res.numberOfInstallments,
+      repaymentType: res.repaymentType,
+      periodicInterest: res.periodicInterest,
+      capitalAtMaturity: res.capitalAtMaturity,
+      finalInstallmentAmount: res.finalInstallmentAmount,
     };
   }, [
     grossAmount,
@@ -259,12 +245,12 @@ export function NewLoanForm({
         d.setMonth(d.getMonth() + (i - 1));
       }
       const isFinal = i === calculations.numberOfInstallments;
-      const amt = (repaymentType === "Interest Only" && isFinal)
+      const amt = (isFinal
         ? calculations.finalInstallmentAmount
-        : calculations.installmentAmount;
+        : calculations.installmentAmount) ?? calculations.installmentAmount ?? 0;
       const typeLabel = repaymentType === "Interest Only"
         ? (isFinal ? "Capital + Interest" : "Interest Only")
-        : "Principal + Interest";
+        : (isFinal ? "Final Installment" : "Principal + Interest");
 
       list.push({
         num: i,
@@ -604,7 +590,7 @@ export function NewLoanForm({
                         </h4>
                         <p className="text-[11px] text-slate-500 font-mono">NIC: {c.nic}</p>
                         <p className="text-[11px] text-slate-600 truncate">
-                          {c.town || c.village || "Sri Lanka"} · {c.phone}
+                          {c.address ? `${c.address} · ` : ""}{c.phone}
                         </p>
                       </div>
                     </div>
@@ -774,29 +760,14 @@ export function NewLoanForm({
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                 <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
                   <MapPin size={14} className="text-red-600" /> Residential Address
                 </h4>
-                <div className="space-y-1.5">
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Street / House:</span>
-                    <span className="font-bold text-slate-900">{selectedCustomer.address || "Main Street"}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200">
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Village / GN:</span>
-                      <span className="font-bold text-slate-800">{selectedCustomer.village || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Town:</span>
-                      <span className="font-bold text-slate-800">{selectedCustomer.town || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">District:</span>
-                      <span className="font-bold text-slate-800">{selectedCustomer.district || "Colombo"}</span>
-                    </div>
-                  </div>
+                <div>
+                  <span className="font-bold text-slate-900 text-xs break-words">
+                    {selectedCustomer.address || "—"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -854,53 +825,53 @@ export function NewLoanForm({
 
       {/* ── STEP 3: CONFIGURE LOAN DETAILS ─────────────────────────────────── */}
       {step === "form" && selectedCustomer && (
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+        <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off">
           {/* Selected Borrower Mini Banner */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
               {selectedCustomer.photoUrl ? (
                 <img
                   src={selectedCustomer.photoUrl}
                   alt={selectedCustomer.name}
-                  className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
+                  className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-red-100 text-red-700 font-bold text-base flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
                   {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
                 </div>
               )}
-              <div>
-                <p className="text-sm font-black text-slate-900">{selectedCustomer.fullName || selectedCustomer.name}</p>
-                <p className="text-xs text-slate-500 font-mono">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-black text-slate-900 truncate">{selectedCustomer.fullName || selectedCustomer.name}</p>
+                <p className="text-[11px] text-slate-500 font-mono truncate">
                   NIC: <strong className="text-slate-800">{selectedCustomer.nic}</strong> · {selectedCustomer.phone} ·{" "}
                   {selectedCustomer.town || "Sri Lanka"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setStep("review")}
-                className="px-3.5 py-1.5 text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-xl transition cursor-pointer shadow-2xs"
+                className="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition cursor-pointer shadow-2xs leading-tight"
               >
                 View Profile
               </button>
               <button
                 type="button"
                 onClick={() => setStep("select")}
-                className="px-3.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer shadow-2xs"
+                className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer shadow-2xs leading-tight"
               >
                 Change Borrower
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
             {/* Left 2 Columns: Form Parameters */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4">
               {/* 1. Loan Terms & Structure */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
                 <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
                   <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                     <DollarSign size={18} />
@@ -1066,7 +1037,7 @@ export function NewLoanForm({
                     <label className="text-xs font-bold text-slate-700">Repayment Frequency</label>
                     <select
                       value={frequency}
-                      onChange={(e) => setFrequency(e.target.value as "Monthly" | "Weekly" | "Daily")}
+                      onChange={(e) => handleFrequencyChange(e.target.value as "Monthly" | "Weekly" | "Daily")}
                       className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                     >
                       <option value="">-- Select Frequency --</option>
@@ -1112,7 +1083,7 @@ export function NewLoanForm({
                       required
                       autoComplete="off"
                       value={issueDate}
-                      onChange={(e) => setIssueDate(e.target.value)}
+                      onChange={(e) => handleIssueDateChange(e.target.value)}
                       className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
                     />
                   </div>
@@ -1138,7 +1109,7 @@ export function NewLoanForm({
                     <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
                       <Calculator size={18} />
                     </div>
-                    <h3 className="text-sm font-black text-slate-900">2. Upfront Deductions &amp; Fees</h3>
+                    <h3 className="text-sm font-black text-slate-900">Fees</h3>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -1179,9 +1150,9 @@ export function NewLoanForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Capital Deduction (LKR)</label>
+                    <label className="text-[11px] font-bold text-slate-600">Document Charge (LKR)</label>
                     <input
                       type="number"
                       min="0"
@@ -1212,18 +1183,6 @@ export function NewLoanForm({
                       autoComplete="off"
                       value={processingFee}
                       onChange={(e) => setProcessingFee(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Admin / Legal Fee (LKR)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      autoComplete="off"
-                      value={adminFee}
-                      onChange={(e) => setAdminFee(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
                     />
                   </div>
@@ -1523,7 +1482,7 @@ export function NewLoanForm({
                           )}
                         </div>
                         <div className="text-right">
-                          <span className="font-bold text-rose-300">{MONEY(item.amount)}</span>
+                          <span className="font-bold text-rose-300">{MONEY(item.amount || 0)}</span>
                           {repaymentType === "Interest Only" && (
                             <span className="block text-[8px] text-slate-400 font-sans">
                               {item.typeLabel}
@@ -1543,7 +1502,7 @@ export function NewLoanForm({
                     className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <PlusCircle size={16} />
-                    <span>Disburse &amp; Activate Loan</span>
+                    <span>Active Loan</span>
                   </button>
 
                   <button

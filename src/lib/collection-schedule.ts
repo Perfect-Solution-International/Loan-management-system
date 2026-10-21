@@ -1,4 +1,5 @@
 import type { Loan, Customer, Payment } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 export interface ScheduledCollectionItem {
   id: string; // unique item key
@@ -63,13 +64,28 @@ export function getDailyCollections(
   loans: Loan[],
   customers: Customer[],
   payments: Payment[],
-  asOfDateStr: string = "2026-10-14"
+  asOfDateStr: string = new Date().toISOString().slice(0, 10)
 ): { items: ScheduledCollectionItem[]; summary: DailyCollectionSummary } {
-  const targetDate = parseDateString(asOfDateStr) || new Date(2026, 9, 14);
+  const targetDate = parseDateString(asOfDateStr) || new Date();
   const items: ScheduledCollectionItem[] = [];
 
   const customerMap = new Map<string, Customer>();
-  customers.forEach((c) => customerMap.set(c.id, c));
+  customers.forEach((c) => {
+    customerMap.set(c.id, c);
+    customerMap.set(String(c.id).trim().toLowerCase(), c);
+  });
+
+  // Pre-index payments by loanId for fast O(1) lookups
+  const paymentsByLoanId = new Map<string, Payment[]>();
+  for (const p of payments) {
+    const key = p.loanId || "";
+    let list = paymentsByLoanId.get(key);
+    if (!list) {
+      list = [];
+      paymentsByLoanId.set(key, list);
+    }
+    list.push(p);
+  }
 
   for (const loan of loans) {
     const statusUpper = (loan.status || "").toUpperCase();
@@ -77,12 +93,29 @@ export function getDailyCollections(
       continue;
     }
 
-    const customer = customerMap.get(loan.customerId);
-    const loanPayments = payments.filter((p) => p.loanId === loan.id);
+    let customer =
+      customerMap.get(loan.customerId) ||
+      customerMap.get(String(loan.customerId).trim().toLowerCase());
+
+    if (!customer && loan.customerName) {
+      customer = {
+        id: loan.customerId || `CUS-${loan.id}`,
+        name: loan.customerName,
+        fullName: loan.customerName,
+        nic: "",
+        phone: "",
+        address: "",
+        village: "",
+        town: "",
+        district: "",
+        monthlyIncome: 0,
+        status: "ACTIVE",
+      };
+    }
+    const loanPayments = paymentsByLoanId.get(loan.id) || [];
     const totalPaid = loanPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-    const totalRepayment =
-      loan.totalRepayment || (loan.principal || loan.amount || 0) + (loan.interest || 0);
-    const balanceDue = Math.max(0, totalRepayment - totalPaid);
+    const totalRepayment = getLoanTotalRepayment(loan);
+    const balanceDue = Math.max(0, Math.round((totalRepayment - totalPaid) * 100) / 100);
 
     // Look for a payment made on this specific date
     const todaysPayment = loanPayments.find(
@@ -136,9 +169,9 @@ export function getDailyCollections(
       }
     }
 
-    // Calculate arrears if delinquent
+    // Calculate past arrears: only cycles strictly prior to targetDate
     let arrearsAmount = 0;
-    if (startDate && targetDate >= startDate) {
+    if (startDate && targetDate > startDate) {
       const diffDays = Math.max(
         0,
         Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -147,16 +180,16 @@ export function getDailyCollections(
       if (frequency === "Daily") cycleDays = 1;
       else if (frequency === "Weekly") cycleDays = 7;
 
-      const cyclesElapsed = Math.min(duration, Math.floor(diffDays / cycleDays) + 1);
-      const expectedDue = Math.min(totalRepayment, cyclesElapsed * installmentAmount);
-      const rawArrears = Math.max(0, expectedDue - totalPaid);
+      const pastCycles = Math.min(duration, Math.floor(diffDays / cycleDays));
+      const expectedPastDue = Math.min(totalRepayment, pastCycles * installmentAmount);
+      const rawArrears = Math.max(0, Math.round((expectedPastDue - totalPaid) * 100) / 100);
       if (rawArrears > 0) {
-        arrearsAmount = rawArrears;
+        arrearsAmount = Math.min(balanceDue, rawArrears);
       }
     }
 
     if (statusUpper === "OVERDUE" && arrearsAmount <= 0) {
-      arrearsAmount = installmentAmount;
+      arrearsAmount = Math.min(balanceDue, installmentAmount);
     }
 
     const hasArrears = arrearsAmount > 0 || statusUpper === "OVERDUE";
@@ -176,10 +209,18 @@ export function getDailyCollections(
         status = "DUE_TODAY";
       }
 
-      // Total expected from borrower today
-      const amountToCollect = isCollectedToday
-        ? Number(todaysPayment?.amount) || installmentAmount
-        : Math.min(balanceDue, installmentAmount + (isScheduledForDate ? 0 : arrearsAmount));
+      // Total expected from borrower today:
+      // If collected today: payment amount.
+      // If scheduled today: installment + any past arrears (capped at balance due)
+      // If NOT scheduled today: just arrears (capped at balance due)
+      let amountToCollect = 0;
+      if (isCollectedToday) {
+        amountToCollect = Number(todaysPayment?.amount) || installmentAmount;
+      } else if (isScheduledForDate) {
+        amountToCollect = Math.min(balanceDue, installmentAmount + arrearsAmount);
+      } else {
+        amountToCollect = Math.min(balanceDue, arrearsAmount);
+      }
 
       const routeArea =
         customer?.town || customer?.village || customer?.district || "Colombo Metro";
@@ -214,9 +255,14 @@ export function getDailyCollections(
   let overdueCount = 0;
 
   for (const it of items) {
+    const paidToday = Number(it.todaysPayment?.amount) || 0;
     if (it.isCollectedToday) {
-      collectedAmount += it.totalDueToday;
+      const recordedPayment = paidToday > 0 ? paidToday : it.totalDueToday;
+      collectedAmount += recordedPayment;
       collectedCount++;
+      if (recordedPayment < it.totalDueToday) {
+        pendingAmount += (it.totalDueToday - recordedPayment);
+      }
     } else {
       pendingAmount += it.totalDueToday;
       pendingCount++;
@@ -224,8 +270,13 @@ export function getDailyCollections(
         overdueCount++;
       }
     }
-    targetAmount += it.totalDueToday;
+    targetAmount += Math.max(it.totalDueToday, paidToday);
   }
+
+  // Round summary figures to 2 decimal places
+  targetAmount = Math.round(targetAmount * 100) / 100;
+  collectedAmount = Math.round(collectedAmount * 100) / 100;
+  pendingAmount = Math.round(pendingAmount * 100) / 100;
 
   const collectionRate =
     targetAmount > 0 ? Math.round((collectedAmount / targetAmount) * 100) : 0;

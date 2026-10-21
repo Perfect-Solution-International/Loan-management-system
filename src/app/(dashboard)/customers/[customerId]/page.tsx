@@ -24,7 +24,9 @@ import {
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
+import { ReceiptModal } from "@/components/modals/ReceiptModal";
 import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
+import { getLoanTotalRepayment } from "@/lib/loan-financials";
 
 function createDocId(): string {
   return `DOC-${Date.now()}`;
@@ -51,6 +53,7 @@ function CustomerDetailsContent() {
   const [selectedFileType, setSelectedFileType] = useState("image/jpeg");
   const [selectedFileSize, setSelectedFileSize] = useState("1.1 MB");
   const [notificationMsg, setNotificationMsg] = useState("");
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
 
   // Loans linked to this customer
   const customerLoans = useMemo(
@@ -80,7 +83,7 @@ function CustomerDetailsContent() {
   );
 
   const totalRepayable = useMemo(
-    () => customerLoans.reduce((sum, l) => sum + (l.totalRepayment || 0), 0),
+    () => customerLoans.reduce((sum, l) => sum + getLoanTotalRepayment(l), 0),
     [customerLoans]
   );
 
@@ -178,7 +181,7 @@ function CustomerDetailsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
-            PORTFOLIO / CUSTOMER PROFILE
+            CUSTOMER PROFILE
           </p>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
             {customer.fullName || customer.name}
@@ -264,12 +267,7 @@ function CustomerDetailsContent() {
               <span>
                 Phone: <strong className="text-slate-800">{customer.phone}</strong>
               </span>
-              <span>
-                Town: <strong className="text-slate-800">{customer.town || "—"}</strong>
-              </span>
-              <span>
-                District: <strong className="text-slate-800">{customer.district || "—"}</strong>
-              </span>
+              {customer.address && <span>Address: <strong className="text-slate-800">{customer.address}</strong></span>}
             </p>
           </div>
         </div>
@@ -337,7 +335,7 @@ function CustomerDetailsContent() {
         {/* Progress Bar */}
         <div className="space-y-1.5 pt-2 border-t border-slate-700/80">
           <div className="flex justify-between text-xs text-slate-300 font-medium">
-            <span>Portfolio Repayment Progress</span>
+            <span>Repayment Progress</span>
             <span className="font-bold text-white">{paymentCompletionRate}% Settled</span>
           </div>
           <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
@@ -403,11 +401,7 @@ function CustomerDetailsContent() {
                 <span className="font-semibold text-slate-800 mt-0.5 block">
                   {customer.address}
                 </span>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Village: <strong>{customer.village || "—"}</strong> · Town:{" "}
-                  <strong>{customer.town || "—"}</strong> · District:{" "}
-                  <strong>{customer.district || "—"}</strong>
-                </p>
+                
               </div>
             </div>
           </div>
@@ -560,6 +554,7 @@ function CustomerDetailsContent() {
                     <th className="py-2.5 px-4">Classification</th>
                     <th className="py-2.5 px-4">Amount Paid</th>
                     <th className="py-2.5 px-4">Method / Notes</th>
+                    <th className="py-2.5 px-4 text-right">Official Receipt</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -597,6 +592,17 @@ function CustomerDetailsContent() {
                             {payment.notes}
                           </span>
                         )}
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReceiptPayment(payment)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shadow-xs"
+                          title="View & Print Official Receipt"
+                        >
+                          <Receipt size={13} className="text-white shrink-0" />
+                          <span className="text-white font-bold">Receipt</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -670,7 +676,7 @@ function CustomerDetailsContent() {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Existing Loans Portfolio
+                Existing Loans
               </h3>
               <span className="text-xs font-bold text-red-600">
                 {customerLoans.length} Loans
@@ -883,6 +889,15 @@ function CustomerDetailsContent() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Official Receipt Modal */}
+      {selectedReceiptPayment && (
+        <ReceiptModal
+          payment={selectedReceiptPayment}
+          onClose={() => setSelectedReceiptPayment(null)}
+          customer={customer}
+        />
       )}
     </div>
   );

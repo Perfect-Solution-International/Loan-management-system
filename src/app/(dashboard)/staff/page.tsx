@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function StaffRedirectPage() {
-  redirect("/settings?tab=staff");
+export default function StaffPage() {
+  redirect("/users?tab=staff");
 }

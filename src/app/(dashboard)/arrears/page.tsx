@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -26,7 +26,7 @@ import {
 import type { Loan, Customer, Payment } from "@/types";
 
 export default function ArrearsPage() {
-  const { loans, customers, payments, addPayment } = useData();
+  const { loans, customers, payments, addPayment, getNextReceiptNo } = useData();
 
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,8 +53,23 @@ export default function ArrearsPage() {
     return map;
   }, [customers]);
 
+  // Dynamic live date state
+  const [todayDateStr, setTodayDateStr] = useState<string>("2026-10-15");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setTodayDateStr(new Date().toISOString().slice(0, 10));
+    }
+  }, []);
+
   // Calculate financials for all loans as of current date
-  const asOfDate = useMemo(() => new Date(2026, 9, 14), []);
+  const asOfDate = useMemo(() => {
+    const parts = todayDateStr.split("-").map(Number);
+    if (parts.length === 3) {
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    return new Date();
+  }, [todayDateStr]);
 
   const delinquentList = useMemo(() => {
     const list: Array<{
@@ -227,7 +242,7 @@ export default function ArrearsPage() {
       return;
     }
 
-    const receiptNo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = getNextReceiptNo();
     const newPayment: Payment = {
       id: `PAY-${Date.now().toString().slice(-6)}`,
       loanId: recoveringLoan.loan.id,
@@ -265,54 +280,39 @@ export default function ArrearsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3.5">
       {/* ── Toast Notification ── */}
       {notification && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-xs">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
             <span>{notification}</span>
           </div>
           <button
             onClick={() => setNotification("")}
-            className="text-emerald-600 hover:text-emerald-800 p-1"
+            className="text-emerald-600 hover:text-emerald-800 p-1 cursor-pointer"
           >
             <X size={14} />
           </button>
         </div>
       )}
 
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-widest bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-md">
-              Credit Control & Risk
-            </span>
-            <span className="text-xs text-slate-600 font-semibold">Delinquency Register</span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
-            Arrears & Delinquent Facilities
-          </h1>
-          <p className="text-xs text-slate-600 font-medium mt-0.5">
-            Comprehensive register of overdue credit accounts, aging delinquency buckets, and field recovery actions.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            onClick={handlePrint}
-            className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer"
-          >
-            <Printer size={14} /> Print Arrears Sheet
-          </button>
-          <Link
-            href="/repayments"
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 transition inline-flex items-center gap-1.5"
-          >
-            <CreditCard size={14} /> Record Repayment
-          </Link>
-        </div>
+      {/* ── Top Actions Bar ── */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={handlePrint}
+          className="h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+        >
+          <Printer size={13} />
+          <span>Print Arrears Sheet</span>
+        </button>
+        <Link
+          href="/repayments"
+          className="h-9 px-3.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-xs shadow-red-600/20 transition inline-flex items-center gap-1.5"
+        >
+          <CreditCard size={13} />
+          <span>Record Repayment</span>
+        </Link>
       </div>
 
       {/* ── Top Exposure KPI Cards ── */}
