@@ -38,7 +38,8 @@ interface CustomerPaymentGatewayModalProps {
   customer: Customer;
   loans: Loan[];
   initialLoanId?: string;
-  onPaymentSuccess?: (receiptNo?: string) => void;
+  todayDate?: string;
+  onPaymentSuccess?: (receiptNo?: string, slipId?: string) => void;
 }
 
 type PaymentMethodType = "BANK_SLIP" | "CARD";
@@ -49,9 +50,11 @@ export function CustomerPaymentGatewayModal({
   customer,
   loans,
   initialLoanId,
+  todayDate,
   onPaymentSuccess,
 }: CustomerPaymentGatewayModalProps) {
   const { addOnlinePayment, addPayment, getNextReceiptNo, repayments } = useData();
+  const effectiveTodayDate = todayDate || new Date().toISOString().slice(0, 10);
 
   // Active Loan selection
   const [selectedLoanId, setSelectedLoanId] = useState<string>(() => {
@@ -97,16 +100,34 @@ export function CustomerPaymentGatewayModal({
   // Bank Slip Upload Fields
   const [slipBank, setSlipBank] = useState("Commercial Bank of Ceylon");
   const [slipRef, setSlipRef] = useState("");
-  const [slipDate, setSlipDate] = useState("2026-10-19");
+  const [slipDate, setSlipDate] = useState(() => effectiveTodayDate);
   const [slipNotes, setSlipNotes] = useState("");
 
   useEffect(() => {
-    const now = new Date();
-    const yr = now.getFullYear();
-    const mo = String(now.getMonth() + 1).padStart(2, "0");
-    const da = String(now.getDate()).padStart(2, "0");
-    setSlipDate(`${yr}-${mo}-${da}`);
-  }, []);
+    setSlipDate(effectiveTodayDate);
+  }, [effectiveTodayDate]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1);
+      setErrorMessage("");
+      if (initialLoanId && loans.some((l) => l.id === initialLoanId)) {
+        setSelectedLoanId(initialLoanId);
+        const match = loans.find((l) => l.id === initialLoanId);
+        if (match?.installment) {
+          setPayAmount(String(match.installment));
+        }
+      }
+    }
+  }, [isOpen, initialLoanId, loans]);
+
+  useEffect(() => {
+    if (selectedLoan?.installment) {
+      setPayAmount(String(selectedLoan.installment));
+    } else if (loanFinancials.nextInstallment > 0) {
+      setPayAmount(String(loanFinancials.nextInstallment));
+    }
+  }, [selectedLoanId]);
   const [slipImageBase64, setSlipImageBase64] = useState("");
   const [slipFileName, setSlipFileName] = useState("");
 
@@ -182,17 +203,17 @@ export function CustomerPaymentGatewayModal({
     return "CARD";
   }, [cardNumber]);
 
-  // Handle Slip Image File selection
+  // Handle Slip Image File selection (with automatic client-side canvas compression)
   const handleSlipFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setErrorMessage("Please select a valid image file (PNG, JPG, JPEG).");
+    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+      setErrorMessage("Please select a valid image file (PNG, JPG, WEBP) or PDF.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage("Image file exceeds 5MB. Please upload a smaller screenshot or photo.");
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage("File exceeds 10MB limit. Please upload a smaller file.");
       return;
     }
 
@@ -200,9 +221,44 @@ export function CustomerPaymentGatewayModal({
     setErrorMessage("");
 
     const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setSlipImageBase64(reader.result);
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (!result) return;
+
+      if (file.type.startsWith("image/")) {
+        // Automatically resize and compress image to fit within localStorage safely (< 150KB)
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL("image/jpeg", 0.85);
+            setSlipImageBase64(compressed);
+          } else {
+            setSlipImageBase64(result);
+          }
+        };
+        img.onerror = () => {
+          setSlipImageBase64(result);
+        };
+        img.src = result;
+      } else {
+        setSlipImageBase64(result);
       }
     };
     reader.readAsDataURL(file);
@@ -249,20 +305,34 @@ export function CustomerPaymentGatewayModal({
     const effectiveDate = slipDate || new Date().toISOString().split("T")[0];
     const effectiveRef = slipRef.trim().toUpperCase() || `DEP-${Date.now().toString().slice(-6)}`;
 
-    const fallbackSlipSvg =
-      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360' viewBox='0 0 600 360'><rect width='100%' height='100%' fill='%23f8fafc'/><rect x='20' y='20' width='560' height='320' rx='16' fill='%23ffffff' stroke='%23cbd5e1' stroke-width='2'/><text x='50' y='70' font-family='sans-serif' font-size='20' font-weight='bold' fill='%230f172a'>BANK TRANSFER RECEIPT</text><text x='50' y='110' font-family='sans-serif' font-size='13' fill='%2364748b'>Bank: " +
-      encodeURIComponent(effectiveBank) +
-      "</text><text x='50' y='140' font-family='sans-serif' font-size='13' fill='%2364748b'>Reference: " +
-      encodeURIComponent(effectiveRef) +
-      "</text><text x='50' y='170' font-family='sans-serif' font-size='13' fill='%2364748b'>Date: " +
-      encodeURIComponent(effectiveDate) +
-      "</text><text x='50' y='200' font-family='sans-serif' font-size='13' fill='%2364748b'>Facility: " +
-      encodeURIComponent(selectedLoan.loanNo || selectedLoan.id) +
-      "</text><text x='50' y='260' font-family='sans-serif' font-size='26' font-weight='bold' fill='%2316a34a'>LKR " +
-      encodeURIComponent(validAmt.toLocaleString()) +
-      "</text><text x='50' y='300' font-family='sans-serif' font-size='11' fill='%2394a3b8'>Customer Electronic Deposit Slip · PSI ONE Gateway</text></svg>";
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380">
+      <rect width="100%" height="100%" fill="#f8fafc" rx="16" stroke="#cbd5e1" stroke-width="2"/>
+      <rect x="20" y="20" width="560" height="340" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="20" y="20" width="560" height="60" rx="12" fill="#0f172a"/>
+      <text x="44" y="56" font-family="sans-serif" font-size="16" font-weight="bold" fill="#ffffff">OFFICIAL BANK TRANSFER SLIP</text>
+      <text x="560" y="56" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="end">ELECTRONIC RECORD</text>
+      <text x="44" y="115" font-family="sans-serif" font-size="11" font-weight="bold" fill="#64748b">BANK NAME</text>
+      <text x="44" y="138" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0f172a">${effectiveBank}</text>
+      <text x="320" y="115" font-family="sans-serif" font-size="11" font-weight="bold" fill="#64748b">REFERENCE NUMBER</text>
+      <text x="320" y="138" font-family="monospace" font-size="15" font-weight="bold" fill="#dc2626">${effectiveRef}</text>
+      <text x="44" y="180" font-family="sans-serif" font-size="11" font-weight="bold" fill="#64748b">BORROWER</text>
+      <text x="44" y="200" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1e293b">${customer.fullName || customer.name || "Customer"}</text>
+      <text x="320" y="180" font-family="sans-serif" font-size="11" font-weight="bold" fill="#64748b">LOAN FACILITY</text>
+      <text x="320" y="200" font-family="monospace" font-size="13" font-weight="bold" fill="#1e293b">${selectedLoan.loanNo || selectedLoan.id}</text>
+      <text x="44" y="240" font-family="sans-serif" font-size="11" font-weight="bold" fill="#64748b">TRANSFER DATE</text>
+      <text x="44" y="260" font-family="monospace" font-size="13" font-weight="bold" fill="#1e293b">${effectiveDate}</text>
+      <line x1="44" y1="280" x2="560" y2="280" stroke="#e2e8f0" stroke-dasharray="4"/>
+      <text x="44" y="315" font-family="sans-serif" font-size="12" font-weight="bold" fill="#64748b">AMOUNT DEPOSITED</text>
+      <text x="44" y="345" font-family="monospace" font-size="26" font-weight="bold" fill="#16a34a">LKR ${validAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</text>
+      <rect x="380" y="295" width="180" height="50" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+      <text x="470" y="325" font-family="sans-serif" font-size="11" font-weight="bold" fill="#166534" text-anchor="middle">ELECTRONIC DEPOSIT</text>
+    </svg>`;
+    const fallbackSlipSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgContent);
 
     const slipId = `SLIP-${Date.now().toString().slice(-6)}`;
+
+    // Bank transfer slips are submitted for administrative review & approval.
+    // Official receipt and loan credit will occur only once verified and approved by admin.
     const newOnlinePayment: OnlinePayment = {
       id: slipId,
       loanId: selectedLoan.id,
@@ -286,11 +356,15 @@ export function CustomerPaymentGatewayModal({
     addOnlinePayment(newOnlinePayment);
 
     setCompletedTransaction({
-      method: paymentMethod,
+      method: "BANK_SLIP",
       amount: validAmt,
       slipId,
       refNumber: newOnlinePayment.referenceNumber,
     });
+
+    if (onPaymentSuccess) {
+      onPaymentSuccess(undefined, slipId);
+    }
   };
 
   // Handle Card Payment Trigger (Initiate 3D Secure)
@@ -339,7 +413,7 @@ export function CustomerPaymentGatewayModal({
       loanId: selectedLoan.id,
       customerId: customer.id,
       amount: validAmt,
-      date: new Date().toISOString().slice(0, 10),
+      date: effectiveTodayDate,
       type: "Capital",
       method: "Card",
       collectedBy: "Online Payment Gateway (Automated)",

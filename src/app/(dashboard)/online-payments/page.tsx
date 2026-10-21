@@ -51,8 +51,19 @@ export default function OnlinePaymentsPage() {
   const [bankFilter, setBankFilter] = useState("ALL");
   const [notificationMsg, setNotificationMsg] = useState("");
 
-  // Slip Image Modal State
+  // Slip Image Modal State & Error Tracking
   const [selectedSlip, setSelectedSlip] = useState<OnlinePayment | null>(null);
+  const [slipImgError, setSlipImgError] = useState(false);
+
+  // Safe Slip URL formatter (handles unencoded SVG, data URLs, etc.)
+  const getSafeSlipUrl = (slip: OnlinePayment | null): string => {
+    if (!slip || !slip.slipUrl) return "";
+    if (slip.slipUrl.startsWith("data:image/svg+xml;utf8,")) {
+      const raw = slip.slipUrl.replace("data:image/svg+xml;utf8,", "");
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(raw);
+    }
+    return slip.slipUrl;
+  };
 
   // Approval Modal State
   const [approvingPayment, setApprovingPayment] = useState<OnlinePayment | null>(null);
@@ -500,7 +511,7 @@ export default function OnlinePaymentsPage() {
                       <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => setSelectedSlip(item)}
+                          onClick={() => { setSelectedSlip(item); setSlipImgError(false); }}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition cursor-pointer border border-slate-200/80 shadow-2xs"
                           title="Click to view bank deposit slip"
                         >
@@ -688,18 +699,99 @@ export default function OnlinePaymentsPage() {
             </div>
 
             {/* Slip Image Preview Area */}
-            <div className="flex-1 overflow-auto bg-slate-900 rounded-2xl p-2 min-h-[300px] max-h-[460px] flex items-center justify-center border border-slate-800">
-              <img
-                src={selectedSlip.slipUrl}
-                alt="Bank Transfer Slip"
-                className="max-h-full max-w-full object-contain rounded-xl shadow-lg"
-              />
+            <div className="flex-1 overflow-auto bg-slate-900 rounded-2xl p-3 min-h-[320px] max-h-[480px] flex items-center justify-center border border-slate-800">
+              {(() => {
+                const safeUrl = getSafeSlipUrl(selectedSlip);
+                const isPdf = safeUrl.startsWith("data:application/pdf") || (selectedSlip.slipFileName || "").toLowerCase().endsWith(".pdf");
+
+                if (slipImgError || !safeUrl) {
+                  return (
+                    <div className="w-full max-w-md bg-white rounded-2xl p-5 border border-slate-200 shadow-xl space-y-3.5 text-left text-slate-800 animate-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                            <Building size={20} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-red-600 block">
+                              Bank Deposit Slip
+                            </span>
+                            <h4 className="text-sm font-black text-slate-900 leading-tight">
+                              {selectedSlip.bankName}
+                            </h4>
+                          </div>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          {selectedSlip.referenceNumber}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Borrower</span>
+                          <span className="font-bold text-slate-900 truncate block">{selectedSlip.customerName}</span>
+                          {selectedSlip.customerNic && <span className="text-[10px] text-slate-500 block">NIC: {selectedSlip.customerNic}</span>}
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Facility ID</span>
+                          <span className="font-mono font-bold text-red-600">{selectedSlip.loanNo || selectedSlip.loanId}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Transfer Date</span>
+                          <span className="font-mono text-slate-700">{selectedSlip.paymentDate}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Submitted At</span>
+                          <span className="text-slate-600 text-[10px]">
+                            {selectedSlip.submittedAt ? new Date(selectedSlip.submittedAt).toLocaleTimeString() : "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-emerald-800 uppercase block">Amount Paid</span>
+                          <span className="text-xl font-black font-mono text-emerald-700">{MONEY(selectedSlip.amount)}</span>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                          <CheckCircle2 size={12} className="text-emerald-600" /> Electronic Slip
+                        </span>
+                      </div>
+
+                      {selectedSlip.notes && (
+                        <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-lg border border-slate-200/60">
+                          &ldquo;{selectedSlip.notes}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (isPdf) {
+                  return (
+                    <iframe
+                      src={safeUrl}
+                      title="Bank Slip Document"
+                      className="w-full h-96 rounded-xl border border-slate-700 bg-white"
+                    />
+                  );
+                }
+
+                return (
+                  <img
+                    src={safeUrl}
+                    alt="Bank Transfer Slip"
+                    onError={() => setSlipImgError(true)}
+                    className="max-h-full max-w-full object-contain rounded-xl shadow-lg"
+                  />
+                );
+              })()}
             </div>
 
             {/* Modal Footer & Actions */}
             <div className="flex items-center justify-between pt-2 border-t border-slate-100">
               <a
-                href={selectedSlip.slipUrl}
+                href={getSafeSlipUrl(selectedSlip)}
                 download={selectedSlip.slipFileName || `Slip_${selectedSlip.id}.jpg`}
                 target="_blank"
                 rel="noreferrer"

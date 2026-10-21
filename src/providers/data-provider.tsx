@@ -189,7 +189,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       const storedOnline = localStorage.getItem("psi_online_payments");
       if (storedOnline) {
-        setOnlinePayments(JSON.parse(storedOnline));
+        try {
+          const parsedOnline: OnlinePayment[] = JSON.parse(storedOnline);
+          const autoApprovedReceipts = new Set<string>();
+          const correctedOnline = parsedOnline.map((op) => {
+            if (
+              op.paymentMethod === "BANK_SLIP" &&
+              (op.reviewedBy === "Customer Online Portal (Instant Credit)" ||
+                op.reviewNotes === "Instant online portal bank transfer credit")
+            ) {
+              if (op.receiptNo) autoApprovedReceipts.add(op.receiptNo);
+              return {
+                ...op,
+                status: "PENDING" as const,
+                reviewedBy: undefined,
+                reviewedAt: undefined,
+                reviewNotes: undefined,
+                receiptNo: undefined,
+              };
+            }
+            return op;
+          });
+
+          if (autoApprovedReceipts.size > 0) {
+            setPayments((prev) => {
+              const filtered = prev.filter(
+                (p) => !autoApprovedReceipts.has(p.receiptNo || "") && !autoApprovedReceipts.has(p.id)
+              );
+              localStorage.setItem("psi_payments", JSON.stringify(filtered));
+              return filtered;
+            });
+          }
+
+          setOnlinePayments(correctedOnline);
+          localStorage.setItem("psi_online_payments", JSON.stringify(correctedOnline));
+        } catch (e) {
+          console.error("Failed to parse online payments", e);
+        }
       }
 
       const storedDocs = localStorage.getItem("psi_documents");
