@@ -83,16 +83,16 @@ function CustomerDetailsContent() {
 
   if (!customer) {
     return (
-      <div className="p-8 max-w-4xl mx-auto space-y-4">
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-4">
-          <h2 className="text-xl font-bold text-slate-800">Customer Not Found</h2>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-4">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-200 text-center space-y-4">
+          <h2 className="text-xl font-semibold text-slate-800">Customer Not Found</h2>
           <p className="text-xs text-slate-500">
             The customer identifier &quot;{customerId}&quot; does not exist in the system records.
           </p>
           <div>
             <Link
               href="/customers"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-500 transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-500 transition"
             >
               <ArrowLeft size={14} /> Back to Customer Directory
             </Link>
@@ -165,18 +165,18 @@ function CustomerDetailsContent() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
             PORTFOLIO / CUSTOMER PROFILE
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
             {customer.fullName || customer.name}
           </h1>
           <p className="text-xs text-slate-500">
-            Customer ID: <span className="font-mono font-bold text-slate-700">{customer.id}</span> · Registered on {customer.registeredAt || "2026-09-18"}
+            Customer ID: <span className="font-mono font-semibold text-slate-700">{customer.id}</span> · Registered on {customer.registeredAt || "2026-09-18"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -194,13 +194,13 @@ function CustomerDetailsContent() {
           </Link>
           <Link
             href={`/repayments`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow-xs transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold text-white shadow-xs transition"
           >
             <Receipt size={14} /> Record Repayment
           </Link>
           <Link
             href={`/loans/new?customerId=${customer.id}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white shadow-md transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white shadow-md transition"
           >
             <Plus size={14} /> Issue New Loan
           </Link>
@@ -208,7 +208,7 @@ function CustomerDetailsContent() {
       </div>
 
       {notificationMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in shadow-xs">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-semibold animate-fade-in shadow-xs">
           <CheckCircle size={18} className="text-emerald-600 shrink-0" />
           <span>{notificationMsg}</span>
         </div>
@@ -216,7 +216,7 @@ function CustomerDetailsContent() {
 
       {/* Profile Overview Card (Photograph, Status, ID, Quick Info) */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
+        <div className="flex flex-wrap items-center gap-5">
           <div className="relative shrink-0">
             <img
               src={
@@ -227,11 +227,11 @@ function CustomerDetailsContent() {
               className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
             />
             <span
-              className={`absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase shadow-xs ${
+              className={`absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-xs font-semibold uppercase shadow-xs ${
                 customer.status.toLowerCase() === "active"
                   ? "bg-emerald-500 text-white"
                   : customer.status.toLowerCase() === "suspended"
-                  ? "bg-rose-500 text-white"
+                  ? "bg-red-500 text-white"
                   : "bg-slate-500 text-white"
               }`}
             >
@@ -241,11 +241,11 @@ function CustomerDetailsContent() {
 
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-black text-slate-900">{customer.name}</h2>
-              <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-slate-100 rounded-md text-slate-600">
+              <h2 className="text-xl font-semibold text-slate-900">{customer.name}</h2>
+              <span className="font-mono text-xs font-semibold px-2.5 py-0.5 bg-slate-100 rounded-md text-slate-600">
                 {customer.id}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                 {customer.occupation || "Employed"}
               </span>
             </div>
@@ -269,26 +269,26 @@ function CustomerDetailsContent() {
         {/* Aggregate Customer Stats */}
         <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 w-full md:w-auto justify-between md:justify-start">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Total Borrowed
             </p>
-            <p className="text-lg font-black text-slate-900 mt-0.5">
+            <p className="text-lg font-semibold text-slate-900 mt-0.5">
               {MONEY(totalBorrowed)}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Active Loans
             </p>
-            <p className="text-lg font-black text-blue-600 mt-0.5">
+            <p className="text-lg font-semibold text-blue-600 mt-0.5">
               {customerLoans.filter((l) => l.status === "Active").length} Loans
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Verified Docs
             </p>
-            <p className="text-lg font-black text-purple-600 mt-0.5">
+            <p className="text-lg font-semibold text-blue-600 mt-0.5">
               {customerDocs.length} Files
             </p>
           </div>
@@ -296,13 +296,13 @@ function CustomerDetailsContent() {
       </div>
 
       {/* OUTSTANDING BALANCE & SETTLEMENT PROGRESS BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 p-6 rounded-2xl text-white shadow-lg space-y-4">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 p-6 rounded-2xl text-white shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
               CURRENT OUTSTANDING LOAN BALANCE & SETTLEMENT
             </p>
-            <h3 className="text-2xl font-black font-mono text-white mt-1">
+            <h3 className="text-2xl font-semibold font-mono text-white mt-1">
               {MONEY(currentOutstandingBalance)}
             </h3>
             <p className="text-xs text-slate-300 mt-0.5">
@@ -310,18 +310,18 @@ function CustomerDetailsContent() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
             <div className="bg-white/10 px-4 py-2.5 rounded-xl border border-white/10">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
+              <span className="text-xs uppercase font-semibold text-slate-400 block">
                 Total Repayable
               </span>
-              <span className="text-sm font-bold text-white">{MONEY(totalRepayable)}</span>
+              <span className="text-sm font-semibold text-white">{MONEY(totalRepayable)}</span>
             </div>
             <div className="bg-emerald-500/20 px-4 py-2.5 rounded-xl border border-emerald-500/30">
-              <span className="text-[10px] uppercase font-bold text-emerald-400 block">
+              <span className="text-xs uppercase font-semibold text-emerald-400 block">
                 Total Paid So Far
               </span>
-              <span className="text-sm font-bold text-emerald-300">{MONEY(totalPaid)}</span>
+              <span className="text-sm font-semibold text-emerald-300">{MONEY(totalPaid)}</span>
             </div>
           </div>
         </div>
@@ -330,7 +330,7 @@ function CustomerDetailsContent() {
         <div className="space-y-1.5 pt-2 border-t border-slate-700/80">
           <div className="flex justify-between text-xs text-slate-300 font-medium">
             <span>Portfolio Repayment Progress</span>
-            <span className="font-bold text-white">{paymentCompletionRate}% Settled</span>
+            <span className="font-semibold text-white">{paymentCompletionRate}% Settled</span>
           </div>
           <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
             <div
@@ -357,35 +357,35 @@ function CustomerDetailsContent() {
         <div className="lg:col-span-2 space-y-6">
           {/* Identity & Residential Panel */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
               <User size={14} className="text-blue-600" /> Personal & Residential Profile
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-3 bg-slate-50/80 rounded-xl">
                 <span className="text-slate-400 block font-medium">Full Legal Name</span>
-                <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                <span className="font-semibold text-slate-800 text-sm mt-0.5 block">
                   {customer.fullName || customer.name}
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50/80 rounded-xl">
                 <span className="text-slate-400 block font-medium">NIC Number</span>
-                <span className="font-mono font-bold text-slate-800 text-sm mt-0.5 block">
+                <span className="font-mono font-semibold text-slate-800 text-sm mt-0.5 block">
                   {customer.nic}
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50/80 rounded-xl">
                 <span className="text-slate-400 block font-medium">Date of Birth & Gender</span>
-                <span className="font-bold text-slate-800 mt-0.5 block">
+                <span className="font-semibold text-slate-800 mt-0.5 block">
                   {customer.dob || "—"} · {customer.gender || "Not Specified"}
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50/80 rounded-xl">
                 <span className="text-slate-400 block font-medium">Customer Status</span>
-                <span className="font-bold text-slate-800 mt-0.5 block">
+                <span className="font-semibold text-slate-800 mt-0.5 block">
                   {customer.status}
                 </span>
               </div>
@@ -395,7 +395,7 @@ function CustomerDetailsContent() {
                 <span className="font-semibold text-slate-800 mt-0.5 block">
                   {customer.address}
                 </span>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Village: <strong>{customer.village || "—"}</strong> · Town:{" "}
                   <strong>{customer.town || "—"}</strong> · District:{" "}
                   <strong>{customer.district || "—"}</strong>
@@ -406,14 +406,14 @@ function CustomerDetailsContent() {
 
           {/* Contact & Communication Profile */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
               <Phone size={14} className="text-blue-600" /> Contact & Communication Details
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-3 bg-slate-50/80 rounded-xl">
                 <span className="text-slate-400 block font-medium">Primary Contact Number</span>
-                <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                <span className="font-semibold text-slate-800 text-sm mt-0.5 block">
                   {customer.phone}
                 </span>
               </div>
@@ -446,14 +446,14 @@ function CustomerDetailsContent() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <FileText size={16} className="text-blue-600" />
-                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   Uploaded Identity Documents ({customerDocs.length})
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsUploadModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition cursor-pointer"
               >
                 <Upload size={13} /> Upload Document
               </button>
@@ -471,10 +471,10 @@ function CustomerDetailsContent() {
                         <FileText size={20} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-slate-900 leading-tight">
+                        <p className="font-semibold text-xs text-slate-900 leading-tight">
                           {doc.title}
                         </p>
-                        <p className="text-[11px] text-slate-400 capitalize mt-0.5">
+                        <p className="text-xs text-slate-400 capitalize mt-0.5">
                           {doc.type.replace(/_/g, " ")} · {doc.fileSize}
                         </p>
                       </div>
@@ -482,7 +482,7 @@ function CustomerDetailsContent() {
                   </div>
 
                   <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-xs text-slate-400">
                       Uploaded {doc.uploadedAt}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -491,7 +491,7 @@ function CustomerDetailsContent() {
                         onClick={() => setSelectedDocForPreview(doc)}
                         className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-white rounded-lg transition"
                         title="Preview Document"
-                      >
+                       aria-label="Preview Document">
                         <Eye size={14} />
                       </button>
                       <button
@@ -499,7 +499,7 @@ function CustomerDetailsContent() {
                         onClick={() => handleDownload(doc)}
                         className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-white rounded-lg transition"
                         title="Download File"
-                      >
+                       aria-label="Download File">
                         <Download size={14} />
                       </button>
                       <button
@@ -507,7 +507,7 @@ function CustomerDetailsContent() {
                         onClick={() => deleteDocument(doc.id)}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition"
                         title="Delete File"
-                      >
+                       aria-label="Delete File">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -516,7 +516,7 @@ function CustomerDetailsContent() {
               ))}
 
               {customerDocs.length === 0 && (
-                <div className="sm:col-span-2 p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs space-y-2">
+                <div className="sm:col-span-2 p-4 sm:p-6 lg:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs space-y-2">
                   <FileText size={32} className="mx-auto text-slate-300" />
                   <p className="font-semibold text-slate-600">No documents uploaded yet</p>
                   <p>Upload NIC copy, photograph, or proof of income for verification.</p>
@@ -530,28 +530,28 @@ function CustomerDetailsContent() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <History size={16} className="text-emerald-600" />
-                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   Previous Repayment History ({customerPayments.length} Collections)
                 </h3>
               </div>
               <Link
                 href="/repayments"
-                className="text-xs font-bold text-blue-600 hover:text-blue-500 inline-flex items-center gap-1"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-500 inline-flex items-center gap-1"
               >
                 Go to Terminal <ArrowUpRight size={13} />
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable records table">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider text-xs">
                   <tr>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Receipt No</th>
-                    <th className="py-2.5 px-4">Loan ID</th>
-                    <th className="py-2.5 px-4">Classification</th>
-                    <th className="py-2.5 px-4">Amount Paid</th>
-                    <th className="py-2.5 px-4">Method / Notes</th>
+                    <th className="py-2.5 px-4" scope="col">Date</th>
+                    <th className="py-2.5 px-4" scope="col">Receipt No</th>
+                    <th className="py-2.5 px-4" scope="col">Loan ID</th>
+                    <th className="py-2.5 px-4" scope="col">Classification</th>
+                    <th className="py-2.5 px-4" scope="col">Amount Paid</th>
+                    <th className="py-2.5 px-4" scope="col">Method / Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -560,7 +560,7 @@ function CustomerDetailsContent() {
                       <td className="py-2.5 px-4 font-mono font-medium text-slate-600">
                         {payment.date}
                       </td>
-                      <td className="py-2.5 px-4 font-mono font-bold text-blue-600">
+                      <td className="py-2.5 px-4 font-mono font-semibold text-blue-600">
                         {payment.receiptNo || payment.id}
                       </td>
                       <td className="py-2.5 px-4 font-mono text-slate-700">
@@ -568,7 +568,7 @@ function CustomerDetailsContent() {
                       </td>
                       <td className="py-2.5 px-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             payment.type === "Capital"
                               ? "bg-blue-100 text-blue-700"
                               : payment.type === "Interest"
@@ -579,13 +579,13 @@ function CustomerDetailsContent() {
                           {payment.type}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 font-mono font-bold text-slate-900">
+                      <td className="py-2.5 px-4 font-mono font-semibold text-slate-900">
                         {MONEY(payment.amount)}
                       </td>
                       <td className="py-2.5 px-4 text-slate-500">
                         <span>{payment.method || "Cash"}</span>
                         {payment.notes && (
-                          <span className="block text-[10px] text-slate-400 truncate max-w-xs">
+                          <span className="block text-xs text-slate-400 truncate max-w-xs">
                             {payment.notes}
                           </span>
                         )}
@@ -596,7 +596,7 @@ function CustomerDetailsContent() {
               </table>
 
               {customerPayments.length === 0 && (
-                <div className="p-8 text-center text-slate-400 text-xs">
+                <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-400 text-xs">
                   <Receipt size={28} className="mx-auto text-slate-300 mb-1" />
                   <p className="font-semibold text-slate-600">No repayment history recorded</p>
                   <p>Payments collected through the repayments module will appear here.</p>
@@ -610,32 +610,32 @@ function CustomerDetailsContent() {
         <div className="space-y-6">
           {/* Guarantor Details Card */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
               <ShieldCheck size={14} className="text-blue-600" /> Guarantor Information
             </h3>
 
             {customer.guarantorName || customer.guarantor ? (
               <div className="space-y-3 text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Guarantor Full Name</span>
-                  <span className="font-bold text-slate-800 text-sm">
+                  <span className="text-slate-400 block text-xs">Guarantor Full Name</span>
+                  <span className="font-semibold text-slate-800 text-sm">
                     {customer.guarantorName || customer.guarantor}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Guarantor NIC</span>
-                  <span className="font-mono font-bold text-slate-800">
+                  <span className="text-slate-400 block text-xs">Guarantor NIC</span>
+                  <span className="font-mono font-semibold text-slate-800">
                     {customer.guarantorNic || "Verification on file"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Contact Phone</span>
+                  <span className="text-slate-400 block text-xs">Contact Phone</span>
                   <span className="font-semibold text-slate-800">
                     {customer.guarantorPhone || "Same as primary"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Relationship</span>
+                  <span className="text-slate-400 block text-xs">Relationship</span>
                   <span className="font-semibold text-slate-800">
                     {customer.guarantorRelationship || "Relative / Colleague"}
                   </span>
@@ -650,7 +650,7 @@ function CustomerDetailsContent() {
 
           {/* Emergency Contact */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-3 text-xs">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
               Emergency Contact
             </h3>
             <p className="font-semibold text-slate-800">
@@ -661,10 +661,10 @@ function CustomerDetailsContent() {
           {/* EXISTING LOANS & OUTSTANDING BALANCES LIST */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Existing Loans Portfolio
               </h3>
-              <span className="text-xs font-bold text-blue-600">
+              <span className="text-xs font-semibold text-blue-600">
                 {customerLoans.length} Loans
               </span>
             </div>
@@ -683,11 +683,11 @@ function CustomerDetailsContent() {
                     className="p-3.5 bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 rounded-xl block transition space-y-2"
                   >
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-mono font-bold text-slate-800">
+                      <span className="font-mono font-semibold text-slate-800">
                         {loan.loanNo || loan.id}
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           loan.status.toLowerCase() === "active"
                             ? "bg-emerald-100 text-emerald-700"
                             : loan.status.toLowerCase() === "completed"
@@ -707,8 +707,8 @@ function CustomerDetailsContent() {
                     </div>
 
                     <div className="pt-1.5 border-t border-slate-200/60 flex justify-between items-center text-xs">
-                      <span className="text-[11px] text-slate-400">Balance Due:</span>
-                      <span className="font-mono font-bold text-rose-600">
+                      <span className="text-xs text-slate-400">Balance Due:</span>
+                      <span className="font-mono font-semibold text-red-600">
                         {MONEY(loanBalanceDue)}
                       </span>
                     </div>
@@ -729,10 +729,10 @@ function CustomerDetailsContent() {
       {/* DOCUMENT PREVIEW MODAL */}
       {selectedDocForPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-sm space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">{selectedDocForPreview.title}</h3>
+                <h3 className="text-sm font-semibold text-slate-900">{selectedDocForPreview.title}</h3>
                 <p className="text-xs text-slate-400">
                   {selectedDocForPreview.fileName} · {selectedDocForPreview.fileSize}
                 </p>
@@ -741,7 +741,7 @@ function CustomerDetailsContent() {
                 type="button"
                 onClick={() => setSelectedDocForPreview(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
-              >
+               aria-label="Close">
                 <X size={16} />
               </button>
             </div>
@@ -754,7 +754,7 @@ function CustomerDetailsContent() {
                   className="max-h-[460px] object-contain rounded-lg"
                 />
               ) : (
-                <div className="text-center text-slate-400 space-y-3 p-8">
+                <div className="text-center text-slate-400 space-y-3 p-4 sm:p-6 lg:p-8">
                   <FileText size={48} className="mx-auto text-blue-400" />
                   <p className="text-sm font-semibold text-slate-200">
                     PDF Document: {selectedDocForPreview.fileName}
@@ -765,7 +765,7 @@ function CustomerDetailsContent() {
                   <button
                     type="button"
                     onClick={() => handleDownload(selectedDocForPreview)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition"
                   >
                     <Download size={14} /> Download Document
                   </button>
@@ -777,14 +777,14 @@ function CustomerDetailsContent() {
               <button
                 type="button"
                 onClick={() => handleDownload(selectedDocForPreview)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition"
               >
                 <Download size={14} /> Download File
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedDocForPreview(null)}
-                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition"
+                className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-500 transition"
               >
                 Close Preview
               </button>
@@ -796,24 +796,24 @@ function CustomerDetailsContent() {
       {/* UPLOAD DOCUMENT MODAL */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-sm space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Upload Identity Document</h3>
+                <h3 className="text-sm font-semibold text-slate-900">Upload Identity Document</h3>
                 <p className="text-xs text-slate-400">Attach NIC, passport, or financial verification proof.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsUploadModalOpen(false)}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
-              >
+               aria-label="Close">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Document Title</label>
+                <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-1">Document Title</label>
                 <input
                   type="text"
                   placeholder="e.g. NIC Card Front / Salary Slip Sep 2026"
@@ -821,16 +821,16 @@ function CustomerDetailsContent() {
                   onChange={(e) => setUploadTitle(e.target.value)}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
                   required
-                />
+                 id="ui-field-1"/>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Document Type</label>
+                <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-2">Document Type</label>
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value as CustomerDocument["type"])}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold bg-white"
-                >
+                 id="ui-field-2">
                   <option value="other">Other Supporting Document</option>
                   <option value="utility_bill">Proof of Billing / Utility Bill</option>
                   <option value="salary_slip">Salary Slip / Income Record</option>
@@ -840,13 +840,13 @@ function CustomerDetailsContent() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Select File</label>
+                <label className="text-xs font-semibold text-slate-700">Select File</label>
                 <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 cursor-pointer bg-slate-50/50 hover:bg-blue-50/30 transition text-center">
                   <Upload size={24} className="text-slate-400 mb-2" />
                   <span className="text-xs font-semibold text-slate-700">
                     {selectedFileName || "Click to browse JPG, PNG or PDF"}
                   </span>
-                  <span className="text-[10px] text-slate-400 mt-1">
+                  <span className="text-xs text-slate-400 mt-1">
                     Max size 15MB · High resolution recommended
                   </span>
                   <input
@@ -862,13 +862,13 @@ function CustomerDetailsContent() {
                 <button
                   type="button"
                   onClick={() => setIsUploadModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition shadow-xs"
+                  className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition shadow-xs"
                 >
                   Save & Attach
                 </button>
@@ -885,7 +885,7 @@ export default function CustomerProfilePage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 max-w-7xl mx-auto text-xs text-slate-400">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-xs text-slate-400">
           Loading customer profile...
         </div>
       }

@@ -77,13 +77,13 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
             OVERVIEW / DASHBOARD
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
             Good morning, Admin 👋
           </h1>
           <p className="text-xs text-slate-500">
@@ -91,10 +91,10 @@ export function DashboardPage() {
           </p>
         </div>
         <Link
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md transition"
           href="/loans/new"
         >
-          <Plus size={16} /> Create New Loan
+          <Plus size={16} /> Create Loan
         </Link>
       </div>
 
@@ -107,7 +107,7 @@ export function DashboardPage() {
               key={s.label}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   {s.label}
                 </span>
                 <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
@@ -115,8 +115,8 @@ export function DashboardPage() {
                 </div>
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-black text-slate-900">{s.value}</div>
-                <div className="text-[11px] text-slate-400 mt-1">{s.foot}</div>
+                <div className="text-2xl font-semibold text-slate-900">{s.value}</div>
+                <div className="text-xs text-slate-400 mt-1">{s.foot}</div>
               </div>
             </div>
           );
@@ -127,7 +127,7 @@ export function DashboardPage() {
         <section className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h2 className="text-base font-bold text-slate-900">Recent Loans</h2>
+              <h2 className="text-base font-semibold text-slate-900">Recent Loans</h2>
               <p className="text-xs text-slate-500">Latest loan applications and status</p>
             </div>
             <Link
@@ -139,7 +139,7 @@ export function DashboardPage() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs text-slate-400 font-bold uppercase">
+              <thead className="bg-slate-50 text-xs text-slate-400 font-semibold uppercase">
                 <tr>
                   <th className="py-2.5 px-3">LOAN / CUSTOMER</th>
                   <th className="py-2.5 px-3">AMOUNT</th>
@@ -159,14 +159,14 @@ export function DashboardPage() {
                     <tr key={l.id} className="hover:bg-slate-50">
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 font-semibold text-xs flex items-center justify-center shrink-0">
                             {initials}
                           </div>
                           <div>
                             <div className="font-semibold text-slate-900 text-xs">
                               {l.loanNo || l.id}
                             </div>
-                            <div className="text-[11px] text-slate-400">
+                            <div className="text-xs text-slate-400">
                               {c?.name || l.customerName || "Customer"}
                             </div>
                           </div>
@@ -180,7 +180,7 @@ export function DashboardPage() {
                       </td>
                       <td className="py-3 px-3">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             (l.status || "").toLowerCase() === "overdue"
                               ? "bg-red-100 text-red-700"
                               : (l.status || "").toLowerCase() === "pending"
@@ -197,7 +197,7 @@ export function DashboardPage() {
               </tbody>
             </table>
             {loans.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs">
+              <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-400 text-xs">
                 No loans yet. Create your first loan.
               </div>
             )}
@@ -208,8 +208,8 @@ export function DashboardPage() {
           <section className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Collection Snapshot</h2>
-                <p className="text-xs text-slate-500">Monthly recovery targets</p>
+                <h2 className="text-base font-semibold text-slate-900">Collection Snapshot</h2>
+                <p className="text-xs text-slate-500">Illustrative monthly chart</p>
               </div>
               <ArrowUpRight size={17} className="text-slate-400" />
             </div>
@@ -220,7 +220,7 @@ export function DashboardPage() {
                     className="w-full bg-blue-600 rounded-t-sm transition-all"
                     style={{ height: `${h}%`, opacity: i === 11 ? 1 : 0.65 }}
                   />
-                  <span className="text-[9px] text-slate-400 font-bold">
+                  <span className="text-xs text-slate-400 font-semibold">
                     {["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"][i]}
                   </span>
                 </div>
@@ -230,8 +230,8 @@ export function DashboardPage() {
 
           <section className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
             <div className="border-b border-slate-100 pb-2">
-              <h2 className="text-base font-bold text-slate-900">Recent Activity</h2>
-              <p className="text-xs text-slate-500">Latest updates across the system</p>
+              <h2 className="text-base font-semibold text-slate-900">Recent Activity</h2>
+              <p className="text-xs text-slate-500">Example events for this demo workspace</p>
             </div>
             <div className="space-y-3">
               {activity.map((a, i) => (
@@ -245,8 +245,8 @@ export function DashboardPage() {
                   />
                   <div>
                     <p className="font-semibold text-slate-800">{a.title}</p>
-                    <p className="text-slate-500 text-[11px]">{a.detail}</p>
-                    <span className="text-[10px] text-slate-400">{a.time}</span>
+                    <p className="text-slate-500 text-xs">{a.detail}</p>
+                    <span className="text-xs text-slate-400">{a.time}</span>
                   </div>
                 </div>
               ))}
@@ -256,7 +256,7 @@ export function DashboardPage() {
       </div>
 
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-        <h2 className="text-base font-bold text-slate-900">Quick Actions</h2>
+        <h2 className="text-base font-semibold text-slate-900">Quick Actions</h2>
         <div className="flex gap-3 flex-wrap">
           <Link
             className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition"

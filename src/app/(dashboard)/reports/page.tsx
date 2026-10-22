@@ -163,14 +163,14 @@ export default function FinancialReportsPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
             ANALYTICS / FINANCIAL AUDIT
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
             Financial Reports & Portfolio Analytics
           </h1>
           <p className="text-xs text-slate-500">
@@ -181,7 +181,7 @@ export default function FinancialReportsPage() {
           <button
             type="button"
             onClick={reportTab === "collections" ? exportCollectionsCsv : exportPortfolioCsv}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
           >
             <Download size={15} />
             Export {reportTab === "collections" ? "Collections Summary" : "Portfolio Register"} (CSV)
@@ -192,61 +192,61 @@ export default function FinancialReportsPage() {
       {/* Aggregate Financial Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Total Disbursed
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-slate-900">{MONEY(totalDisbursed)}</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">{loans.length} loan records</p>
+            <h3 className="text-xl font-semibold text-slate-900">{MONEY(totalDisbursed)}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">{loans.length} loan records</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Period Collections ({timePeriod})
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-emerald-600">{MONEY(totalPeriodCollections)}</h3>
-            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+            <h3 className="text-xl font-semibold text-emerald-600">{MONEY(totalPeriodCollections)}</h3>
+            <p className="text-xs text-emerald-600 font-medium mt-0.5">
               {filteredPayments.length} receipts logged
             </p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Outstanding Due
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-slate-900">{MONEY(outstandingReceivable)}</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">Receivable capital & interest</p>
+            <h3 className="text-xl font-semibold text-slate-900">{MONEY(outstandingReceivable)}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Receivable capital & interest</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Overdue In-Arrears
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-red-600">{MONEY(overduePortfolio)}</h3>
-            <p className="text-[11px] text-red-600 font-medium mt-0.5">Requires immediate action</p>
+            <h3 className="text-xl font-semibold text-red-600">{MONEY(overduePortfolio)}</h3>
+            <p className="text-xs text-red-600 font-medium mt-0.5">Requires immediate action</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Recovery Efficiency
           </span>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-blue-600">{collectionEfficiency}%</h3>
-            <p className="text-[11px] text-blue-600 font-medium mt-0.5">Overall collection rate</p>
+            <h3 className="text-xl font-semibold text-blue-600">{collectionEfficiency}%</h3>
+            <p className="text-xs text-blue-600 font-medium mt-0.5">Overall collection rate</p>
           </div>
         </div>
       </div>
 
       {/* Revenue Breakdown & Visual Audit Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
           <PieChart size={16} className="text-blue-600" />
           Collections Breakdown for Selected Period ({timePeriod.toUpperCase()})
         </h3>
@@ -254,10 +254,10 @@ export default function FinancialReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
           <div className="p-4 bg-blue-50/70 rounded-xl border border-blue-100 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-blue-800 uppercase">Capital Recovery</span>
-              <p className="text-lg font-black text-blue-900 mt-1">{MONEY(capitalCollected)}</p>
+              <span className="text-xs font-semibold text-blue-800 uppercase">Capital Recovery</span>
+              <p className="text-lg font-semibold text-blue-900 mt-1">{MONEY(capitalCollected)}</p>
             </div>
-            <span className="text-xs font-bold text-blue-600">
+            <span className="text-xs font-semibold text-blue-600">
               {totalPeriodCollections > 0
                 ? Math.round((capitalCollected / totalPeriodCollections) * 100)
                 : 0}
@@ -267,10 +267,10 @@ export default function FinancialReportsPage() {
 
           <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-100 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-emerald-800 uppercase">Interest Income</span>
-              <p className="text-lg font-black text-emerald-900 mt-1">{MONEY(interestCollected)}</p>
+              <span className="text-xs font-semibold text-emerald-800 uppercase">Interest Income</span>
+              <p className="text-lg font-semibold text-emerald-900 mt-1">{MONEY(interestCollected)}</p>
             </div>
-            <span className="text-xs font-bold text-emerald-600">
+            <span className="text-xs font-semibold text-emerald-600">
               {totalPeriodCollections > 0
                 ? Math.round((interestCollected / totalPeriodCollections) * 100)
                 : 0}
@@ -278,12 +278,12 @@ export default function FinancialReportsPage() {
             </span>
           </div>
 
-          <div className="p-4 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center justify-between">
+          <div className="p-4 bg-blue-50/70 rounded-xl border border-blue-100 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-purple-800 uppercase">Other Fees / Penalties</span>
-              <p className="text-lg font-black text-purple-900 mt-1">{MONEY(otherFeesCollected)}</p>
+              <span className="text-xs font-semibold text-blue-800 uppercase">Other Fees / Penalties</span>
+              <p className="text-lg font-semibold text-blue-900 mt-1">{MONEY(otherFeesCollected)}</p>
             </div>
-            <span className="text-xs font-bold text-purple-600">
+            <span className="text-xs font-semibold text-blue-600">
               {totalPeriodCollections > 0
                 ? Math.round((otherFeesCollected / totalPeriodCollections) * 100)
                 : 0}
@@ -297,11 +297,11 @@ export default function FinancialReportsPage() {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-4">
           {/* Main Tab Toggle */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setReportTab("collections")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer ${
                 reportTab === "collections"
                   ? "bg-blue-600 text-white shadow-sm"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -312,7 +312,7 @@ export default function FinancialReportsPage() {
             <button
               type="button"
               onClick={() => setReportTab("portfolio")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer ${
                 reportTab === "portfolio"
                   ? "bg-blue-600 text-white shadow-sm"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -324,8 +324,8 @@ export default function FinancialReportsPage() {
 
           {/* Sub-Filters: Time Period or Status */}
           {reportTab === "collections" ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Period:
               </span>
               {(["daily", "weekly", "monthly", "all"] as const).map((p) => (
@@ -333,7 +333,7 @@ export default function FinancialReportsPage() {
                   key={p}
                   type="button"
                   onClick={() => setTimePeriod(p)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition uppercase cursor-pointer ${
                     timePeriod === p
                       ? "bg-slate-900 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -345,7 +345,7 @@ export default function FinancialReportsPage() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Loan Status:
               </span>
               {(["ALL", "ACTIVE", "PENDING", "OVERDUE", "COMPLETED"] as const).map((s) => (
@@ -353,7 +353,7 @@ export default function FinancialReportsPage() {
                   key={s}
                   type="button"
                   onClick={() => setStatusFilter(s)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     statusFilter === s
                       ? "bg-slate-900 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -370,7 +370,7 @@ export default function FinancialReportsPage() {
         {reportTab === "collections" && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Receipt / ID</th>
                   <th className="py-3 px-4">Date</th>
@@ -388,7 +388,7 @@ export default function FinancialReportsPage() {
                   const loan = loans.find((l) => l.id === p.loanId);
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                      <td className="py-3 px-4 font-mono font-semibold text-slate-900">
                         {p.receiptNo || p.id}
                       </td>
                       <td className="py-3 px-4 text-slate-500">{p.date}</td>
@@ -400,12 +400,12 @@ export default function FinancialReportsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             p.type === "Capital"
                               ? "bg-blue-100 text-blue-700"
                               : p.type === "Interest"
                               ? "bg-emerald-100 text-emerald-700"
-                              : "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
                           }`}
                         >
                           {p.type}
@@ -413,7 +413,7 @@ export default function FinancialReportsPage() {
                       </td>
                       <td className="py-3 px-4 text-slate-600">{p.method || "Cash"}</td>
                       <td className="py-3 px-4 text-slate-600">{p.collectedBy || "Admin"}</td>
-                      <td className="py-3 px-4 text-right font-black text-slate-900">
+                      <td className="py-3 px-4 text-right font-semibold text-slate-900">
                         {MONEY(p.amount)}
                       </td>
                     </tr>
@@ -423,7 +423,7 @@ export default function FinancialReportsPage() {
             </table>
 
             {filteredPayments.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs">
+              <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-400 text-xs">
                 No collections found for the {timePeriod} timeframe.
               </div>
             )}
@@ -434,7 +434,7 @@ export default function FinancialReportsPage() {
         {reportTab === "portfolio" && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Loan ID</th>
                   <th className="py-3 px-4">Borrower</th>
@@ -456,7 +456,7 @@ export default function FinancialReportsPage() {
 
                   return (
                     <tr key={l.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                      <td className="py-3 px-4 font-mono font-semibold text-slate-900">
                         {l.loanNo || l.id}
                       </td>
                       <td className="py-3 px-4 font-semibold text-slate-900">
@@ -468,18 +468,18 @@ export default function FinancialReportsPage() {
                       <td className="py-3 px-4 text-slate-600">
                         {l.interestRate}% ({l.repaymentFrequency || "Monthly"})
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-900">
+                      <td className="py-3 px-4 font-semibold text-slate-900">
                         {MONEY(l.totalRepayment)}
                       </td>
-                      <td className="py-3 px-4 font-bold text-emerald-600">
+                      <td className="py-3 px-4 font-semibold text-emerald-600">
                         {MONEY(paid)}
                       </td>
-                      <td className="py-3 px-4 font-bold text-amber-700">
+                      <td className="py-3 px-4 font-semibold text-amber-700">
                         {MONEY(balance)}
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             (l.status || "").toLowerCase() === "active"
                               ? "bg-emerald-100 text-emerald-700"
                               : (l.status || "").toLowerCase() === "overdue"
@@ -499,7 +499,7 @@ export default function FinancialReportsPage() {
             </table>
 
             {filteredLoans.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs">
+              <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-400 text-xs">
                 No loans found matching the status filter &quot;{statusFilter}&quot;.
               </div>
             )}

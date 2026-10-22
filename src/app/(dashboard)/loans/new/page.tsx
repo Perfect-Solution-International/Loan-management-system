@@ -73,7 +73,7 @@ function CustomerProfileModal({
       {/* Card header */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Blue banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-7 py-5 flex items-center justify-between">
+        <div className="bg-blue-800 px-4 sm:px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {customer.photoUrl ? (
               <img
@@ -82,15 +82,15 @@ function CustomerProfileModal({
                 className="w-16 h-16 rounded-2xl object-cover border-2 border-white/50 shadow-md shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-white/20 text-white font-black text-2xl flex items-center justify-center shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-white/20 text-white font-semibold text-2xl flex items-center justify-center shrink-0">
                 {(customer.name || "C").charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">
+              <p className="text-xs font-semibold text-blue-200 uppercase tracking-widest">
                 CUSTOMER PROFILE
               </p>
-              <h2 className="text-xl font-black text-white mt-0.5">
+              <h2 className="text-xl font-semibold text-white mt-0.5">
                 {customer.fullName || customer.name}
               </h2>
               <div className="flex items-center gap-2 mt-1.5">
@@ -98,7 +98,7 @@ function CustomerProfileModal({
                   {customer.id}
                 </span>
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     isActive ? "bg-emerald-400/20 text-emerald-100" : "bg-slate-400/20 text-slate-200"
                   }`}
                 >
@@ -110,23 +110,23 @@ function CustomerProfileModal({
         </div>
 
         {/* Outstanding balance */}
-        <div className="bg-slate-900 px-7 py-4 flex items-center justify-between">
+        <div className="bg-slate-900 px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">
+            <p className="text-xs font-semibold text-blue-300 uppercase tracking-widest">
               Current Outstanding Balance
             </p>
-            <p className="text-2xl font-black font-mono text-white mt-0.5">
+            <p className="text-2xl font-semibold font-mono text-white mt-0.5">
               {MONEY(outstanding)}
             </p>
           </div>
           <div className="text-right text-xs space-y-1">
             <p className="text-slate-400">
-              Total Repayable: <span className="text-white font-bold">{MONEY(totalRepayable)}</span>
+              Total Repayable: <span className="text-white font-semibold">{MONEY(totalRepayable)}</span>
             </p>
-            <p className="text-emerald-400 font-bold">Paid: {MONEY(totalPaid)}</p>
+            <p className="text-emerald-400 font-semibold">Paid: {MONEY(totalPaid)}</p>
             <p className="text-slate-400">
               Active loans:{" "}
-              <span className="text-white font-bold">
+              <span className="text-white font-semibold">
                 {customerLoans.filter((l) => l.status === "Active" || l.status === "Overdue").length}
               </span>
             </p>
@@ -134,7 +134,7 @@ function CustomerProfileModal({
         </div>
 
         {/* Body sections */}
-        <div className="px-7 py-6 space-y-6">
+        <div className="px-4 sm:px-6 py-6 space-y-6">
           {/* Warning if suspended */}
           {!isActive && (
             <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
@@ -185,8 +185,8 @@ function CustomerProfileModal({
                     className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                   >
                     <div>
-                      <p className="font-bold text-slate-800">{doc.title}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
+                      <p className="font-semibold text-slate-800">{doc.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
                         {doc.fileName} · {doc.fileSize}
                       </p>
                     </div>
@@ -194,7 +194,7 @@ function CustomerProfileModal({
                       href={doc.fileUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 font-bold rounded-lg transition text-xs"
+                      className="px-3 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold rounded-lg transition text-xs"
                     >
                       View
                     </a>
@@ -209,21 +209,21 @@ function CustomerProfileModal({
           {/* Existing loans */}
           <Section icon={<DollarSign size={13} />} title={`Existing Loans (${customerLoans.length})`}>
             {customerLoans.length > 0 ? (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <div className="overflow-x-auto rounded-xl border border-slate-200" tabIndex={0} role="region" aria-label="Scrollable records table">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Loan ID</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Purpose</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Principal</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Total Due</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Status</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Loan ID</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Purpose</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Principal</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Total Due</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {customerLoans.map((loan: Loan) => (
                       <tr key={loan.id}>
-                        <td className="px-4 py-2.5 font-mono font-bold text-slate-800">
+                        <td className="px-4 py-2.5 font-mono font-semibold text-slate-800">
                           {loan.loanNo || loan.id}
                         </td>
                         <td className="px-4 py-2.5 text-slate-700">
@@ -232,16 +232,16 @@ function CustomerProfileModal({
                         <td className="px-4 py-2.5 font-mono text-slate-800">
                           {MONEY(loan.principal || loan.amount || 0)}
                         </td>
-                        <td className="px-4 py-2.5 font-mono font-bold text-slate-900">
+                        <td className="px-4 py-2.5 font-mono font-semibold text-slate-900">
                           {MONEY(loan.totalRepayment || 0)}
                         </td>
                         <td className="px-4 py-2.5">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                               loan.status === "Active"
                                 ? "bg-emerald-100 text-emerald-700"
                                 : loan.status === "Overdue"
-                                ? "bg-rose-100 text-rose-700"
+                                ? "bg-red-100 text-red-700"
                                 : "bg-slate-200 text-slate-600"
                             }`}
                           >
@@ -266,26 +266,26 @@ function CustomerProfileModal({
               </div>
             )}
             {customerPayments.length > 0 ? (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <div className="overflow-x-auto rounded-xl border border-slate-200" tabIndex={0} role="region" aria-label="Scrollable records table">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Date</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Receipt</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Type</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Amount</th>
-                      <th className="text-left px-4 py-2.5 font-bold text-slate-600">Method</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Date</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Receipt</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Type</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Amount</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Method</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {customerPayments.map((p: Payment) => (
                       <tr key={p.id}>
                         <td className="px-4 py-2.5 font-mono text-slate-700">{p.date}</td>
-                        <td className="px-4 py-2.5 font-mono font-bold text-blue-700">
+                        <td className="px-4 py-2.5 font-mono font-semibold text-blue-700">
                           {p.receiptNo || p.id}
                         </td>
                         <td className="px-4 py-2.5 text-slate-700">{p.type}</td>
-                        <td className="px-4 py-2.5 font-mono font-bold text-slate-900">
+                        <td className="px-4 py-2.5 font-mono font-semibold text-slate-900">
                           {MONEY(p.amount)}
                         </td>
                         <td className="px-4 py-2.5 text-slate-600">{p.method || "Cash"}</td>
@@ -305,20 +305,20 @@ function CustomerProfileModal({
         </div>
 
         {/* Footer actions */}
-        <div className="px-7 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/60 rounded-b-3xl">
+        <div className="px-4 sm:px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/60 rounded-b-3xl">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition cursor-pointer"
           >
             <ArrowLeft size={13} /> Change Customer
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md shadow-blue-600/20 transition cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md  transition cursor-pointer"
           >
-            Confirm & Proceed to Loan Form <ChevronRight size={14} />
+            Continue to Loan Terms <ChevronRight size={14} />
           </button>
         </div>
       </div>
@@ -475,26 +475,26 @@ function IssueNewLoanContent() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Page Header */}
-      <div className="bg-white border-b border-slate-200 px-8 py-5">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
               OPERATIONS / NEW LOAN CONTRACT
             </p>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-              Issue New Loan
+            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-0.5">
+              Create Loan
             </h1>
           </div>
           <Link
             href="/loans"
-            className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-xs"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-xs"
           >
             <ArrowLeft size={14} /> Back to Loans
           </Link>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Step indicator */}
         {step !== "done" && (
           <div className="flex items-center gap-2">
@@ -506,7 +506,7 @@ function IssueNewLoanContent() {
               return (
                 <React.Fragment key={s.key}>
                   <div
-                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition ${
                       isActive
                         ? "bg-blue-600 text-white shadow-sm"
                         : isDone
@@ -529,15 +529,15 @@ function IssueNewLoanContent() {
         {/* ── STEP 1: SELECT CUSTOMER ─────────────────────────────────────── */}
         {step === "select" && (
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="px-7 pt-6 pb-4 border-b border-slate-100">
-              <h2 className="text-base font-black text-slate-900">Select Borrower</h2>
+            <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-slate-100">
+              <h2 className="text-base font-semibold text-slate-900">Select Borrower</h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Search for and select the customer who will receive this loan
               </p>
             </div>
 
             {/* Search bar */}
-            <div className="px-7 py-4 border-b border-slate-100">
+            <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
               <div className="relative">
                 <Search
                   size={14}
@@ -548,14 +548,14 @@ function IssueNewLoanContent() {
                   onChange={(e) => setCustomerSearch(e.target.value)}
                   placeholder="Search customer by name, NIC, ID, or town…"
                   className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-                />
+                 aria-label="Search customer by name, NIC, ID, or town…"/>
               </div>
             </div>
 
             {/* Customer list */}
             <div className="max-h-[480px] overflow-y-auto divide-y divide-slate-100">
               {filteredCustomers.length === 0 && (
-                <div className="px-7 py-12 text-center">
+                <div className="px-4 sm:px-6 py-12 text-center">
                   <User size={32} className="text-slate-300 mx-auto mb-2" />
                   <p className="text-sm text-slate-500">No customers found</p>
                 </div>
@@ -575,7 +575,7 @@ function IssueNewLoanContent() {
                     key={c.id}
                     type="button"
                     onClick={() => handleSelectCustomer(c.id)}
-                    className="w-full flex items-center gap-4 px-7 py-4 hover:bg-blue-50/60 transition text-left cursor-pointer"
+                    className="w-full flex items-center gap-4 px-4 sm:px-6 py-4 hover:bg-blue-50/60 transition text-left cursor-pointer"
                   >
                     {c.photoUrl ? (
                       <img
@@ -584,18 +584,18 @@ function IssueNewLoanContent() {
                         className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
                       />
                     ) : (
-                      <span className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 text-sm font-extrabold flex items-center justify-center shrink-0">
+                      <span className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 text-sm font-semibold flex items-center justify-center shrink-0">
                         {initials}
                       </span>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>
+                      <p className="text-sm font-semibold text-slate-900 truncate">{displayName}</p>
                       <p className="text-xs text-slate-500 truncate">
                         NIC: {c.nic} · {c.town || "—"} · {c.phone}
                       </p>
                     </div>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold shrink-0 ${
                         isActive
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-slate-200 text-slate-600"
@@ -638,12 +638,12 @@ function IssueNewLoanContent() {
                     className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 font-black text-lg flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 font-semibold text-lg flex items-center justify-center shrink-0">
                     {(selectedCustomer.name || "C").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-slate-900 truncate">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
                     {selectedCustomer.fullName || selectedCustomer.name}
                   </p>
                   <p className="text-xs text-slate-500 truncate">
@@ -651,7 +651,7 @@ function IssueNewLoanContent() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs px-2.5 py-1 bg-blue-50 text-blue-700 font-bold rounded-lg">
+                  <span className="font-mono text-xs px-2.5 py-1 bg-blue-50 text-blue-700 font-semibold rounded-lg">
                     Loan ID: {loanId}
                   </span>
                   <button
@@ -659,7 +659,7 @@ function IssueNewLoanContent() {
                     onClick={handleBackToSelect}
                     className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
                     title="Change customer"
-                  >
+                   aria-label="Change customer">
                     <X size={14} />
                   </button>
                 </div>
@@ -855,17 +855,17 @@ function IssueNewLoanContent() {
                   rows={3}
                   placeholder="Any additional notes about this loan agreement, collateral, or special terms…"
                   className={`${inputCls} resize-none`}
-                />
+                 aria-label="Any additional notes about this loan agreement, collateral, or special terms…"/>
               </FormCard>
             </div>
 
             {/* Right col: Live summary + Submit */}
             <div className="space-y-4">
               {/* Financial Summary */}
-              <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl sticky top-6 space-y-5">
+              <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-sm xl:sticky xl:top-24 space-y-5">
                 <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                   <Calculator size={16} className="text-blue-400" />
-                  <h3 className="font-bold text-sm">Financial Summary</h3>
+                  <h3 className="font-semibold text-sm">Financial Summary</h3>
                 </div>
 
                 <div className="space-y-3 text-xs">
@@ -895,11 +895,11 @@ function IssueNewLoanContent() {
                       <p className="text-slate-400">
                         {frequency} Installment
                       </p>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-xs text-slate-500">
                         {calculations.numberOfInstallments} payments
                       </p>
                     </div>
-                    <span className="text-blue-400 font-black text-base">
+                    <span className="text-blue-400 font-semibold text-base">
                       {MONEY(calculations.installmentAmount)}
                     </span>
                   </div>
@@ -907,14 +907,14 @@ function IssueNewLoanContent() {
 
                 {/* Loan ID */}
                 <div className="p-3 bg-slate-800 rounded-xl text-xs">
-                  <p className="text-slate-400 text-[10px] uppercase tracking-wider">Loan Reference</p>
-                  <p className="font-mono font-black text-white mt-0.5 text-sm">{loanId}</p>
+                  <p className="text-slate-400 text-xs uppercase tracking-wider">Loan Reference</p>
+                  <p className="font-mono font-semibold text-white mt-0.5 text-sm">{loanId}</p>
                 </div>
 
                 <button
                   type="submit"
                   disabled={submitted}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold text-xs uppercase tracking-wider rounded-xl shadow-sm  transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <PlusCircle size={15} />
                   Disburse & Activate Loan
@@ -931,9 +931,9 @@ function IssueNewLoanContent() {
               <CheckCircle2 size={40} className="text-emerald-500" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900">Loan Activated!</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">Loan Activated!</h2>
               <p className="text-sm text-slate-500 mt-2">
-                Loan <span className="font-mono font-bold text-slate-800">{loanId}</span> has been
+                Loan <span className="font-mono font-semibold text-slate-800">{loanId}</span> has been
                 disbursed and activated. Redirecting to loan detail page…
               </p>
             </div>
@@ -952,31 +952,16 @@ function FormCard({ title, children }: { title: string; children: React.ReactNod
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100">
-        <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">{title}</h3>
+        <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-widest">{title}</h3>
       </div>
       <div className="p-6">{children}</div>
     </div>
   );
 }
 
-function FormField({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      {children}
-    </div>
-  );
+function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactElement<{ id?: string }> }) {
+  const fieldId = React.useId();
+  return <div><label htmlFor={fieldId} className="block text-sm font-medium text-slate-600 mb-2">{label}{required && <span className="text-red-700 ml-0.5">*</span>}</label>{React.cloneElement(children, {id:fieldId})}</div>;
 }
 
 function SummaryRow({
@@ -1001,7 +986,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
     <div>
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
         <span className="text-blue-600">{icon}</span>
-        <h3 className="text-[10px] font-extrabold text-slate-600 uppercase tracking-widest">{title}</h3>
+        <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-widest">{title}</h3>
       </div>
       {children}
     </div>
@@ -1025,8 +1010,8 @@ function InfoBox({
 }) {
   return (
     <div className={`${fullWidth ? "sm:col-span-2" : ""} bg-slate-50 rounded-xl p-3 border border-slate-100`}>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-sm font-bold text-slate-900 mt-0.5 ${mono ? "font-mono" : ""}`}>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</p>
+      <p className={`text-sm font-semibold text-slate-900 mt-0.5 ${mono ? "font-mono" : ""}`}>
         {value || "—"}
       </p>
     </div>
@@ -1038,7 +1023,7 @@ export default function IssueNewLoanPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-center text-slate-500 text-sm">
+        <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-500 text-sm">
           Loading loan creation wizard…
         </div>
       }

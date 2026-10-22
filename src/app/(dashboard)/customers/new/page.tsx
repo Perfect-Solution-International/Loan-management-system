@@ -483,18 +483,18 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
             PORTFOLIO / REGISTRATION
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-            Advanced Customer Registration
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
+            Add Customer
           </h1>
           <p className="text-xs text-slate-500">
-            Comprehensive borrower profile onboarding with photograph, identity verification, existing loans, and repayment history.
+            Create a customer profile and organize contact details, documents, and loan history.
           </p>
         </div>
         <Link
@@ -529,22 +529,22 @@ export default function NewCustomerPage() {
                 <Camera size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900">
+                <h2 className="text-sm font-semibold text-slate-900">
                   Customer Photograph & Account Identity
                 </h2>
-                <p className="text-[11px] text-slate-600">
+                <p className="text-xs text-slate-600">
                   Upload borrower facial portrait, auto-generate Customer ID, and set customer status.
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">Status:</span>
+              <span className="text-xs font-semibold text-slate-500">Status:</span>
               <select
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-semibold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+               aria-label="status">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Suspended">Suspended</option>
@@ -567,14 +567,14 @@ export default function NewCustomerPage() {
                     onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
                     className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-xs cursor-pointer transition"
                     title="Remove Photo"
-                  >
+                   aria-label="Remove Photo">
                     <X size={12} />
                   </button>
                 </div>
               ) : (
                 <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400">
                   <Camera size={26} className="text-slate-400 mb-1" />
-                  <span className="text-[10px] font-bold">No Photo</span>
+                  <span className="text-xs font-semibold">No Photo</span>
                 </div>
               )}
             </div>
@@ -582,11 +582,11 @@ export default function NewCustomerPage() {
             {/* Photo Controls */}
             <div className="space-y-3 flex-1">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
                   Upload Customer Photograph (JPG, PNG)
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition">
                     <Upload size={14} /> Browse Photo from Device
                     <input
                       type="file"
@@ -601,7 +601,7 @@ export default function NewCustomerPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Select a clear portrait image of the customer for identity verification.
                 </p>
               </div>
@@ -609,7 +609,7 @@ export default function NewCustomerPage() {
               {/* Customer ID Display / Edit */}
               <div className="pt-2 flex items-center gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500">
+                  <label className="text-xs font-semibold text-slate-500" htmlFor="ui-field-1">
                     Auto-generated Customer ID
                   </label>
                   <div className="flex items-center gap-2">
@@ -618,14 +618,14 @@ export default function NewCustomerPage() {
                       autoComplete="off"
                       value={customerId}
                       onChange={(e) => setCustomerId(e.target.value)}
-                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-semibold text-slate-800 w-36 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     id="ui-field-1"/>
                     <button
                       type="button"
                       onClick={handleRegenerateId}
                       className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition"
                       title="Regenerate Customer ID"
-                    >
+                     aria-label="Regenerate Customer ID">
                       <RefreshCw size={14} />
                     </button>
                   </div>
@@ -642,10 +642,10 @@ export default function NewCustomerPage() {
               <UserCheck size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="text-sm font-semibold text-slate-900">
                 Full Name & National Identity (NIC)
               </h2>
-              <p className="text-[11px] text-slate-600">
+              <p className="text-xs text-slate-600">
                 Sri Lankan National Identity Card details and birth data.
               </p>
             </div>
@@ -653,7 +653,7 @@ export default function NewCustomerPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-2">
                 Full Legal Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -665,11 +665,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="e.g. Kasun Chamara Perera"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-2"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-3">
                 NIC Number <span className="text-red-500">*</span>
               </label>
               <input
@@ -680,18 +680,18 @@ export default function NewCustomerPage() {
                 value={form.nic}
                 onChange={handleChange}
                 placeholder="e.g. 198512345678 or 851234567V"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold uppercase"
-              />
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-semibold uppercase"
+               id="ui-field-3"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Gender</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-4">Gender</label>
               <select
                 name="gender"
                 value={form.gender}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
-              >
+               id="ui-field-4">
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -699,7 +699,7 @@ export default function NewCustomerPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Date of Birth (DOB)</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-5">Date of Birth (DOB)</label>
               <input
                 type="date"
                 name="dob"
@@ -707,7 +707,7 @@ export default function NewCustomerPage() {
                 value={form.dob}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-5"/>
             </div>
           </div>
         </div>
@@ -715,14 +715,14 @@ export default function NewCustomerPage() {
         {/* SECTION 3: RESIDENTIAL ADDRESS, VILLAGE & TOWN */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
               <MapPin size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="text-sm font-semibold text-slate-900">
                 Residential Address, Village & Town
               </h2>
-              <p className="text-[11px] text-slate-600">
+              <p className="text-xs text-slate-600">
                 Detailed permanent domicile location and administrative region.
               </p>
             </div>
@@ -730,7 +730,7 @@ export default function NewCustomerPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-6">
                 Residential Address (House / Street)
               </label>
               <input
@@ -741,11 +741,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="No. 45/2, Temple Road"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-6"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-7">
                 Village / Suburb / Grama Niladhari
               </label>
               <input
@@ -756,11 +756,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="e.g. Mahabage, Kiribathgoda"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-7"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Town / City</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-8">Town / City</label>
               <input
                 type="text"
                 name="town"
@@ -769,17 +769,17 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="e.g. Kelaniya, Colombo 03"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-8"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">District</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-9">District</label>
               <select
                 name="district"
                 value={form.district}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
-              >
+               id="ui-field-9">
                 {SRI_LANKA_DISTRICTS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -797,10 +797,10 @@ export default function NewCustomerPage() {
               <Phone size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="text-sm font-semibold text-slate-900">
                 Contact Numbers & Emergency Contacts
               </h2>
-              <p className="text-[11px] text-slate-600">
+              <p className="text-xs text-slate-600">
                 Active telecommunication channels for collections and notifications.
               </p>
             </div>
@@ -808,7 +808,7 @@ export default function NewCustomerPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-10">
                 Primary Contact Number <span className="text-red-500">*</span>
               </label>
               <input
@@ -820,11 +820,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="0771234567"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-10"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-11">
                 Alternative Contact Number
               </label>
               <input
@@ -835,11 +835,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="0112345678"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-11"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Email Address (Optional)</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-12">Email Address (Optional)</label>
               <input
                 type="email"
                 name="email"
@@ -848,11 +848,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="customer@example.lk"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-12"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Emergency Contact Person</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-13">Emergency Contact Person</label>
               <input
                 type="text"
                 name="emergencyContactName"
@@ -861,11 +861,11 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="e.g. Malini Perera"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-13"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Emergency Contact Phone</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-14">Emergency Contact Phone</label>
               <input
                 type="tel"
                 name="emergencyContactPhone"
@@ -874,17 +874,17 @@ export default function NewCustomerPage() {
                 onChange={handleChange}
                 placeholder="0719998888"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-              />
+               id="ui-field-14"/>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Emergency Relationship</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-15">Emergency Relationship</label>
               <select
                 name="emergencyContactRelationship"
                 value={form.emergencyContactRelationship}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
-              >
+               id="ui-field-15">
                 <option value="Spouse">Spouse</option>
                 <option value="Parent">Parent</option>
                 <option value="Sibling">Sibling</option>
@@ -902,10 +902,10 @@ export default function NewCustomerPage() {
               <CreditCard size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="text-sm font-semibold text-slate-900">
                 National Identity Card (NIC) Images
               </h2>
-              <p className="text-[11px] text-slate-600">
+              <p className="text-xs text-slate-600">
                 Dedicated upload slots for clear scanned images or photos of borrower&apos;s NIC (Front &amp; Back).
               </p>
             </div>
@@ -915,12 +915,12 @@ export default function NewCustomerPage() {
             {/* NIC Front */}
             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-600" />
                   NIC Front Image
                 </span>
                 {nicFrontUrl && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                     ✓ Uploaded
                   </span>
                 )}
@@ -935,10 +935,10 @@ export default function NewCustomerPage() {
                   />
                   <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
                     <div className="truncate pr-2">
-                      <p className="text-[11px] font-bold text-slate-800 truncate">
+                      <p className="text-xs font-semibold text-slate-800 truncate">
                         {nicFrontFileName || "nic_front.jpg"}
                       </p>
-                      <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
+                      <p className="text-xs text-slate-500">{nicFrontFileSize || "Image file"}</p>
                     </div>
                     <button
                       type="button"
@@ -947,7 +947,7 @@ export default function NewCustomerPage() {
                         setNicFrontFileName("");
                         setNicFrontFileSize("");
                       }}
-                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-semibold transition cursor-pointer shrink-0"
                     >
                       Remove
                     </button>
@@ -956,8 +956,8 @@ export default function NewCustomerPage() {
               ) : (
                 <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
                   <Upload size={22} className="text-slate-400 mb-2" />
-                  <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
-                  <span className="text-[10px] text-slate-500 mt-1">
+                  <span className="text-xs font-semibold text-slate-700">Upload NIC Front</span>
+                  <span className="text-xs text-slate-500 mt-1">
                     Click to browse PNG, JPG or PDF
                   </span>
                   <input
@@ -973,12 +973,12 @@ export default function NewCustomerPage() {
             {/* NIC Back */}
             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-600" />
                   NIC Back Image
                 </span>
                 {nicBackUrl && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                     ✓ Uploaded
                   </span>
                 )}
@@ -993,10 +993,10 @@ export default function NewCustomerPage() {
                   />
                   <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between">
                     <div className="truncate pr-2">
-                      <p className="text-[11px] font-bold text-slate-800 truncate">
+                      <p className="text-xs font-semibold text-slate-800 truncate">
                         {nicBackFileName || "nic_back.jpg"}
                       </p>
-                      <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
+                      <p className="text-xs text-slate-500">{nicBackFileSize || "Image file"}</p>
                     </div>
                     <button
                       type="button"
@@ -1005,7 +1005,7 @@ export default function NewCustomerPage() {
                         setNicBackFileName("");
                         setNicBackFileSize("");
                       }}
-                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition cursor-pointer shrink-0"
+                      className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg font-semibold transition cursor-pointer shrink-0"
                     >
                       Remove
                     </button>
@@ -1014,8 +1014,8 @@ export default function NewCustomerPage() {
               ) : (
                 <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-blue-50/30 transition text-center min-h-[160px]">
                   <Upload size={22} className="text-slate-400 mb-2" />
-                  <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
-                  <span className="text-[10px] text-slate-500 mt-1">
+                  <span className="text-xs font-semibold text-slate-700">Upload NIC Back</span>
+                  <span className="text-xs text-slate-500 mt-1">
                     Click to browse PNG, JPG or PDF
                   </span>
                   <input
@@ -1034,14 +1034,14 @@ export default function NewCustomerPage() {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                 <FileText size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900">
+                <h2 className="text-sm font-semibold text-slate-900">
                   Other Docs &amp; Supporting Documents ({attachedDocs.length})
                 </h2>
-                <p className="text-[11px] text-slate-600">
+                <p className="text-xs text-slate-600">
                   Upload multiple supporting documents (utility bills, salary slips, signed lease/loan agreements, or other proofs).
                 </p>
               </div>
@@ -1057,12 +1057,12 @@ export default function NewCustomerPage() {
                   className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 flex items-center justify-between gap-3 shadow-2xs"
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0">
                       <FileText size={16} />
                     </div>
                     <div className="truncate">
-                      <p className="text-xs font-bold text-slate-800 truncate">{doc.title}</p>
-                      <p className="text-[10px] text-slate-600">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{doc.title}</p>
+                      <p className="text-xs text-slate-600">
                         {doc.type.replace(/_/g, " ")} · {doc.fileSize} · {doc.fileName}
                       </p>
                     </div>
@@ -1072,7 +1072,7 @@ export default function NewCustomerPage() {
                     onClick={() => handleRemoveDoc(doc.id)}
                     className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition shrink-0 cursor-pointer"
                     title="Remove document"
-                  >
+                   aria-label="Remove document">
                     <X size={14} />
                   </button>
                 </div>
@@ -1087,12 +1087,12 @@ export default function NewCustomerPage() {
           {/* Add Supporting Documents Inline Form */}
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-700">Attach Supporting Document:</p>
-              <span className="text-[10px] text-slate-500">Supports selecting multiple files at once</span>
+              <p className="text-xs font-semibold text-slate-700">Attach Supporting Document:</p>
+              <span className="text-xs text-slate-500">Supports selecting multiple files at once</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                <label className="text-xs font-semibold text-slate-500 block mb-1" htmlFor="ui-field-16">
                   Document Title
                 </label>
                 <input
@@ -1102,18 +1102,18 @@ export default function NewCustomerPage() {
                   value={newDocTitle}
                   onChange={(e) => setNewDocTitle(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                 id="ui-field-16"/>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 block mb-1" htmlFor="ui-field-17">
                   Category
                 </label>
                 <select
                   value={newDocType}
                   onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 id="ui-field-17">
                   <option value="other">Other Supporting Document</option>
                   <option value="utility_bill">Utility Bill / Address Proof</option>
                   <option value="salary_slip">Salary Slip / Income Proof</option>
@@ -1123,7 +1123,7 @@ export default function NewCustomerPage() {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                <label className="text-xs font-semibold text-slate-500 block mb-1">
                   Upload Files (JPG, PNG, PDF)
                 </label>
                 <div className="flex gap-2">
@@ -1140,7 +1140,7 @@ export default function NewCustomerPage() {
                   <button
                     type="button"
                     onClick={handleAddDocumentToForm}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
                   >
                     Attach
                   </button>
@@ -1154,21 +1154,21 @@ export default function NewCustomerPage() {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+              <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                 <CreditCard size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900">
+                <h2 className="text-sm font-semibold text-slate-900">
                   Existing Loans & Previous Repayment History
                 </h2>
-                <p className="text-[11px] text-slate-600">
+                <p className="text-xs text-slate-600">
                   Record previous loan contracts, outstanding balances, and repayment track records.
                 </p>
               </div>
             </div>
 
             {/* Toggle Switch */}
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
               <input
                 type="checkbox"
                 name="hasExistingLoan"
@@ -1185,19 +1185,19 @@ export default function NewCustomerPage() {
               {/* Existing Loan Terms */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Existing Loan ID / No.</label>
+                  <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-18">Existing Loan ID / No.</label>
                   <input
                     type="text"
                     name="existingLoanNo"
                     value={form.existingLoanNo}
                     onChange={handleChange}
                     placeholder="e.g. LN-2026-PRIOR-01"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
-                  />
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-semibold"
+                   id="ui-field-18"/>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Principal Borrowed (LKR)</label>
+                  <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-19">Principal Borrowed (LKR)</label>
                   <input
                     type="number"
                     name="existingLoanPrincipal"
@@ -1205,11 +1205,11 @@ export default function NewCustomerPage() {
                     value={form.existingLoanPrincipal}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-                  />
+                   id="ui-field-19"/>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Interest Rate (%)</label>
+                  <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-20">Interest Rate (%)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1217,11 +1217,11 @@ export default function NewCustomerPage() {
                     value={form.existingInterestRate}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-                  />
+                   id="ui-field-20"/>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Duration (Months)</label>
+                  <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-21">Duration (Months)</label>
                   <input
                     type="number"
                     name="existingDuration"
@@ -1229,7 +1229,7 @@ export default function NewCustomerPage() {
                     value={form.existingDuration}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-                  />
+                   id="ui-field-21"/>
                 </div>
               </div>
 
@@ -1237,14 +1237,14 @@ export default function NewCustomerPage() {
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                 <div className="flex items-center gap-2">
                   <History size={16} className="text-blue-600" />
-                  <h3 className="text-xs font-bold text-slate-900">
+                  <h3 className="text-xs font-semibold text-slate-900">
                     Repayment History Ledger & Current Outstanding Balance Due
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-22">
                       Total Amount Previously Paid (LKR)
                     </label>
                     <input
@@ -1254,12 +1254,12 @@ export default function NewCustomerPage() {
                       value={form.previousAmountPaid}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
-                    />
-                    <p className="text-[10px] text-slate-600">Sum of prior installments settled.</p>
+                     id="ui-field-22"/>
+                    <p className="text-xs text-slate-600">Sum of prior installments settled.</p>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-23">
                       Installments Settled Count
                     </label>
                     <input
@@ -1268,11 +1268,11 @@ export default function NewCustomerPage() {
                       value={form.previousInstallmentsPaid}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
-                    />
+                     id="ui-field-23"/>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-24">
                       Payment Mode
                     </label>
                     <select
@@ -1280,7 +1280,7 @@ export default function NewCustomerPage() {
                       value={form.previousPaymentMethod}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
-                    >
+                     id="ui-field-24">
                       <option value="Cash">Cash</option>
                       <option value="Bank Transfer">Bank Transfer</option>
                       <option value="Cheque">Cheque</option>
@@ -1291,7 +1291,7 @@ export default function NewCustomerPage() {
                 {/* Outstanding Balance Banner */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-25">
                       Previous Repayment History Notes
                     </label>
                     <textarea
@@ -1301,20 +1301,20 @@ export default function NewCustomerPage() {
                       onChange={handleChange}
                       placeholder="e.g. Paid regular weekly installments on time with no delays."
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold resize-none"
-                    />
+                     id="ui-field-25"/>
                   </div>
 
                   {/* Calculated Balance Callout */}
                   <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                      <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
                         Current Outstanding Balance Due
                       </p>
-                      <p className="text-xl font-black font-mono text-blue-900 mt-0.5">
+                      <p className="text-xl font-semibold font-mono text-blue-900 mt-0.5">
                         {MONEY(computedLoanCalculations?.outstanding || 0)}
                       </p>
                     </div>
-                    <p className="text-[10px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Total Repayable: {MONEY(computedLoanCalculations?.totalRepayment || 0)} · Paid:{" "}
                       {MONEY(computedLoanCalculations?.paid || 0)}
                     </p>
@@ -1335,15 +1335,15 @@ export default function NewCustomerPage() {
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
           <Link
             href="/customers"
-            className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+            className="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
           >
             Cancel
           </Link>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
           >
-            <UserPlus size={16} /> Register & Save Customer Record
+            <UserPlus size={16} /> Add Customer
           </button>
         </div>
       </form>

@@ -13,6 +13,7 @@ import {
   User,
   ArrowRight,
 } from "lucide-react";
+import { Modal } from "@/components/ui";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Customer, Loan, Payment } from "@/types";
@@ -133,15 +134,15 @@ export default function RepaymentsCollectionsPage() {
   });
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
             COLLECTIONS / REPAYMENTS MODULE
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-            Repayment & Collections Terminal
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
+            Repayments
           </h1>
           <p className="text-xs text-slate-500">
             Record loan recoveries separated by Capital, Interest, and Other fees with automated status settlement.
@@ -156,7 +157,7 @@ export default function RepaymentsCollectionsPage() {
       </div>
 
       {notificationMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-semibold animate-fade-in">
           <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
           <span>{notificationMsg}</span>
         </div>
@@ -166,13 +167,13 @@ export default function RepaymentsCollectionsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Total Inflows
             </p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
+            <h3 className="text-2xl font-semibold text-slate-900 mt-1">
               {MONEY(totalCollectionsAllTime)}
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               {payments.length} transactions recorded
             </p>
           </div>
@@ -183,13 +184,13 @@ export default function RepaymentsCollectionsPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Capital Recovered
             </p>
-            <h3 className="text-2xl font-black text-emerald-600 mt-1">
+            <h3 className="text-2xl font-semibold text-emerald-600 mt-1">
               {MONEY(totalCapitalRepaid)}
             </h3>
-            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+            <p className="text-xs text-emerald-600 font-medium mt-0.5">
               Principal reductions
             </p>
           </div>
@@ -200,30 +201,30 @@ export default function RepaymentsCollectionsPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Interest Earned
             </p>
-            <h3 className="text-2xl font-black text-purple-600 mt-1">
+            <h3 className="text-2xl font-semibold text-blue-600 mt-1">
               {MONEY(totalInterestCollected)}
             </h3>
-            <p className="text-[11px] text-purple-600 font-medium mt-0.5">
+            <p className="text-xs text-blue-600 font-medium mt-0.5">
               Gross interest recognized
             </p>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <Receipt size={22} />
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Settled Loans
             </p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
+            <h3 className="text-2xl font-semibold text-slate-900 mt-1">
               {completedLoansCount}
             </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               100% paid off contracts
             </p>
           </div>
@@ -239,10 +240,10 @@ export default function RepaymentsCollectionsPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
             <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">
                 1. Select Loan & Enter Payment Breakdown
               </h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Choose the contract and record repayment categorized by financial component.
               </p>
             </div>
@@ -250,14 +251,14 @@ export default function RepaymentsCollectionsPage() {
             <form onSubmit={handleRecordRepayment} className="space-y-5">
               {/* Loan Dropdown */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-                  Choose Loan Contract *
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1" htmlFor="ui-field-1">
+                  Loan account *
                 </label>
                 <select
                   value={selectedLoanId}
                   onChange={(e) => setSelectedLoanId(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                 id="ui-field-1">
                   {loans.map((l) => {
                     const c = customers.find((cust) => cust.id === l.customerId);
                     return (
@@ -272,8 +273,8 @@ export default function RepaymentsCollectionsPage() {
 
               {/* Payment Type Tabs */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">
-                  Repayment Categorization Type *
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1.5">
+                  Payment category *
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {(["Capital", "Interest", "Other"] as const).map((t) => (
@@ -281,7 +282,7 @@ export default function RepaymentsCollectionsPage() {
                       key={t}
                       type="button"
                       onClick={() => setPaymentType(t)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                      className={`py-2.5 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer ${
                         paymentType === t
                           ? "bg-blue-600 text-white shadow-sm"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -294,7 +295,7 @@ export default function RepaymentsCollectionsPage() {
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {paymentType === "Capital"
                     ? "Deducts directly from principal borrowed."
                     : paymentType === "Interest"
@@ -306,7 +307,7 @@ export default function RepaymentsCollectionsPage() {
               {/* Amount, Method, Date */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1" htmlFor="ui-field-2">
                     Amount (LKR) *
                   </label>
                   <input
@@ -316,12 +317,12 @@ export default function RepaymentsCollectionsPage() {
                     placeholder={`e.g. ${selectedLoan?.installment || 25000}`}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   id="ui-field-2"/>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1" htmlFor="ui-field-3">
                     Payment Method
                   </label>
                   <select
@@ -332,7 +333,7 @@ export default function RepaymentsCollectionsPage() {
                       )
                     }
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
+                   id="ui-field-3">
                     <option value="Cash">Cash On Hand</option>
                     <option value="Bank Transfer">Bank Transfer / Deposit</option>
                     <option value="Cheque">Bank Cheque</option>
@@ -340,7 +341,7 @@ export default function RepaymentsCollectionsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1" htmlFor="ui-field-4">
                     Collection Date
                   </label>
                   <input
@@ -349,14 +350,14 @@ export default function RepaymentsCollectionsPage() {
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                   id="ui-field-4"/>
                 </div>
               </div>
 
               {/* Notes & Staff Collector */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1" htmlFor="ui-field-5">
                     Collection Officer
                   </label>
                   <input
@@ -364,11 +365,11 @@ export default function RepaymentsCollectionsPage() {
                     value={collectedBy}
                     onChange={(e) => setCollectedBy(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                   id="ui-field-5"/>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1" htmlFor="ui-field-6">
                     Reference / Cashier Notes
                   </label>
                   <input
@@ -377,13 +378,13 @@ export default function RepaymentsCollectionsPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                   id="ui-field-6"/>
                 </div>
               </div>
 
               {/* Real-time settlement banner */}
               {willSettleLoan && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-semibold">
                   <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
                   <span>
                     🎉 This payment will settle the loan in full! Loan status will automatically transition from Active to COMPLETED upon submission.
@@ -396,9 +397,9 @@ export default function RepaymentsCollectionsPage() {
                 <button
                   type="submit"
                   disabled={!selectedLoan || numEnteredAmount <= 0}
-                  className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/30 transition cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 sm:px-6 lg:px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 text-white font-semibold text-xs uppercase tracking-wider rounded-xl shadow-sm  transition cursor-pointer"
                 >
-                  <Receipt size={16} /> Record Repayment & Generate Receipt
+                  <Receipt size={16} /> Record Payment
                 </button>
               </div>
             </form>
@@ -407,18 +408,18 @@ export default function RepaymentsCollectionsPage() {
 
         {/* Right Col: Live Loan Financial Ledger & Balance Due Breakdown */}
         <div className="space-y-6">
-          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl space-y-5">
+          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-sm space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <h3 className="font-bold text-sm tracking-wide">
+                <h3 className="font-semibold text-sm tracking-wide">
                   Live Contract Balance
                 </h3>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs text-slate-400">
                   {selectedLoan?.loanNo || selectedLoan?.id}
                 </p>
               </div>
               <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   selectedLoan?.status.toLowerCase() === "completed"
                     ? "bg-emerald-500/20 text-emerald-400"
                     : selectedLoan?.status.toLowerCase() === "overdue"
@@ -432,12 +433,12 @@ export default function RepaymentsCollectionsPage() {
 
             {selectedCustomer && (
               <div className="flex items-center gap-3 p-3 bg-slate-800/80 rounded-xl text-xs">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] shrink-0">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-semibold text-xs shrink-0">
                   {selectedCustomer.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-bold text-slate-200">{selectedCustomer.name}</p>
-                  <p className="text-[10px] text-slate-400">NIC: {selectedCustomer.nic}</p>
+                  <p className="font-semibold text-slate-200">{selectedCustomer.name}</p>
+                  <p className="text-xs text-slate-400">NIC: {selectedCustomer.nic}</p>
                 </div>
               </div>
             )}
@@ -460,14 +461,14 @@ export default function RepaymentsCollectionsPage() {
 
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Total Paid So Far</span>
-                <span className="font-bold text-emerald-400">
+                <span className="font-semibold text-emerald-400">
                   {MONEY(totalPaid)}
                 </span>
               </div>
 
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Current Balance Due</span>
-                <span className="font-black text-amber-400 text-sm">
+                <span className="font-semibold text-amber-400 text-sm">
                   {MONEY(balanceDue)}
                 </span>
               </div>
@@ -475,7 +476,7 @@ export default function RepaymentsCollectionsPage() {
               {numEnteredAmount > 0 && (
                 <div className="flex justify-between py-1.5 px-3 bg-blue-950/60 rounded-xl border border-blue-800/40 mt-2">
                   <span className="text-blue-300 font-semibold">After Payment</span>
-                  <span className="font-black text-white">
+                  <span className="font-semibold text-white">
                     {MONEY(newBalanceAfter)}
                   </span>
                 </div>
@@ -485,9 +486,9 @@ export default function RepaymentsCollectionsPage() {
             {/* Repayment Progress Bar */}
             {selectedLoan && (
               <div className="space-y-1.5 pt-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-xs text-slate-400">
                   <span>Recovery Progress</span>
-                  <span className="font-bold text-slate-200">
+                  <span className="font-semibold text-slate-200">
                     {selectedLoan.totalRepayment > 0
                       ? Math.min(100, Math.round((totalPaid / selectedLoan.totalRepayment) * 100))
                       : 0}
@@ -516,7 +517,7 @@ export default function RepaymentsCollectionsPage() {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-semibold text-slate-900">
               Collections Journal & Receipts History
             </h3>
             <p className="text-xs text-slate-500">
@@ -536,7 +537,7 @@ export default function RepaymentsCollectionsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+               aria-label="Search receipt, loan, borrower..."/>
             </div>
 
             <div className="flex gap-1.5">
@@ -545,7 +546,7 @@ export default function RepaymentsCollectionsPage() {
                   key={t}
                   type="button"
                   onClick={() => setTypeFilter(t)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     typeFilter === t
                       ? "bg-blue-600 text-white"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -558,18 +559,18 @@ export default function RepaymentsCollectionsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable records table">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-bold uppercase tracking-wider">
+            <thead className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-400 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3 px-4">Receipt / Payment ID</th>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Borrower & Loan</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Method</th>
-                <th className="py-3 px-4">Collected By</th>
-                <th className="py-3 px-4 text-right">Amount</th>
-                <th className="py-3 px-4 text-right">Receipt</th>
+                <th className="py-3 px-4" scope="col">Receipt / Payment ID</th>
+                <th className="py-3 px-4" scope="col">Date</th>
+                <th className="py-3 px-4" scope="col">Borrower & Loan</th>
+                <th className="py-3 px-4" scope="col">Type</th>
+                <th className="py-3 px-4" scope="col">Method</th>
+                <th className="py-3 px-4" scope="col">Collected By</th>
+                <th className="py-3 px-4 text-right" scope="col">Amount</th>
+                <th className="py-3 px-4 text-right" scope="col">Receipt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -578,28 +579,28 @@ export default function RepaymentsCollectionsPage() {
                 const cust = customers.find((c) => c.id === p.customerId);
                 return (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition text-xs">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                    <td className="py-3 px-4 font-mono font-semibold text-slate-900">
                       {p.receiptNo || p.id}
                     </td>
                     <td className="py-3 px-4 text-slate-500">{p.date}</td>
                     <td className="py-3 px-4">
                       <div>
-                        <span className="font-bold text-slate-900 block">
+                        <span className="font-semibold text-slate-900 block">
                           {cust?.name || "Customer"}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-xs text-slate-400 font-mono">
                           {loan?.loanNo || p.loanId}
                         </span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           p.type === "Capital"
                             ? "bg-blue-100 text-blue-700"
                             : p.type === "Interest"
                             ? "bg-emerald-100 text-emerald-700"
-                            : "bg-purple-100 text-purple-700"
+                            : "bg-blue-100 text-blue-700"
                         }`}
                       >
                         {p.type}
@@ -609,7 +610,7 @@ export default function RepaymentsCollectionsPage() {
                     <td className="py-3 px-4 text-slate-600">
                       {p.collectedBy || "Admin Officer"}
                     </td>
-                    <td className="py-3 px-4 text-right font-black text-slate-900">
+                    <td className="py-3 px-4 text-right font-semibold text-slate-900">
                       {MONEY(p.amount)}
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -628,7 +629,7 @@ export default function RepaymentsCollectionsPage() {
           </table>
 
           {filteredPayments.length === 0 && (
-            <div className="p-8 text-center text-slate-400 text-xs">
+            <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-400 text-xs">
               No repayment transactions match the filter criteria.
             </div>
           )}
@@ -637,24 +638,24 @@ export default function RepaymentsCollectionsPage() {
 
       {/* OFFICIAL RECEIPT POPUP MODAL */}
       {activeReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-up border border-slate-200">
+        <Modal title="Payment receipt" onClose={() => setActiveReceipt(null)} className="receipt-dialog modal-small">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-sm animate-scale-up border border-slate-200">
             <div className="flex justify-between items-center border-b pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-xs">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-semibold text-xs">
                   PSI
                 </div>
                 <div>
-                  <h3 className="font-black text-sm text-slate-900">
+                  <h3 className="font-semibold text-sm text-slate-900">
                     Official Repayment Receipt
                   </h3>
-                  <p className="text-[10px] text-slate-400">PSI ONE Microfinance</p>
+                  <p className="text-xs text-slate-400">PSI ONE Microfinance</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveReceipt(null)}
                 className="p-1 text-slate-400 hover:text-slate-800 rounded-full hover:bg-slate-100"
-              >
+               aria-label="Close">
                 <X size={18} />
               </button>
             </div>
@@ -663,7 +664,7 @@ export default function RepaymentsCollectionsPage() {
             <div className="p-4 bg-slate-50 rounded-xl space-y-3 text-xs border border-slate-200/60 font-mono">
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">RECEIPT NO</span>
-                <span className="font-bold text-slate-900">
+                <span className="font-semibold text-slate-900">
                   {activeReceipt.receiptNo || activeReceipt.id}
                 </span>
               </div>
@@ -673,7 +674,7 @@ export default function RepaymentsCollectionsPage() {
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">BORROWER</span>
-                <span className="font-bold text-slate-900">
+                <span className="font-semibold text-slate-900">
                   {customers.find((c) => c.id === activeReceipt.customerId)?.name ||
                     "Customer"}
                 </span>
@@ -687,19 +688,19 @@ export default function RepaymentsCollectionsPage() {
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">PAYMENT TYPE</span>
-                <span className="font-bold text-blue-600">{activeReceipt.type}</span>
+                <span className="font-semibold text-blue-600">{activeReceipt.type}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">PAYMENT METHOD</span>
                 <span>{activeReceipt.method || "Cash"}</span>
               </div>
-              <div className="flex justify-between py-1 text-sm font-bold text-slate-900">
+              <div className="flex justify-between py-1 text-sm font-semibold text-slate-900">
                 <span>AMOUNT RECEIVED</span>
-                <span className="text-emerald-600 font-black">
+                <span className="text-emerald-600 font-semibold">
                   {MONEY(activeReceipt.amount)}
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400 pt-2 border-t text-center">
+              <div className="text-xs text-slate-400 pt-2 border-t text-center">
                 Collected by {activeReceipt.collectedBy || "Authorized Officer"}
               </div>
             </div>
@@ -709,7 +710,7 @@ export default function RepaymentsCollectionsPage() {
               <button
                 type="button"
                 onClick={handlePrintReceipt}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
               >
                 <Printer size={14} /> Print Receipt
               </button>
@@ -722,7 +723,7 @@ export default function RepaymentsCollectionsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

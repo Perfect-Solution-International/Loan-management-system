@@ -20,6 +20,7 @@ import {
   History,
   DollarSign,
 } from "lucide-react";
+import { Modal } from "@/components/ui";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import type { Customer, Loan, Payment, CustomerDocument } from "@/types";
@@ -78,15 +79,15 @@ export default function CustomersPage() {
   const inactiveCount = customers.length - activeCount;
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       {/* ═══ Page Header ══════════════════════════════════════════════════════ */}
-      <div className="bg-white border-b border-slate-200 px-8 py-6">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
               PSI ONE · LOAN MANAGEMENT
             </p>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
+            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-0.5">
               Customer Directory
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -94,7 +95,7 @@ export default function CustomersPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             {/* Search */}
             <div className="relative">
               <Search
@@ -106,14 +107,14 @@ export default function CustomersPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, NIC, ID, town…"
                 className="pl-8 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl w-64 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-              />
+               aria-label="Search name, NIC, ID, town…"/>
             </div>
 
             {/* ADD CUSTOMER — navigates to /customers/new */}
             <button
               type="button"
               onClick={() => router.push("/customers/new")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/25 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-md  transition cursor-pointer"
             >
               <UserPlus size={14} />
               Add Customer
@@ -122,7 +123,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* ═══ Summary Cards ═══════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
@@ -130,10 +131,10 @@ export default function CustomersPage() {
               <Users size={18} className="text-blue-600" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Total Customers
               </p>
-              <p className="text-2xl font-black text-slate-900">{customers.length}</p>
+              <p className="text-2xl font-semibold text-slate-900">{customers.length}</p>
             </div>
           </div>
 
@@ -142,51 +143,51 @@ export default function CustomersPage() {
               <UserCheck size={18} className="text-emerald-600" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Active Borrowers
               </p>
-              <p className="text-2xl font-black text-slate-900">{activeCount}</p>
+              <p className="text-2xl font-semibold text-slate-900">{activeCount}</p>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
-              <UserX size={18} className="text-rose-600" />
+            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+              <UserX size={18} className="text-red-600" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Inactive / Suspended
               </p>
-              <p className="text-2xl font-black text-slate-900">{inactiveCount}</p>
+              <p className="text-2xl font-semibold text-slate-900">{inactiveCount}</p>
             </div>
           </div>
         </div>
 
         {/* ═══ Customer Table ═══════════════════════════════════════════════════ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable records table">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     Customer
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     Customer ID
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     Contact Phone
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     NIC Number
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     Town / District
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     Status
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest" scope="col">
                     Actions
                   </th>
                 </tr>
@@ -217,15 +218,15 @@ export default function CustomersPage() {
                               className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
                             />
                           ) : (
-                            <span className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 text-[11px] font-extrabold flex items-center justify-center shrink-0">
+                            <span className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0">
                               {initials}
                             </span>
                           )}
                           <div>
-                            <p className="font-bold text-slate-900 text-sm leading-tight">
+                            <p className="font-semibold text-slate-900 text-sm leading-tight">
                               {displayName}
                             </p>
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-xs text-slate-500">
                               {customer.village || customer.town || "Registered Customer"}
                             </p>
                           </div>
@@ -233,7 +234,7 @@ export default function CustomersPage() {
                       </td>
 
                       <td className="px-5 py-3.5">
-                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                        <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
                           {customer.id}
                         </span>
                       </td>
@@ -255,7 +256,7 @@ export default function CustomersPage() {
 
                       <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                             isActive
                               ? "bg-emerald-100 text-emerald-800"
                               : "bg-slate-200 text-slate-600"
@@ -270,7 +271,7 @@ export default function CustomersPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedCustomerId(customer.id)}
-                            className="px-3 py-1.5 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer"
+                            className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer"
                           >
                             View Details
                           </button>
@@ -314,27 +315,19 @@ export default function CustomersPage() {
       {/* CUSTOMER PROFILE MODAL (VIEW DETAILS)                                  */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {selectedCustomer && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setSelectedCustomerId(null);
-          }}
-        >
+        <Modal title="Customer profile" onClose={() => setSelectedCustomerId(null)} className="">
           <div
-            className="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl flex flex-col"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="profile-modal-title"
+            className="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-sm flex flex-col"
           >
             {/* Modal Header */}
-            <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-3xl z-10">
+            <div className="flex items-start justify-between px-4 sm:px-6 pt-6 pb-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-3xl z-10">
               <div>
-                <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
                   CUSTOMER PROFILE OVERVIEW
                 </p>
                 <h2
                   id="profile-modal-title"
-                  className="text-xl font-black text-slate-900 mt-0.5"
+                  className="text-xl font-semibold text-slate-900 mt-0.5"
                 >
                   {selectedCustomer.fullName || selectedCustomer.name}
                 </h2>
@@ -352,7 +345,7 @@ export default function CustomersPage() {
               </button>
             </div>
 
-            <div className="px-7 py-6 space-y-6">
+            <div className="px-4 sm:px-6 py-6 space-y-6">
               {/* ── Photo + Quick Info ────────────────────────────────────── */}
               <div className="flex items-center gap-5">
                 {selectedCustomer.photoUrl ? (
@@ -362,20 +355,20 @@ export default function CustomersPage() {
                     className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-200 shadow-md shrink-0"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-2xl bg-blue-100 text-blue-700 font-black text-2xl flex items-center justify-center shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-blue-100 text-blue-700 font-semibold text-2xl flex items-center justify-center shrink-0">
                     {(selectedCustomer.name || "C").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <h3 className="text-lg font-black text-slate-900 leading-tight">
+                  <h3 className="text-lg font-semibold text-slate-900 leading-tight">
                     {selectedCustomer.fullName || selectedCustomer.name}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded">
+                    <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded">
                       {selectedCustomer.id}
                     </span>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                         (selectedCustomer.status || "").toUpperCase() === "ACTIVE"
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-slate-200 text-slate-600"
@@ -388,21 +381,21 @@ export default function CustomersPage() {
               </div>
 
               {/* ── Outstanding Balance Banner ────────────────────────────── */}
-              <div className="bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-2xl p-5 flex items-center justify-between">
+              <div className="bg-blue-800 text-white rounded-2xl p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">
+                  <p className="text-xs font-semibold text-blue-300 uppercase tracking-widest">
                     Current Outstanding Balance
                   </p>
-                  <p className="text-2xl font-black font-mono mt-1">
+                  <p className="text-2xl font-semibold font-mono mt-1">
                     {MONEY(outstanding)}
                   </p>
                 </div>
                 <div className="text-right text-xs space-y-1">
                   <p className="text-slate-400">
                     Total Repayable:{" "}
-                    <span className="text-white font-bold">{MONEY(totalRepayable)}</span>
+                    <span className="text-white font-semibold">{MONEY(totalRepayable)}</span>
                   </p>
-                  <p className="text-emerald-400 font-bold">Paid: {MONEY(totalPaid)}</p>
+                  <p className="text-emerald-400 font-semibold">Paid: {MONEY(totalPaid)}</p>
                 </div>
               </div>
 
@@ -448,8 +441,8 @@ export default function CustomersPage() {
                         className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                       >
                         <div>
-                          <p className="font-bold text-slate-800">{doc.title}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">
+                          <p className="font-semibold text-slate-800">{doc.title}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
                             {doc.fileName} · {doc.fileSize} ·{" "}
                             <span className="uppercase">{doc.type.replace(/_/g, " ")}</span>
                           </p>
@@ -458,7 +451,7 @@ export default function CustomersPage() {
                           href={doc.fileUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 font-bold rounded-lg transition"
+                          className="px-3 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold rounded-lg transition"
                         >
                           View
                         </a>
@@ -477,21 +470,21 @@ export default function CustomersPage() {
                 <ProfileSectionTitle icon={<DollarSign size={14} />} label={`Existing Loans (${selectedLoans.length})`} />
                 <div className="mt-3">
                   {selectedLoans.length > 0 ? (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200" tabIndex={0} role="region" aria-label="Scrollable records table">
                       <table className="w-full text-xs">
                         <thead className="bg-slate-50 border-b border-slate-200">
                           <tr>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Loan ID</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Purpose</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Principal</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Total Due</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Status</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Loan ID</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Purpose</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Principal</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Total Due</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {selectedLoans.map((loan: Loan) => (
                             <tr key={loan.id} className="hover:bg-slate-50/60">
-                              <td className="px-4 py-2.5 font-mono font-bold text-slate-800">
+                              <td className="px-4 py-2.5 font-mono font-semibold text-slate-800">
                                 {loan.loanNo || loan.id}
                               </td>
                               <td className="px-4 py-2.5 text-slate-700">
@@ -500,16 +493,16 @@ export default function CustomersPage() {
                               <td className="px-4 py-2.5 font-mono text-slate-800">
                                 {MONEY(loan.principal || loan.amount || 0)}
                               </td>
-                              <td className="px-4 py-2.5 font-mono font-bold text-slate-900">
+                              <td className="px-4 py-2.5 font-mono font-semibold text-slate-900">
                                 {MONEY(loan.totalRepayment || 0)}
                               </td>
                               <td className="px-4 py-2.5">
                                 <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                     loan.status.toLowerCase() === "active"
                                       ? "bg-emerald-100 text-emerald-700"
                                       : loan.status.toLowerCase() === "overdue"
-                                      ? "bg-rose-100 text-rose-700"
+                                      ? "bg-red-100 text-red-700"
                                       : "bg-slate-200 text-slate-600"
                                   }`}
                                 >
@@ -537,26 +530,26 @@ export default function CustomersPage() {
                 )}
                 <div className="mt-3">
                   {selectedPayments.length > 0 ? (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200" tabIndex={0} role="region" aria-label="Scrollable records table">
                       <table className="w-full text-xs">
                         <thead className="bg-slate-50 border-b border-slate-200">
                           <tr>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Date</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Receipt No</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Type</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Amount</th>
-                            <th className="text-left px-4 py-2.5 font-bold text-slate-600">Method</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Date</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Receipt No</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Type</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Amount</th>
+                            <th className="text-left px-4 py-2.5 font-semibold text-slate-600" scope="col">Method</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {selectedPayments.map((p: Payment) => (
                             <tr key={p.id} className="hover:bg-slate-50/60">
                               <td className="px-4 py-2.5 font-mono text-slate-700">{p.date}</td>
-                              <td className="px-4 py-2.5 font-mono font-bold text-blue-700">
+                              <td className="px-4 py-2.5 font-mono font-semibold text-blue-700">
                                 {p.receiptNo || p.id}
                               </td>
                               <td className="px-4 py-2.5 text-slate-700">{p.type}</td>
-                              <td className="px-4 py-2.5 font-mono font-bold text-slate-900">
+                              <td className="px-4 py-2.5 font-mono font-semibold text-slate-900">
                                 {MONEY(p.amount)}
                               </td>
                               <td className="px-4 py-2.5 text-slate-600">{p.method || "Cash"}</td>
@@ -577,10 +570,10 @@ export default function CustomersPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-7 py-4 flex items-center justify-between rounded-b-3xl">
+            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between rounded-b-3xl">
               <Link
                 href={`/customers/${selectedCustomer.id}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md  transition"
               >
                 Open Full Profile <ExternalLink size={13} />
               </Link>
@@ -589,16 +582,16 @@ export default function CustomersPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedCustomerId(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
                 >
                   Close
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -613,7 +606,7 @@ function ProfileSectionTitle({
   return (
     <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
       <span className="text-blue-600">{icon}</span>
-      <h4 className="text-[10px] font-extrabold text-slate-700 uppercase tracking-widest">
+      <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-widest">
         {label}
       </h4>
     </div>
@@ -633,8 +626,8 @@ function ProfileRow({
 }) {
   return (
     <div className={`${fullWidth ? "sm:col-span-2" : ""} bg-slate-50 rounded-xl p-3 border border-slate-100`}>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-sm font-bold text-slate-900 mt-0.5 ${mono ? "font-mono" : ""}`}>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</p>
+      <p className={`text-sm font-semibold text-slate-900 mt-0.5 ${mono ? "font-mono" : ""}`}>
         {value || "—"}
       </p>
     </div>

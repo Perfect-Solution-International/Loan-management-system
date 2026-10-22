@@ -51,16 +51,16 @@ export default function LoginPage() {
           <p>
             Manage customers, track repayments, and make
             confident lending decisions — all from one
-            secure workspace.
+            workspace.
           </p>
 
           <div className="login-feature-list">
             <div>
               <span><ShieldCheck size={18} /></span>
               <section>
-                <strong>Secure by design</strong>
+                <strong>Organized for daily lending</strong>
                 <small>
-                  Your financial workspace, built with care.
+                  Customer and loan details in one place.
                 </small>
               </section>
             </div>

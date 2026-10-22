@@ -1,4 +1,3 @@
-// src/components/modals/CustomerProfileModal.tsx
 'use client';
 
 import React from 'react';
@@ -24,8 +23,8 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
       <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-hidden">
         <div className="flex justify-between items-center border-b pb-3">
           <h3 className="text-xl font-bold text-gray-800">Customer Profile Verification</h3>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-400 hover:text-gray-700 font-bold text-lg p-1 rounded-full hover:bg-gray-100">
             ✕
           </button>
@@ -34,10 +33,10 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col items-center text-center space-y-2 border-r pr-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={customer.photoUrl || 'https://via.placeholder.com/150'} 
-              alt={customer.fullName || customer.name || 'Customer photo'} 
-              className="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md" 
+            <img
+              src={customer.photoUrl || 'https://via.placeholder.com/150'}
+              alt={customer.fullName || customer.name || 'Customer photo'}
+              className="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md"
             />
             <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
               {customer.status}
@@ -68,12 +67,12 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
         </div>
 
         <div className="flex justify-end space-x-3 border-t pt-4">
-          <button 
+          <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition">
             Cancel & Re-select
           </button>
-          <button 
+          <button
             onClick={() => onConfirm(customer)}
             className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md transition">
             Confirm & Proceed to Deductions
