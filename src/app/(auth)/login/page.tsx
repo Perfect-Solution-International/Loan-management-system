@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -245,7 +246,7 @@ export default function LoginPage() {
             <div>
               <span><ShieldCheck size={18} /></span>
               <section>
-                <strong>Secure by design</strong>
+                <strong>Organized for daily lending</strong>
                 <small>
                   End-to-end 256-bit encrypted access for authorized personnel and customers.
                 </small>
@@ -482,9 +483,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <footer className="login-copyright">
-          © 2026 PSI ONE. All rights reserved.
-        </footer>
       </section>
     </main>
   );

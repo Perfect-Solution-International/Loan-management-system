@@ -23,6 +23,7 @@ import {
   ArrowUpRight,
   CreditCard,
 } from "lucide-react";
+import { Modal } from "@/components/ui";
 import { useData } from "@/providers/data-provider";
 import { initialSettings } from "@/lib/demo-data";
 import { MONEY } from "@/constants";
@@ -115,7 +116,7 @@ function SettingsContent() {
   }, [simPrincipal, simDuration, formSettings]);
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -140,8 +141,8 @@ function SettingsContent() {
           </div>
           <button
             onClick={() => setNotificationMsg("")}
-            className="text-emerald-500 hover:text-emerald-700 font-bold"
-          >
+            className="text-emerald-500 hover:text-emerald-700 font-semibold"
+           aria-label="Close">
             <X size={14} />
           </button>
         </div>
@@ -151,7 +152,7 @@ function SettingsContent() {
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         <button
           onClick={() => setActiveTab("rules")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
             activeTab === "rules"
               ? "bg-red-600 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
@@ -161,7 +162,7 @@ function SettingsContent() {
         </button>
         <button
           onClick={() => setActiveTab("security")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
             activeTab === "security"
               ? "bg-red-600 text-white shadow-xs"
               : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
@@ -212,7 +213,7 @@ function SettingsContent() {
                       <Percent size={18} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">
+                      <h2 className="text-sm font-semibold text-slate-900">
                         Default Interest Rate Rules
                       </h2>
                       <p className="text-[11px] text-slate-600 font-medium">
@@ -223,7 +224,7 @@ function SettingsContent() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-1">
                         Monthly Interest Rate (%)
                       </label>
                       <div className="relative">
@@ -250,7 +251,7 @@ function SettingsContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-2">
                         Weekly Interest Rate (%)
                       </label>
                       <div className="relative">
@@ -277,7 +278,7 @@ function SettingsContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-3">
                         Daily Interest Rate (%)
                       </label>
                       <div className="relative">
@@ -312,7 +313,7 @@ function SettingsContent() {
                       <DollarSign size={18} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">
+                      <h2 className="text-sm font-semibold text-slate-900">
                         Deduction & Disbursement Policies
                       </h2>
                       <p className="text-[11px] text-slate-600 font-medium">
@@ -323,7 +324,7 @@ function SettingsContent() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-4">
                         Capital Deduction Rate (%)
                       </label>
                       <div className="relative">
@@ -352,7 +353,7 @@ function SettingsContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-5">
                         Interest Deduction Method
                       </label>
                       <select
@@ -378,7 +379,7 @@ function SettingsContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-6">
                         Default Processing Fee (LKR)
                       </label>
                       <input
@@ -401,7 +402,7 @@ function SettingsContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-7">
                         Default Administrative / Legal Fee (LKR)
                       </label>
                       <input
@@ -432,7 +433,7 @@ function SettingsContent() {
                       <AlertCircle size={18} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">
+                      <h2 className="text-sm font-semibold text-slate-900">
                         Late Repayment & Delinquency Rules
                       </h2>
                       <p className="text-[11px] text-slate-600 font-medium">
@@ -443,7 +444,7 @@ function SettingsContent() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-8">
                         Late Repayment Penalty Rate (%)
                       </label>
                       <div className="relative">
@@ -472,7 +473,7 @@ function SettingsContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-9">
                         Grace Period (Days)
                       </label>
                       <input
@@ -503,7 +504,7 @@ function SettingsContent() {
                       <Building size={18} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">
+                      <h2 className="text-sm font-semibold text-slate-900">
                         System Identity & Currency
                       </h2>
                       <p className="text-[11px] text-slate-600 font-medium">
@@ -514,7 +515,7 @@ function SettingsContent() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-10">
                         System Name
                       </label>
                       <input
@@ -525,11 +526,11 @@ function SettingsContent() {
                         }
                         className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
-                      />
+                       id="ui-field-10"/>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-11">
                         Operating Currency
                       </label>
                       <select
@@ -600,7 +601,7 @@ function SettingsContent() {
                   <div className="space-y-2 text-xs border-t border-slate-700/80 pt-3">
                     <div className="flex justify-between text-slate-200 font-medium">
                       <span>Total Interest ({formSettings.defaultMonthlyRate}% x {simDuration} mo)</span>
-                      <span className="font-mono font-bold text-white">
+                      <span className="font-mono font-semibold text-white">
                         {MONEY(simCalculations.totalInterest)}
                       </span>
                     </div>
@@ -629,10 +630,10 @@ function SettingsContent() {
                   {/* Summary Callouts */}
                   <div className="space-y-2.5 pt-2">
                     <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                      <p className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">
+                      <p className="text-xs text-emerald-400 uppercase font-semibold tracking-wider">
                         Borrower Disbursed Cash
                       </p>
-                      <p className="text-xl font-black font-mono text-emerald-300">
+                      <p className="text-xl font-semibold font-mono text-emerald-300">
                         {MONEY(simCalculations.netDisbursement)}
                       </p>
                     </div>
@@ -716,7 +717,7 @@ function SettingsContent() {
             {/* Audit & Backup Policy */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                   <Lock size={18} />
                 </div>
                 <div>
@@ -768,7 +769,7 @@ export default function SettingsPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 max-w-7xl mx-auto text-xs text-slate-400">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-xs text-slate-400">
           Loading system settings...
         </div>
       }

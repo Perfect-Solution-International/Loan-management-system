@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import { DataProvider } from '@/providers/data-provider';
+import type { Metadata } from "next";
+import "./globals.css";
+import { DataProvider } from "@/providers/data-provider";
 
 export const metadata: Metadata = {
   title: 'PSI One Loan Management System',
@@ -11,13 +11,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className="bg-slate-100 font-sans antialiased text-slate-800">
-        <DataProvider>
-          {children}
-        </DataProvider>
+      <body className="font-sans antialiased">
+        <DataProvider>{children}</DataProvider>
       </body>
     </html>
   );

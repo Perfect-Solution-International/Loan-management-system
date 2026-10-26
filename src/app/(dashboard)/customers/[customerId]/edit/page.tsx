@@ -144,18 +144,18 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
             CUSTOMER PROFILE / EDIT
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
             Edit Customer Profile
           </h1>
           <p className="text-xs text-slate-500">
-            Updating records for <span className="font-bold">{customer.name}</span> ({customer.id})
+            Updating records for <span className="font-semibold">{customer.name}</span> ({customer.id})
           </p>
         </div>
         <Link
@@ -182,18 +182,18 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 <Camera size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900">Photograph & Customer Status</h2>
-                <p className="text-[11px] text-slate-600">Update photo portrait and account status.</p>
+                <h2 className="text-sm font-semibold text-slate-900">Photograph & Customer Status</h2>
+                <p className="text-xs text-slate-600">Update photo portrait and account status.</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">Status:</span>
+              <span className="text-xs font-semibold text-slate-500">Status:</span>
               <select
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-bold bg-white text-slate-700"
-              >
+                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-semibold bg-white text-slate-700"
+               aria-label="status">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Suspended">Suspended</option>
@@ -216,24 +216,24 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                     onClick={() => setForm((prev) => ({ ...prev, photoUrl: "" }))}
                     className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-xs cursor-pointer transition"
                     title="Remove Photo"
-                  >
+                   aria-label="Remove Photo">
                     <X size={12} />
                   </button>
                 </div>
               ) : (
                 <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 gap-1.5 shadow-2xs">
                   <Camera size={26} className="text-slate-400" />
-                  <span className="text-[10px] font-bold text-slate-500">No Photo</span>
+                  <span className="text-xs font-semibold text-slate-500">No Photo</span>
                 </div>
               )}
             </div>
 
             <div className="space-y-3 flex-1">
               <div>
-                <label className="text-xs font-bold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Customer Photograph
                 </label>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Clear facial portrait for verification and loan dossier.
                 </p>
               </div>
@@ -268,10 +268,10 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
               <FileText size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="text-sm font-semibold text-slate-900">
                 National Identity Card (NIC) Images
               </h2>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Dedicated image uploads for borrower NIC front and back surfaces.
               </p>
             </div>
@@ -281,11 +281,11 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             {/* NIC Front */}
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   NIC Front Side
                 </label>
                 {form.nicFrontUrl && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">
                     Uploaded
                   </span>
                 )}
@@ -304,7 +304,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                       onClick={() => setForm((prev) => ({ ...prev, nicFrontUrl: "" }))}
                       className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-xs cursor-pointer"
                       title="Remove NIC Front"
-                    >
+                     aria-label="Remove NIC Front">
                       <X size={14} />
                     </button>
                   </div>
@@ -327,11 +327,11 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             {/* NIC Back */}
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   NIC Back Side
                 </label>
                 {form.nicBackUrl && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">
                     Uploaded
                   </span>
                 )}
@@ -350,7 +350,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                       onClick={() => setForm((prev) => ({ ...prev, nicBackUrl: "" }))}
                       className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-xs cursor-pointer"
                       title="Remove NIC Back"
-                    >
+                     aria-label="Remove NIC Back">
                       <X size={14} />
                     </button>
                   </div>
@@ -405,7 +405,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Residential Address</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-4">Residential Address</label>
               <input
                 type="text"
                 name="address"
@@ -416,7 +416,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Village / Grama Niladhari</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-5">Village / Grama Niladhari</label>
               <input
                 type="text"
                 name="village"
@@ -427,7 +427,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Town / City</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-6">Town / City</label>
               <input
                 type="text"
                 name="town"
@@ -438,7 +438,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">District</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-7">District</label>
               <select
                 name="district"
                 value={form.district}
@@ -461,12 +461,12 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <Phone size={18} />
             </div>
-            <h2 className="text-sm font-bold text-slate-900">Contact & Communication Details</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Contact & Communication Details</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Primary Contact Phone</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-8">Primary Contact Phone</label>
               <input
                 type="tel"
                 name="phone"
@@ -478,7 +478,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Alternative Phone</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-9">Alternative Phone</label>
               <input
                 type="tel"
                 name="alternatePhone"
@@ -489,7 +489,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Email Address</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-10">Email Address</label>
               <input
                 type="email"
                 name="email"
@@ -505,7 +505,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
           <Link
             href={`/customers/${customer.id}`}
-            className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+            className="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
           >
             Cancel
           </Link>
@@ -530,9 +530,9 @@ function EditCustomerContent() {
 
   if (!customer) {
     return (
-      <div className="p-8 max-w-4xl mx-auto space-y-4">
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-4">
-          <h2 className="text-xl font-bold text-slate-800">Customer Not Found</h2>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-4">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-200 text-center space-y-4">
+          <h2 className="text-xl font-semibold text-slate-800">Customer Not Found</h2>
           <p className="text-xs text-slate-500">
             Cannot find customer with ID &quot;{customerId}&quot;.
           </p>
@@ -554,7 +554,7 @@ export default function EditCustomerPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 max-w-5xl mx-auto text-xs text-slate-600">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto text-xs text-slate-600">
           Loading customer editor...
         </div>
       }

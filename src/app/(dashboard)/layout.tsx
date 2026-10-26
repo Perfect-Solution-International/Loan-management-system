@@ -100,7 +100,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               className="p-2 text-slate-700 hover:text-red-600 hover:bg-red-50 rounded-xl transition md:hidden cursor-pointer"
               aria-label="Open navigation menu"
             >
-              <Menu size={20} />
+              <Menu size={19} />
             </button>
 
             {/* Current Active Location */}
@@ -202,9 +202,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
           </div>
         </header>
-
-        {/* Dynamic Page Views */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 min-w-0">
+        <main id="main-content" tabIndex={-1} className="min-w-0 outline-none">
           {children}
         </main>
       </div>

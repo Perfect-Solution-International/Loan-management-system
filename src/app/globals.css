@@ -1,10 +1,70 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
+/* Inter is self-hosted; see public/fonts/LICENSE.txt for the font license. */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/InterVariable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
 
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/InterVariable-Italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans:
+    "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-mono: "Cascadia Code", Consolas, monospace;
+  --color-blue-50: #eef4fc;
+  --color-blue-100: #dce8f8;
+  --color-blue-200: #bbd1f0;
+  --color-blue-500: #2c5fa5;
+  --color-blue-600: #244e87;
+  --color-blue-700: #1b3d6c;
+  --color-blue-800: #172f50;
+  --color-blue-900: #142942;
+  --color-emerald-600: #18724c;
+  --color-amber-600: #996116;
+  --color-red-600: #b42332;
+  --color-slate-50: #f6f8fa;
+  --color-slate-100: #edf1f5;
+  --color-slate-200: #dfe5ec;
+  --color-slate-300: #bac5d2;
+  --color-slate-400: #64748b;
+  --color-slate-500: #58677c;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #243247;
+  --color-slate-900: #16263d;
+  --color-slate-950: #112237;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.75rem;
+  --shadow-xs: 0 1px 2px rgb(16 34 55 / 3%);
+  --shadow-sm: 0 1px 3px rgb(16 34 55 / 5%);
+  --shadow-md: 0 2px 5px rgb(16 34 55 / 6%);
+}
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: monospace;
+  --background: #f6f8fa;
+  --surface: #fff;
+  --foreground: #16263d;
+  --muted: #58677c;
+  --primary: #244e87;
+  --primary-hover: #1b3d6c;
+  --border: #dfe5ec;
+  --success: #166544;
+  --warning: #885513;
+  --danger: #b42332;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --space-unit: 4px;
+  --focus-ring: #3978ca;
+  --transition: 150ms ease;
   color-scheme: light;
 }
 
@@ -215,12 +275,13 @@ select option {
 
 .login-page {
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: 1.02fr 0.98fr;
+  grid-template-rows: minmax(0, 1fr);
   background: #ffffff;
   overflow: hidden;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .login-visual {
@@ -295,10 +356,10 @@ select option {
 
 .login-visual-content h1 {
   margin: 27px 0 20px;
-  font-size: clamp(40px, 5vw, 65px);
+  font-size: clamp(34px, 4vw, 52px);
   line-height: 1.1;
   letter-spacing: -2px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .login-visual-content h1 span {
@@ -408,7 +469,7 @@ select option {
   color: #09090b;
   font-size: 29px;
   letter-spacing: -1px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .login-intro {
@@ -577,7 +638,6 @@ select option {
 @media (max-width: 850px) {
   .login-page {
     grid-template-columns: 1fr;
-    min-height: 100dvh;
   }
 
   .login-visual {
@@ -585,7 +645,7 @@ select option {
   }
 
   .login-form-side {
-    min-height: 100vh;
+    min-height: 0;
     padding: 35px 22px 75px;
     background:
       radial-gradient(ellipse at top right, #fff1f2, transparent 50%),

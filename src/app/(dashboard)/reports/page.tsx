@@ -436,7 +436,7 @@ export default function FinancialReportsPage() {
             <button
               type="button"
               onClick={() => setReportTab("collections")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer ${
                 reportTab === "collections"
                   ? "bg-red-600 text-white shadow-md shadow-red-600/20"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -597,12 +597,12 @@ export default function FinancialReportsPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             p.type === "Capital"
                               ? "bg-red-100 text-red-700"
                               : p.type === "Interest"
                               ? "bg-emerald-100 text-emerald-700"
-                              : "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
                           }`}
                         >
                           {p.type}

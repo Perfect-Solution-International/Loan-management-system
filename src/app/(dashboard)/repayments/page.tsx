@@ -15,6 +15,7 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
+import { Modal } from "@/components/ui";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
@@ -954,7 +955,7 @@ export default function RepaymentsCollectionsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </main>
   );
