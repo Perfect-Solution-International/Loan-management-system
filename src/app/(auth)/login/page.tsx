@@ -2,13 +2,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import {
   ArrowRight,
   Eye,
   EyeOff,
   Fingerprint,
-  Landmark,
   LockKeyhole,
   Mail,
   ShieldCheck,
@@ -26,9 +26,13 @@ export default function LoginPage() {
         <div className="login-visual-glow login-glow-two" />
 
         <Link href="/" className="login-brand">
-          <span className="login-brand-icon">
-            <Landmark size={24} />
-          </span>
+          <Image
+            src="/logos/icon.png"
+            alt="PSI One logo"
+            width={46}
+            height={46}
+            className="h-[46px] w-[46px] shrink-0 object-contain"
+          />
 
           <span>
             PSI <b>ONE</b>
@@ -90,9 +94,13 @@ export default function LoginPage() {
       <section className="login-form-side">
         <div className="login-form-wrap">
           <div className="login-mobile-brand">
-            <span className="login-brand-icon">
-              <Landmark size={22} />
-            </span>
+            <Image
+              src="/logos/icon.png"
+              alt="PSI One logo"
+              width={46}
+              height={46}
+              className="h-[46px] w-[46px] shrink-0 object-contain"
+            />
             <span>PSI <b>ONE</b></span>
           </div>
 
