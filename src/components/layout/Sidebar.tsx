@@ -112,7 +112,7 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <Link href="/login" onClick={onNavigate}>
           <LogIn size={15} />
-          Sign-in preview
+          Logout
         </Link>
       </div>
     </aside>

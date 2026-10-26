@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ChevronRight, Database, Menu } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 import { DataProvider } from "@/providers/data-provider";
 import Sidebar from "@/components/layout/Sidebar";
 import { LoadingState, Modal } from "@/components/ui";
@@ -96,19 +96,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             <span className="text-xs text-slate-500 hidden lg:block">
               Sri Lanka · LKR
             </span>
-            <span className="demo-tag">
-              <Database size={12} />
-              Demo workspace
-            </span>
           </div>
         </header>
-        <div className="prototype-banner">
-          <Database size={13} />
-          <p>
-            Demo records and changes stay in this browser. Authentication and
-            shared storage are not connected.
-          </p>
-        </div>
         <main id="main-content" tabIndex={-1} className="min-w-0 outline-none">
           {children}
         </main>
