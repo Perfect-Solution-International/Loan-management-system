@@ -783,8 +783,16 @@
   }
   .sidebar-navigation {
     flex: 1;
-    overflow: auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: 0 12px;
+    scrollbar-width: none;
+  }
+  .sidebar-navigation::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
   .nav-group {
     padding: 0 0 24px;
