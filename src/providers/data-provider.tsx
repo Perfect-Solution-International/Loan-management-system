@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type {
   Customer,
@@ -64,6 +64,10 @@ const defaultState: DataContextValue = {
 };
 
 const DataContext = createContext<DataContextValue>(defaultState);
+
+const subscribeToHydration = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>(() => {
@@ -301,7 +305,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 export function useData(): DataContextValue {
   const context = useContext(DataContext);
-  return context || defaultState;
+  // Each consumer must finish hydrating before exposing browser records, including
+  // consumers inside Suspense boundaries that hydrate after the provider mounts.
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot
+  );
+
+  if (isHydrated) return context || defaultState;
+
+  return {
+    ...context,
+    customers: defaultState.customers,
+    loans: defaultState.loans,
+    payments: defaultState.payments,
+    repayments: defaultState.payments,
+    documents: defaultState.documents,
+    settings: defaultState.settings,
+    staffUsers: defaultState.staffUsers,
+  };
 }
 
 export default DataProvider;
