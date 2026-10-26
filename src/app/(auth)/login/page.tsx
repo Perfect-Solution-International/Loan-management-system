@@ -194,18 +194,8 @@ export default function LoginPage() {
             </span>
           </div>
 
-          <p className="login-demo-note">
-            Demo interface · Authentication is not connected yet
-          </p>
-
-          <Link href="/" className="login-back-link">
-            ← Back to dashboard preview
-          </Link>
         </div>
 
-        <footer className="login-copyright">
-          © 2026 PSI ONE. All rights reserved.
-        </footer>
       </section>
     </main>
   );
