@@ -47,12 +47,12 @@ const navSections = [
         icon: Users,
       },
       {
-        name: 'Loans List',
+        name: 'Loan Register',
         href: '/loans',
         icon: Wallet,
       },
       {
-        name: 'Issue New Loan',
+        name: 'New Loan',
         href: '/loans/new',
         icon: PlusCircle,
         badge: 'New',
@@ -64,14 +64,14 @@ const navSections = [
     title: 'COLLECTIONS & RISK',
     items: [
       {
-        name: "Today's Collection",
+        name: "Today's Collections",
         href: '/collections',
         icon: CalendarDays,
         badge: 'Daily',
         badgeVariant: 'amber' as const,
       },
       {
-        name: 'Repayments Ledger',
+        name: 'Repayment Ledger',
         href: '/repayments',
         icon: Receipt,
       },
@@ -186,12 +186,12 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             icon: Users,
           },
           {
-            name: 'Loans List',
+            name: 'Loan Register',
             href: '/loans',
             icon: Wallet,
           },
           {
-            name: 'Issue New Loan',
+            name: 'New Loan',
             href: '/loans/new',
             icon: PlusCircle,
             badge: 'New',
@@ -203,14 +203,14 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
         title: 'COLLECTIONS & RISK',
         items: [
           {
-            name: "Today's Collection",
+            name: "Today's Collections",
             href: '/collections',
             icon: CalendarDays,
             badge: 'Daily',
             badgeVariant: 'amber' as const,
           },
           {
-            name: 'Repayments Ledger',
+            name: 'Repayment Ledger',
             href: '/repayments',
             icon: Receipt,
           },
@@ -262,8 +262,8 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
 
   return (
     <aside
-      className={`bg-[#0b0f19] text-slate-200 flex flex-col justify-between border-r border-slate-800/80 shrink-0 ${
-        isMobile ? 'w-full h-full p-4' : 'w-64 min-h-screen p-4 shadow-xl'
+      className={`workspace-sidebar bg-[#0b0f19] text-slate-200 flex flex-col justify-between border-r border-slate-800/80 shrink-0 ${
+        isMobile ? 'w-full h-full p-4' : 'w-64 h-dvh p-4 shadow-xl'
       }`}
     >
       <div className="flex flex-col flex-1 min-h-0">
@@ -283,14 +283,14 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
         </div>
 
         {/* Navigation Sections */}
-        <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
+        <div id={isMobile ? "workspace-navigation" : undefined} className="sidebar-navigation flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
           {dynamicNavSections.map((section) => (
             <div key={section.title} className="space-y-1">
-              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+              <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                 {section.title}
               </p>
 
-              <nav className="space-y-1">
+              <nav className="space-y-1" aria-label={section.title}>
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const active = isPathActive(pathname, item.href);
@@ -299,8 +299,9 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
                     <Link
                       key={item.href}
                       href={item.href}
+                      aria-current={active ? "page" : undefined}
                       onClick={onClose}
-                      className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 ${
+                      className={`sidebar-link group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-150 ${
                         active
                           ? 'bg-gradient-to-r from-red-600 via-red-600 to-rose-700 text-white shadow-md shadow-red-600/30'
                           : 'text-slate-200 hover:text-white hover:bg-white/10'
@@ -320,13 +321,13 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
 
                       {item.badge && (
                         <span
-                          className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                          className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                             active
                               ? 'bg-white/25 text-white'
                               : item.badgeVariant === 'red'
                               ? 'bg-red-600 text-white border border-red-500'
                               : item.badgeVariant === 'amber'
-                              ? 'bg-amber-400 text-slate-950 font-black border border-amber-300'
+                              ? 'bg-amber-400 text-slate-950 font-semibold border border-amber-300'
                               : 'bg-slate-700 text-white border border-slate-600'
                           }`}
                         >
@@ -352,7 +353,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
                 isStaff
                   ? "bg-gradient-to-br from-blue-600 to-indigo-700"
                   : "bg-gradient-to-br from-red-600 to-rose-700"
-              } text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 ring-1 ring-white/10`}
+              } text-white flex items-center justify-center font-semibold text-xs shadow-xs shrink-0 ring-1 ring-white/10`}
             >
               {isStaff ? "FO" : "AD"}
             </div>
@@ -360,7 +361,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
               <p className="text-xs font-bold text-white truncate leading-tight">
                 {isStaff ? "Field Officer" : "Admin Officer"}
               </p>
-              <p className="text-[10px] text-slate-400 font-medium">
+              <p className="text-[11px] text-slate-400 font-medium">
                 {isStaff ? "Loan Officer" : "Administrator"}
               </p>
             </div>
@@ -369,6 +370,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             href="/login"
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0"
             title="Sign Out"
+            aria-label="Sign out"
           >
             <LogOut size={15} />
           </Link>
@@ -383,7 +385,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             </span>
             <span className="text-[11px] font-bold text-white">System Core</span>
           </div>
-          <span className="text-emerald-400 font-extrabold uppercase tracking-wider text-[10px] font-mono">
+          <span className="text-emerald-400 font-bold uppercase tracking-wider text-[11px] font-mono">
             ONLINE
           </span>
         </div>

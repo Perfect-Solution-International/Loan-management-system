@@ -280,17 +280,21 @@ export default function ArrearsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3.5">
+    <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Arrears register</h2>
+        <p>Review missed installments, outstanding amounts, and recovery actions.</p>
+      </div>
       {/* ── Toast Notification ── */}
       {notification && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs" role="status">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
             <span>{notification}</span>
           </div>
           <button
             onClick={() => setNotification("")}
-            className="text-emerald-600 hover:text-emerald-800 p-1 cursor-pointer"
+            className="text-emerald-600 hover:text-emerald-800 p-1 cursor-pointer" aria-label="Close"
           >
             <X size={14} />
           </button>
@@ -316,7 +320,7 @@ export default function ArrearsPage() {
       </div>
 
       {/* ── Top Exposure KPI Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Total Arrears Amount */}
         <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -328,7 +332,7 @@ export default function ArrearsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-rose-700">
+            <div className="text-2xl font-semibold text-rose-700">
               {MONEY(totalArrearsAmount)}
             </div>
             <p className="text-[11px] text-rose-700/90 font-medium mt-1">
@@ -348,7 +352,7 @@ export default function ArrearsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-slate-900">
+            <div className="text-2xl font-semibold text-slate-900">
               {delinquentList.length}{" "}
               <span className="text-xs font-semibold text-slate-600">
                 of {loans.length} facilities
@@ -371,7 +375,7 @@ export default function ArrearsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-slate-900">
+            <div className="text-2xl font-semibold text-slate-900">
               {parRate}%
             </div>
             <p className="text-[11px] text-slate-600 font-medium mt-1">
@@ -391,7 +395,7 @@ export default function ArrearsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-amber-700">
+            <div className="text-2xl font-semibold text-amber-700">
               {MONEY(agingStats.b31_60 + agingStats.b61_90 + agingStats.b90Plus)}
             </div>
             <p className="text-[11px] text-amber-800 font-medium mt-1">
@@ -427,7 +431,7 @@ export default function ArrearsPage() {
                 1 – 30 Days
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                   agingFilter === "1_30"
                     ? "bg-white/25 text-white"
                     : "bg-amber-100 text-amber-800"
@@ -437,14 +441,14 @@ export default function ArrearsPage() {
               </span>
             </div>
             <div
-              className={`text-base font-black mt-1 ${
+              className={`text-base font-semibold mt-1 ${
                 agingFilter === "1_30" ? "text-white" : "text-slate-900"
               }`}
             >
               {MONEY(agingStats.b1_30)}
             </div>
             <span
-              className={`text-[10px] font-medium ${
+              className={`text-[11px] font-medium ${
                 agingFilter === "1_30" ? "text-amber-100" : "text-slate-500"
               }`}
             >
@@ -466,7 +470,7 @@ export default function ArrearsPage() {
                 31 – 60 Days
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                   agingFilter === "31_60"
                     ? "bg-white/25 text-white"
                     : "bg-orange-100 text-orange-800"
@@ -476,14 +480,14 @@ export default function ArrearsPage() {
               </span>
             </div>
             <div
-              className={`text-base font-black mt-1 ${
+              className={`text-base font-semibold mt-1 ${
                 agingFilter === "31_60" ? "text-white" : "text-slate-900"
               }`}
             >
               {MONEY(agingStats.b31_60)}
             </div>
             <span
-              className={`text-[10px] font-medium ${
+              className={`text-[11px] font-medium ${
                 agingFilter === "31_60" ? "text-orange-100" : "text-slate-500"
               }`}
             >
@@ -505,7 +509,7 @@ export default function ArrearsPage() {
                 61 – 90 Days
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                   agingFilter === "61_90"
                     ? "bg-white/25 text-white"
                     : "bg-rose-100 text-rose-800"
@@ -515,14 +519,14 @@ export default function ArrearsPage() {
               </span>
             </div>
             <div
-              className={`text-base font-black mt-1 ${
+              className={`text-base font-semibold mt-1 ${
                 agingFilter === "61_90" ? "text-white" : "text-rose-700"
               }`}
             >
               {MONEY(agingStats.b61_90)}
             </div>
             <span
-              className={`text-[10px] font-medium ${
+              className={`text-[11px] font-medium ${
                 agingFilter === "61_90" ? "text-rose-100" : "text-slate-500"
               }`}
             >
@@ -544,7 +548,7 @@ export default function ArrearsPage() {
                 90+ Days
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                   agingFilter === "90_PLUS"
                     ? "bg-white/25 text-white"
                     : "bg-red-100 text-red-900"
@@ -554,14 +558,14 @@ export default function ArrearsPage() {
               </span>
             </div>
             <div
-              className={`text-base font-black mt-1 ${
+              className={`text-base font-semibold mt-1 ${
                 agingFilter === "90_PLUS" ? "text-white" : "text-red-700"
               }`}
             >
               {MONEY(agingStats.b90Plus)}
             </div>
             <span
-              className={`text-[10px] font-medium ${
+              className={`text-[11px] font-medium ${
                 agingFilter === "90_PLUS" ? "text-red-100" : "text-slate-500"
               }`}
             >
@@ -573,7 +577,7 @@ export default function ArrearsPage() {
 
       {/* ── Search and Filter Controls Toolbar ── */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {/* Search Input */}
           <div className="lg:col-span-2 relative">
             <Search
@@ -585,7 +589,7 @@ export default function ArrearsPage() {
               placeholder="Search by borrower name, loan no, NIC, phone, guarantor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 focus:bg-white text-slate-800 placeholder-slate-400"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 focus:bg-white text-slate-800 placeholder-slate-400" aria-label="Search by borrower name, loan no, NIC, phone, guarantor..."
             />
           </div>
 
@@ -642,18 +646,18 @@ export default function ArrearsPage() {
           )}
         </div>
 
-        <div className="overflow-x-auto min-w-full">
-          <table className="w-full text-left text-xs min-w-[900px]">
-            <thead className="bg-slate-100 text-[11px] text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
+        <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+          <table className="w-full text-left text-xs min-w-[900px] lms-table">
+            <thead className="bg-slate-100 text-[11px] text-slate-700 font-semibold uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Borrower Dossier</th>
-                <th className="py-3 px-3">Facility Details</th>
-                <th className="py-3 px-3 text-right">Installment</th>
-                <th className="py-3 px-3 text-center">Missed Cycles</th>
-                <th className="py-3 px-3 text-center">Days Overdue</th>
-                <th className="py-3 px-3 text-right">Arrears Balance</th>
-                <th className="py-3 px-3 text-right">Remaining Balance</th>
-                <th className="py-3 px-4 text-center">Recovery Actions</th>
+                <th className="py-3 px-4" scope="col">Borrower Dossier</th>
+                <th className="py-3 px-3" scope="col">Facility Details</th>
+                <th className="py-3 px-3 text-right" scope="col">Installment</th>
+                <th className="py-3 px-3 text-center" scope="col">Missed Cycles</th>
+                <th className="py-3 px-3 text-center" scope="col">Days Overdue</th>
+                <th className="py-3 px-3 text-right" scope="col">Arrears Balance</th>
+                <th className="py-3 px-3 text-right" scope="col">Remaining Balance</th>
+                <th className="py-3 px-4 text-center" scope="col">Recovery Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -671,7 +675,7 @@ export default function ArrearsPage() {
                     {/* Borrower Dossier */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-semibold text-xs flex items-center justify-center shrink-0">
                           {initials}
                         </div>
                         <div>
@@ -729,7 +733,7 @@ export default function ArrearsPage() {
 
                     {/* Installment Amount */}
                     <td className="py-3.5 px-3 text-right">
-                      <div className="font-black text-slate-900 text-xs">
+                      <div className="font-semibold text-slate-900 text-xs">
                         {MONEY(item.loan.installment)}
                       </div>
                       <div className="text-[11px] text-slate-500 font-medium">Regular per cycle</div>
@@ -745,7 +749,7 @@ export default function ArrearsPage() {
                     {/* Days Overdue */}
                     <td className="py-3.5 px-3 text-center">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${
                           item.fin.overdueDays > 60
                             ? "bg-red-100 text-red-800 border-red-300"
                             : item.fin.overdueDays > 30
@@ -759,10 +763,10 @@ export default function ArrearsPage() {
 
                     {/* Arrears Balance */}
                     <td className="py-3.5 px-3 text-right">
-                      <div className="font-black text-rose-700 text-sm">
+                      <div className="font-semibold text-rose-700 text-sm">
                         {MONEY(item.fin.arrears)}
                       </div>
-                      <div className="text-[9px] font-bold text-rose-600 uppercase">
+                      <div className="text-[11px] font-bold text-rose-600 uppercase">
                         Defaulted
                       </div>
                     </td>
@@ -772,7 +776,7 @@ export default function ArrearsPage() {
                       <div className="font-bold text-slate-900 text-xs">
                         {MONEY(item.fin.balanceDue)}
                       </div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-[11px] text-slate-400">
                         Paid: {MONEY(item.fin.totalPaid)}
                       </div>
                     </td>
@@ -792,7 +796,7 @@ export default function ArrearsPage() {
                             handleIssueNotice(bName, item.loan.loanNo || item.loan.id)
                           }
                           className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
-                          title="Issue Demand Notice / SMS Reminder"
+                          title="Issue Demand Notice / SMS Reminder" aria-label="Issue Demand Notice / SMS Reminder"
                         >
                           <FileWarning size={13} />
                         </button>
@@ -822,20 +826,20 @@ export default function ArrearsPage() {
 
       {/* ── Quick Recovery Payment Modal ── */}
       {recoveringLoan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs lms-overlay">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5 lms-dialog">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">
+                <p className="text-[11px] font-bold text-red-600 uppercase tracking-widest">
                   Credit Recovery Action
                 </p>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900">
                   Record Arrears Recovery
                 </h3>
               </div>
               <button
                 onClick={closeRecoveryModal}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -863,7 +867,7 @@ export default function ArrearsPage() {
                   {MONEY(recoveringLoan.loan.installment)}
                 </span>
               </div>
-              <div className="flex justify-between border-t border-rose-200/80 pt-1 font-black text-sm">
+              <div className="flex justify-between border-t border-rose-200/80 pt-1 font-semibold text-sm">
                 <span className="text-rose-800">Total Arrears Owed:</span>
                 <span className="text-rose-700">{MONEY(recoveringLoan.fin.arrears)}</span>
               </div>
@@ -871,7 +875,7 @@ export default function ArrearsPage() {
 
             <form onSubmit={handleConfirmRecovery} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 mb-1" htmlFor="field-app-dashboard-arrears-page-1">
                   Recovered Amount (LKR) *
                 </label>
                 <input
@@ -881,13 +885,13 @@ export default function ArrearsPage() {
                   step="any"
                   value={recoveryAmount}
                   onChange={(e) => setRecoveryAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 text-slate-900"
+                  className="w-full px-3 py-2 text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 text-slate-900" id="field-app-dashboard-arrears-page-1"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-bold text-slate-700 mb-1" htmlFor="field-app-dashboard-arrears-page-2">
                     Recovery Method *
                   </label>
                   <select
@@ -897,7 +901,7 @@ export default function ArrearsPage() {
                         e.target.value as "Cash" | "Bank Transfer" | "Cheque"
                       )
                     }
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-800 font-medium"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-800 font-medium" id="field-app-dashboard-arrears-page-2"
                   >
                     <option value="Cash">Cash (Recovery Officer)</option>
                     <option value="Bank Transfer">Bank Transfer / Deposit</option>
@@ -905,20 +909,20 @@ export default function ArrearsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-bold text-slate-700 mb-1" htmlFor="field-app-dashboard-arrears-page-3">
                     Recovery Officer
                   </label>
                   <input
                     type="text"
                     value={collectorName}
                     onChange={(e) => setCollectorName(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-800"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-800" id="field-app-dashboard-arrears-page-3"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 mb-1" htmlFor="field-app-dashboard-arrears-page-4">
                   Recovery Remarks / Payment Reference
                 </label>
                 <input
@@ -926,7 +930,7 @@ export default function ArrearsPage() {
                   placeholder="e.g. Arrears partial settlement, promised full balance by next week"
                   value={recoveryNotes}
                   onChange={(e) => setRecoveryNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-800"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-800" id="field-app-dashboard-arrears-page-4"
                 />
               </div>
 

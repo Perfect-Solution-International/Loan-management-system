@@ -368,7 +368,7 @@ export function NewLoanForm({
           <CheckCircle2 size={36} />
         </div>
         <div>
-          <h3 className="text-xl font-black text-slate-900">Loan Contract Issued!</h3>
+          <h3 className="text-xl font-semibold text-slate-900">Loan created</h3>
           <p className="text-xs text-slate-500 mt-1">
             Contract <span className="font-mono font-bold text-red-600">{submittedLoanId}</span> has been successfully issued to{" "}
             <strong>{selectedCustomer?.fullName || selectedCustomer?.name}</strong>.
@@ -413,7 +413,7 @@ export function NewLoanForm({
               <Check size={14} className="text-emerald-700 stroke-[3]" />
             ) : (
               <span
-                className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                className={`w-4 h-4 rounded-full text-center text-[11px] font-bold leading-4 ${
                   step === "select"
                     ? "bg-white/25 text-white"
                     : "bg-slate-200 text-slate-800"
@@ -443,7 +443,7 @@ export function NewLoanForm({
             }`}
           >
             <span
-              className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+              className={`w-4 h-4 rounded-full text-center text-[11px] font-bold leading-4 ${
                 step === "review"
                   ? "bg-white/25 text-white"
                   : "bg-slate-300 text-slate-800"
@@ -472,7 +472,7 @@ export function NewLoanForm({
             }`}
           >
             <span
-              className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+              className={`w-4 h-4 rounded-full text-center text-[11px] font-bold leading-4 ${
                 step === "form"
                   ? "bg-white/25 text-white"
                   : "bg-slate-300 text-slate-800"
@@ -492,7 +492,7 @@ export function NewLoanForm({
             <span className="font-bold text-slate-900 truncate max-w-[180px]">
               {selectedCustomer.fullName || selectedCustomer.name}
             </span>
-            <span className="font-mono text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[10px]">
+            <span className="font-mono text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[11px]">
               {selectedCustomer.id}
             </span>
           </div>
@@ -500,7 +500,7 @@ export function NewLoanForm({
       </div>
 
       {errorMsg && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold flex items-center gap-2">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold flex items-center gap-2" role="alert">
           <AlertTriangle size={16} className="shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -510,7 +510,7 @@ export function NewLoanForm({
       {step === "select" && (
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-4">
           <div className="p-6 border-b border-slate-100">
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">
+            <h2 className="text-lg font-semibold text-slate-900 tracking-tight">
               Step 1: Select a Borrower
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -531,7 +531,7 @@ export function NewLoanForm({
                 value={customerSearch}
                 onChange={(e) => setCustomerSearch(e.target.value)}
                 placeholder="Search by customer name, NIC number, phone, town, or ID..."
-                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 transition shadow-2xs"
+                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 transition shadow-2xs" aria-label="Search by customer name, NIC number, phone, town, or ID..."
               />
             </div>
 
@@ -572,11 +572,11 @@ export function NewLoanForm({
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                          <span className="font-mono text-[11px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
                             {c.id}
                           </span>
                           <span
-                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                               (c.status || "").toUpperCase() === "ACTIVE"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : "bg-amber-100 text-amber-800"
@@ -585,7 +585,7 @@ export function NewLoanForm({
                             {c.status || "Active"}
                           </span>
                         </div>
-                        <h4 className="text-xs font-black text-slate-900 truncate mt-0.5">
+                        <h4 className="text-xs font-semibold text-slate-900 truncate mt-0.5">
                           {c.fullName || c.name}
                         </h4>
                         <p className="text-[11px] text-slate-500 font-mono">NIC: {c.nic}</p>
@@ -596,7 +596,7 @@ export function NewLoanForm({
                     </div>
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="text-[10px] text-slate-400 font-medium">
+                      <span className="text-[11px] text-slate-400 font-medium">
                         Outstanding: <strong className="font-mono text-slate-700">{MONEY(outstanding)}</strong>
                       </span>
                       <span
@@ -654,7 +654,7 @@ export function NewLoanForm({
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-6">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">
+              <h2 className="text-lg font-semibold text-slate-900 tracking-tight">
                 Step 2: Review Borrower Profile Details
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -676,17 +676,17 @@ export function NewLoanForm({
                   className="w-20 h-20 rounded-2xl object-cover border-2 border-white/60 shadow-md shrink-0 bg-slate-100"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-2xl bg-white/20 border border-white/40 text-white font-black text-3xl flex items-center justify-center shrink-0">
+                <div className="w-20 h-20 rounded-2xl bg-white/20 border border-white/40 text-white font-semibold text-3xl flex items-center justify-center shrink-0">
                   {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-rose-200 uppercase tracking-widest bg-red-950/60 border border-red-900/40 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold text-rose-200 uppercase tracking-widest bg-red-950/60 border border-red-900/40 px-2.5 py-0.5 rounded-full">
                     Borrower Dossier
                   </span>
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                       (selectedCustomer.status || "").toUpperCase() === "ACTIVE"
                         ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
                         : "bg-amber-400/20 text-amber-200 border border-amber-400/40"
@@ -695,7 +695,7 @@ export function NewLoanForm({
                     {selectedCustomer.status || "Active"}
                   </span>
                 </div>
-                <h3 className="text-xl font-black">
+                <h3 className="text-xl font-semibold">
                   {selectedCustomer.fullName || selectedCustomer.name}
                 </h3>
                 <p className="text-xs text-zinc-300 font-mono">
@@ -710,7 +710,7 @@ export function NewLoanForm({
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   Active Contracts
                 </span>
-                <span className="text-xl font-black text-slate-900 mt-1 block">
+                <span className="text-xl font-semibold text-slate-900 mt-1 block">
                   {customerFinancialSnapshot.activeLoansCount}
                 </span>
               </div>
@@ -719,7 +719,7 @@ export function NewLoanForm({
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   Total Outstanding Liability
                 </span>
-                <span className="text-xl font-black font-mono text-amber-600 mt-1 block">
+                <span className="text-xl font-semibold font-mono text-amber-600 mt-1 block">
                   {MONEY(customerFinancialSnapshot.outstanding)}
                 </span>
               </div>
@@ -728,7 +728,7 @@ export function NewLoanForm({
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   Lifetime Repayments Paid
                 </span>
-                <span className="text-xl font-black font-mono text-emerald-600 mt-1 block">
+                <span className="text-xl font-semibold font-mono text-emerald-600 mt-1 block">
                   {MONEY(customerFinancialSnapshot.totalPaid)}
                 </span>
               </div>
@@ -841,7 +841,7 @@ export function NewLoanForm({
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-black text-slate-900 truncate">{selectedCustomer.fullName || selectedCustomer.name}</p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{selectedCustomer.fullName || selectedCustomer.name}</p>
                 <p className="text-[11px] text-slate-500 font-mono truncate">
                   NIC: <strong className="text-slate-800">{selectedCustomer.nic}</strong> · {selectedCustomer.phone} ·{" "}
                   {selectedCustomer.town || "Sri Lanka"}
@@ -853,14 +853,14 @@ export function NewLoanForm({
               <button
                 type="button"
                 onClick={() => setStep("review")}
-                className="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition cursor-pointer shadow-2xs leading-tight"
+                className="px-2 py-0.5 text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition cursor-pointer shadow-2xs leading-tight"
               >
                 View Profile
               </button>
               <button
                 type="button"
                 onClick={() => setStep("select")}
-                className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer shadow-2xs leading-tight"
+                className="px-2 py-0.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer shadow-2xs leading-tight"
               >
                 Change Borrower
               </button>
@@ -876,14 +876,14 @@ export function NewLoanForm({
                   <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                     <DollarSign size={18} />
                   </div>
-                  <h3 className="text-sm font-black text-slate-900">1. Loan Terms &amp; Structure</h3>
+                  <h3 className="text-sm font-semibold text-slate-900">1. Loan Terms &amp; Structure</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Loan Amount */}
                   <div className="space-y-1.5 sm:col-span-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-700">
+                      <label className="text-xs font-bold text-slate-700" htmlFor="control-components-forms-NewLoanForm-1">
                         Loan Amount (LKR) <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center gap-1.5">
@@ -916,7 +916,7 @@ export function NewLoanForm({
                       required
                       value={grossAmount}
                       onChange={(e) => setGrossAmount(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-sm font-mono font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs" id="control-components-forms-NewLoanForm-1"
                     />
                   </div>
 
@@ -941,7 +941,7 @@ export function NewLoanForm({
                         }`}
                       >
                         <div>
-                          <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                          <div className="text-xs font-semibold text-slate-900 flex items-center gap-2">
                             <span
                               className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
                                 repaymentType === "Capital + Interest"
@@ -974,7 +974,7 @@ export function NewLoanForm({
                         }`}
                       >
                         <div>
-                          <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                          <div className="text-xs font-semibold text-slate-900 flex items-center gap-2">
                             <span
                               className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
                                 repaymentType === "Interest Only"
@@ -1001,7 +1001,7 @@ export function NewLoanForm({
 
                   {/* Interest Rate */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-1">
                       Interest Rate (%) <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -1012,17 +1012,17 @@ export function NewLoanForm({
                       required
                       value={interestRate}
                       onChange={(e) => setInterestRate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs" id="field-components-forms-NewLoanForm-1"
                     />
                   </div>
 
                   {/* Rate Period */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Rate Period</label>
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-2">Rate Period</label>
                     <select
                       value={ratePeriod}
                       onChange={(e) => setRatePeriod(e.target.value as "Monthly" | "Weekly" | "Daily" | "Flat")}
-                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs" id="field-components-forms-NewLoanForm-2"
                     >
                       <option value="">-- Select Rate Period --</option>
                       <option value="Monthly">Per Month (Standard)</option>
@@ -1034,11 +1034,11 @@ export function NewLoanForm({
 
                   {/* Repayment Frequency */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Repayment Frequency</label>
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-3">Repayment Frequency</label>
                     <select
                       value={frequency}
                       onChange={(e) => handleFrequencyChange(e.target.value as "Monthly" | "Weekly" | "Daily")}
-                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs" id="field-components-forms-NewLoanForm-3"
                     >
                       <option value="">-- Select Frequency --</option>
                       <option value="Monthly">Monthly</option>
@@ -1049,7 +1049,7 @@ export function NewLoanForm({
 
                   {/* Duration */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-4">
                       Duration (No. of Installments) <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -1059,44 +1059,44 @@ export function NewLoanForm({
                       required
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs" id="field-components-forms-NewLoanForm-4"
                     />
                   </div>
 
                   {/* Loan Purpose */}
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-700">Loan Purpose</label>
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-5">Loan Purpose</label>
                     <input
                       type="text"
                       autoComplete="off"
                       value={purpose}
                       onChange={(e) => setPurpose(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs" id="field-components-forms-NewLoanForm-5"
                     />
                   </div>
 
                   {/* Dates */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Issue Date *</label>
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-6">Issue Date *</label>
                     <input
                       type="date"
                       required
                       autoComplete="off"
                       value={issueDate}
                       onChange={(e) => handleIssueDateChange(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                      className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs" id="field-components-forms-NewLoanForm-6"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">First Repayment Date *</label>
+                    <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-7">First Repayment Date *</label>
                     <input
                       type="date"
                       required
                       autoComplete="off"
                       value={firstPaymentDate}
                       onChange={(e) => setFirstPaymentDate(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                      className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs" id="field-components-forms-NewLoanForm-7"
                     />
                   </div>
                 </div>
@@ -1109,7 +1109,7 @@ export function NewLoanForm({
                     <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
                       <Calculator size={18} />
                     </div>
-                    <h3 className="text-sm font-black text-slate-900">Fees</h3>
+                    <h3 className="text-sm font-semibold text-slate-900">Fees</h3>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -1152,59 +1152,59 @@ export function NewLoanForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Document Charge (LKR)</label>
+                    <label className="text-[11px] font-bold text-slate-600" htmlFor="field-components-forms-NewLoanForm-8">Document Charge (LKR)</label>
                     <input
                       type="number"
                       min="0"
                       autoComplete="off"
                       value={capitalDeduction}
                       onChange={(e) => setCapitalDeduction(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300" id="field-components-forms-NewLoanForm-8"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Interest Deduction (LKR)</label>
+                    <label className="text-[11px] font-bold text-slate-600" htmlFor="field-components-forms-NewLoanForm-9">Interest Deduction (LKR)</label>
                     <input
                       type="number"
                       min="0"
                       autoComplete="off"
                       value={interestDeduction}
                       onChange={(e) => setInterestDeduction(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300" id="field-components-forms-NewLoanForm-9"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Processing Fee (LKR)</label>
+                    <label className="text-[11px] font-bold text-slate-600" htmlFor="field-components-forms-NewLoanForm-10">Processing Fee (LKR)</label>
                     <input
                       type="number"
                       min="0"
                       autoComplete="off"
                       value={processingFee}
                       onChange={(e) => setProcessingFee(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300" id="field-components-forms-NewLoanForm-10"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Other Fees (LKR)</label>
+                    <label className="text-[11px] font-bold text-slate-600" htmlFor="field-components-forms-NewLoanForm-11">Other Fees (LKR)</label>
                     <input
                       type="number"
                       min="0"
                       autoComplete="off"
                       value={otherFees}
                       onChange={(e) => setOtherFees(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300" id="field-components-forms-NewLoanForm-11"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600">Disbursement Mode</label>
+                    <label className="text-[11px] font-bold text-slate-600" htmlFor="field-components-forms-NewLoanForm-12">Disbursement Mode</label>
                     <select
                       value={disbursementMethod}
                       onChange={(e) => setDisbursementMethod(e.target.value as "Cash" | "Bank Transfer" | "Cheque")}
-                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300" id="field-components-forms-NewLoanForm-12"
                     >
                       <option value="">-- Select Mode --</option>
                       <option value="Cash">Cash Handover</option>
@@ -1223,7 +1223,7 @@ export function NewLoanForm({
                       <ShieldCheck size={18} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-slate-900">3. Necessary Guarantor Details</h3>
+                      <h3 className="text-sm font-semibold text-slate-900">3. Guarantor details</h3>
                       <p className="text-[11px] text-slate-600 font-medium">Security guarantor details registered with this loan.</p>
                     </div>
                   </div>
@@ -1269,7 +1269,7 @@ export function NewLoanForm({
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1 animate-in fade-in duration-200">
                     <div className="sm:col-span-2 space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Guarantor Full Legal Name <span className="text-red-500">*</span></label>
+                      <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-13">Guarantor Full Legal Name <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         name="form_guarantor_fullname"
@@ -1278,17 +1278,17 @@ export function NewLoanForm({
                         value={guarantorName}
                         onChange={(e) => setGuarantorName(e.target.value)}
                         placeholder="e.g. Kamal Perera"
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500" id="field-components-forms-NewLoanForm-13"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Relationship to Borrower</label>
+                      <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-14">Relationship to Borrower</label>
                       <select
                         name="form_guarantor_relationship"
                         value={guarantorRelationship}
                         onChange={(e) => setGuarantorRelationship(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white" id="field-components-forms-NewLoanForm-14"
                       >
                         <option value="">-- Select Relationship --</option>
                         <option value="Spouse">Spouse</option>
@@ -1301,7 +1301,7 @@ export function NewLoanForm({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Guarantor NIC Number</label>
+                      <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-15">Guarantor NIC Number</label>
                       <input
                         type="text"
                         name="form_guarantor_nic"
@@ -1310,12 +1310,12 @@ export function NewLoanForm({
                         value={guarantorNic}
                         onChange={(e) => setGuarantorNic(e.target.value)}
                         placeholder="e.g. 198512345678 / 851234567V"
-                        className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500" id="field-components-forms-NewLoanForm-15"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Guarantor Contact Phone</label>
+                      <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-16">Guarantor Contact Phone</label>
                       <input
                         type="tel"
                         name="form_guarantor_phone"
@@ -1324,12 +1324,12 @@ export function NewLoanForm({
                         value={guarantorPhone}
                         onChange={(e) => setGuarantorPhone(e.target.value)}
                         placeholder="e.g. 0771234567"
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500" id="field-components-forms-NewLoanForm-16"
                       />
                     </div>
 
                     <div className="space-y-1 sm:col-span-3">
-                      <label className="text-xs font-bold text-slate-700">Guarantor Residential Address</label>
+                      <label className="text-xs font-bold text-slate-700" htmlFor="field-components-forms-NewLoanForm-17">Guarantor Residential Address</label>
                       <input
                         type="text"
                         name="form_guarantor_address"
@@ -1338,7 +1338,7 @@ export function NewLoanForm({
                         value={guarantorAddress}
                         onChange={(e) => setGuarantorAddress(e.target.value)}
                         placeholder="Street, City, District"
-                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500" id="field-components-forms-NewLoanForm-17"
                       />
                     </div>
                   </div>
@@ -1367,9 +1367,9 @@ export function NewLoanForm({
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <Calculator size={18} className="text-rose-400" />
-                    <h3 className="font-black text-sm tracking-tight">Financial Summary</h3>
+                    <h3 className="font-semibold text-sm tracking-tight">Financial Summary</h3>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
                     Live
                   </span>
                 </div>
@@ -1390,12 +1390,12 @@ export function NewLoanForm({
                   {/* Net Cash Disbursement */}
                   <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex justify-between items-center">
                     <div>
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
                         Net Disbursement
                       </span>
-                      <span className="text-[10px] text-slate-400">Borrower cashout</span>
+                      <span className="text-[11px] text-slate-400">Borrower cashout</span>
                     </div>
-                    <span className="font-mono text-base font-black text-emerald-400">
+                    <span className="font-mono text-base font-semibold text-emerald-400">
                       {MONEY(calculations.netDisbursement)}
                     </span>
                   </div>
@@ -1409,7 +1409,7 @@ export function NewLoanForm({
 
                   <div className="flex justify-between items-center py-1 border-b border-slate-800">
                     <span className="text-slate-300 font-bold">Total Repayment</span>
-                    <span className="font-mono font-black text-white text-sm">
+                    <span className="font-mono font-semibold text-white text-sm">
                       {MONEY(calculations.totalRepayment)}
                     </span>
                   </div>
@@ -1418,24 +1418,24 @@ export function NewLoanForm({
                     <div className="space-y-2">
                       <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
                         <div>
-                          <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                          <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider block">
                             Periodic Interest Payment
                           </span>
-                          <span className="text-[10px] text-zinc-400">
+                          <span className="text-[11px] text-zinc-400">
                             {calculations.numberOfInstallments} cycles ({frequency})
                           </span>
                         </div>
-                        <span className="font-mono text-base font-black text-rose-400">
+                        <span className="font-mono text-base font-semibold text-rose-400">
                           {MONEY(calculations.installmentAmount)}
                         </span>
                       </div>
 
                       <div className="p-2.5 bg-zinc-900/90 border border-zinc-700/60 rounded-xl flex justify-between items-center text-xs">
                         <div>
-                          <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider block">
+                          <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider block">
                             Capital at Maturity
                           </span>
-                          <span className="text-[10px] text-zinc-400">Final balloon payment</span>
+                          <span className="text-[11px] text-zinc-400">Final balloon payment</span>
                         </div>
                         <span className="font-mono font-bold text-white">
                           {MONEY(calculations.capitalAtMaturity || 0)}
@@ -1445,14 +1445,14 @@ export function NewLoanForm({
                   ) : (
                     <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
                       <div>
-                        <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                        <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider block">
                           {frequency} Installment
                         </span>
-                        <span className="text-[10px] text-zinc-400">
+                        <span className="text-[11px] text-zinc-400">
                           {calculations.numberOfInstallments} equal payments
                         </span>
                       </div>
-                      <span className="font-mono text-lg font-black text-rose-400">
+                      <span className="font-mono text-lg font-semibold text-rose-400">
                         {MONEY(calculations.installmentAmount)}
                       </span>
                     </div>
@@ -1462,21 +1462,21 @@ export function NewLoanForm({
                 {/* Installment breakdown preview */}
                 {schedulePreview.length > 0 && (
                   <div className="space-y-1.5 pt-1 border-t border-slate-800 text-[11px]">
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                    <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-slate-400 font-bold">
                       <span>Installment Schedule Preview</span>
                       <span>{repaymentType}</span>
                     </div>
                     {schedulePreview.map((item) => (
                       <div
                         key={item.num}
-                        className="flex items-center justify-between p-1.5 bg-slate-800/60 rounded-lg text-[10px] font-mono text-slate-300"
+                        className="flex items-center justify-between p-1.5 bg-slate-800/60 rounded-lg text-[11px] font-mono text-slate-300"
                       >
                         <div className="flex items-center gap-1.5">
                           <span>
                             #{item.num} · {item.date}
                           </span>
                           {item.isFinal && (
-                            <span className="text-[9px] font-sans font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            <span className="text-[11px] font-sans font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                               Maturity
                             </span>
                           )}
@@ -1502,7 +1502,7 @@ export function NewLoanForm({
                     className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <PlusCircle size={16} />
-                    <span>Active Loan</span>
+                    <span>Create loan</span>
                   </button>
 
                   <button

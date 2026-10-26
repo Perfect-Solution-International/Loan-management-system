@@ -109,10 +109,14 @@ export default function LoansListPage() {
   }, [loans, customers, search, statusFilter]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3">
+    <section className="min-h-screen bg-slate-50">
+      <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Loan register</h2>
+        <p>Review loan terms, balances, and repayment status.</p>
+      </div>
         {/* ═══ Action Bar (Search, Status Filter & Issue Loan) ══════════════ */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
           {/* Search */}
           <div className="relative flex-1 sm:max-w-md">
             <Search
@@ -124,22 +128,22 @@ export default function LoansListPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search loan ID, borrower, NIC, contact…"
-              className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition"
+              className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition" aria-label="Search loan ID, borrower, NIC, contact…"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5" aria-label="Clear search"
               >
                 <X size={12} />
               </button>
             )}
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+          <div className="flex min-w-0 items-center justify-between gap-2">
             {/* Filter Pills */}
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto scrollbar-none py-0.5 table-scroll" role="region" aria-label="Loan status filters" tabIndex={0}>
               {[
                 { id: "ALL", label: "All", count: loans.length },
                 { id: "ACTIVE", label: "Active", count: activeLoansCount },
@@ -159,7 +163,7 @@ export default function LoansListPage() {
                 >
                   <span>{tab.label}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
+                    className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                       statusFilter === tab.id
                         ? "bg-white/25 text-white"
                         : "bg-slate-100 text-slate-600"
@@ -184,20 +188,20 @@ export default function LoansListPage() {
         </div>
 
         {/* ═══ Summary Cards (Customer-style compact metrics) ═══════════════ */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {/* Card 1: Total Portfolio */}
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
               <CreditCard size={16} className="text-red-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Total Disbursed
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {MONEY(totalPortfolio)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 {loans.length} facilities
               </p>
             </div>
@@ -209,13 +213,13 @@ export default function LoansListPage() {
               <TrendingUp size={16} className="text-emerald-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Active Contracts
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-emerald-600 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-emerald-600 leading-tight">
                 {activeLoansCount}
               </p>
-              <p className="text-[10px] text-emerald-700 font-semibold truncate">
+              <p className="text-[11px] text-emerald-700 font-semibold truncate">
                 Performing loans
               </p>
             </div>
@@ -227,13 +231,13 @@ export default function LoansListPage() {
               <Wallet size={16} className="text-blue-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Total Recovered
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {MONEY(totalCollected)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 {payments.length} remittances
               </p>
             </div>
@@ -245,13 +249,13 @@ export default function LoansListPage() {
               <AlertTriangle size={16} className="text-rose-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-rose-500 uppercase tracking-wider truncate">
                 Total In Arrears
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-rose-600 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-rose-600 leading-tight">
                 {MONEY(totalArrears)}
               </p>
-              <p className="text-[10px] text-rose-600 font-medium truncate">
+              <p className="text-[11px] text-rose-600 font-medium truncate">
                 {delinquentCount} delinquent {delinquentCount === 1 ? "account" : "accounts"}
               </p>
             </div>
@@ -260,18 +264,18 @@ export default function LoansListPage() {
 
         {/* ═══ Main Loans Register Table (Customer Theme) ════════════════════ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto min-w-full">
-            <table className="w-full text-left text-sm whitespace-nowrap min-w-[860px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+          <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left text-sm whitespace-nowrap min-w-[860px] lms-table">
+              <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                 <tr>
-                  <th className="py-3 px-5">Facility No</th>
-                  <th className="py-3 px-5">Borrower</th>
-                  <th className="py-3 px-5 text-right">Principal</th>
-                  <th className="py-3 px-5">Interest / Term</th>
-                  <th className="py-3 px-5 text-right">Installment</th>
-                  <th className="py-3 px-5 text-right">Arrears</th>
-                  <th className="py-3 px-5 text-center">Status</th>
-                  <th className="py-3 px-5 text-right">Actions</th>
+                  <th className="py-3 px-5" scope="col">Facility No</th>
+                  <th className="py-3 px-5" scope="col">Borrower</th>
+                  <th className="py-3 px-5 text-right" scope="col">Principal</th>
+                  <th className="py-3 px-5" scope="col">Interest / Term</th>
+                  <th className="py-3 px-5 text-right" scope="col">Installment</th>
+                  <th className="py-3 px-5 text-right" scope="col">Arrears</th>
+                  <th className="py-3 px-5 text-center" scope="col">Status</th>
+                  <th className="py-3 px-5 text-right" scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -308,7 +312,7 @@ export default function LoansListPage() {
                           >
                             {l.loanNo || l.id}
                           </Link>
-                          <span className="text-[10px] text-slate-500 font-medium">
+                          <span className="text-[11px] text-slate-500 font-medium">
                             {l.issueDate || "—"}
                           </span>
                         </div>
@@ -324,7 +328,7 @@ export default function LoansListPage() {
                               className="w-8 h-8 rounded-xl object-cover border border-slate-200 shrink-0"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-bold text-[11px] flex items-center justify-center shrink-0">
                               {borrowerInitials}
                             </div>
                           )}
@@ -335,7 +339,7 @@ export default function LoansListPage() {
                             >
                               {borrowerName}
                             </Link>
-                            <span className="text-[10px] text-slate-500 font-mono font-medium">
+                            <span className="text-[11px] text-slate-500 font-mono font-medium">
                               {cust?.nic ? `NIC: ${cust.nic}` : cust?.phone || l.purpose || "Borrower"}
                               {cust?.town ? ` · ${cust.town}` : ""}
                             </span>
@@ -348,7 +352,7 @@ export default function LoansListPage() {
                         <div>
                           {MONEY(l.principal || l.amount || 0)}
                           {l.netDisbursement && l.netDisbursement !== (l.principal || l.amount) && (
-                            <span className="block text-[10px] font-medium text-slate-500">
+                            <span className="block text-[11px] font-medium text-slate-500">
                               Net: {MONEY(l.netDisbursement)}
                             </span>
                           )}
@@ -361,7 +365,7 @@ export default function LoansListPage() {
                           <span className="font-semibold text-xs text-slate-900">
                             {l.interestRate}% ({l.ratePeriod || l.repaymentFrequency || "Monthly"})
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">
+                          <span className="text-[11px] text-slate-500 font-medium">
                             {l.duration} {l.repaymentFrequency === "Daily" ? "Days" : l.repaymentFrequency === "Weekly" ? "Weeks" : "Months"} term
                           </span>
                         </div>
@@ -373,7 +377,7 @@ export default function LoansListPage() {
                           <span className="font-mono font-bold text-xs text-slate-900">
                             {MONEY(l.installment || 0)}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-semibold">
+                          <span className="text-[11px] text-slate-500 font-semibold">
                             per {l.repaymentFrequency?.toLowerCase() || "cycle"}
                           </span>
                         </div>
@@ -387,7 +391,7 @@ export default function LoansListPage() {
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
                               {MONEY(fin.arrears)}
                             </span>
-                            <span className="text-[10px] text-rose-600 font-semibold mt-0.5">
+                            <span className="text-[11px] text-rose-600 font-semibold mt-0.5">
                               {fin.missedInstallments > 0
                                 ? `${fin.missedInstallments} cycle${fin.missedInstallments > 1 ? "s" : ""} overdue`
                                 : "Overdue payment"}
@@ -398,7 +402,7 @@ export default function LoansListPage() {
                             <span className="text-xs font-mono font-medium text-slate-400">
                               {MONEY(0)}
                             </span>
-                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-0.5">
+                            <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-0.5">
                               <Check size={10} /> Up to date
                             </span>
                           </div>
@@ -408,7 +412,7 @@ export default function LoansListPage() {
                       {/* 7. Standing / Status */}
                       <td className="py-3 px-5 text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                             isOverdue
                               ? "bg-rose-100 text-rose-800"
                               : isPending
@@ -462,7 +466,7 @@ export default function LoansListPage() {
                   <FileSpreadsheet size={24} />
                 </div>
                 <p className="font-bold text-slate-700 text-sm">
-                  No credit facilities match this criteria
+                  No loans match your filters
                 </p>
                 <p className="max-w-md mx-auto text-slate-500">
                   {search
@@ -475,7 +479,7 @@ export default function LoansListPage() {
                     onClick={() => setSearch("")}
                     className="px-3.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition cursor-pointer"
                   >
-                    Clear Search Filter
+                    Clear search
                   </button>
                 )}
               </div>
@@ -483,6 +487,6 @@ export default function LoansListPage() {
           </div>
         </div>
       </div>
-    </main>
+    </section>
   );
 }

@@ -247,7 +247,7 @@ export default function LoginPage() {
               <section>
                 <strong>Organized for daily lending</strong>
                 <small>
-                  End-to-end 256-bit encrypted access for authorized personnel and customers.
+                  Access your customer accounts, loan records, and daily lending tools in one place.
                 </small>
               </section>
             </div>
@@ -255,7 +255,7 @@ export default function LoginPage() {
             <div>
               <span><Fingerprint size={18} /></span>
               <section>
-                <strong>Centralized Portal</strong>
+                <strong>One workspace</strong>
                 <small>
                   Single point of access for portfolio management, daily collections, and customer accounts.
                 </small>
@@ -299,11 +299,11 @@ export default function LoginPage() {
           {/* Professional Role / Portal Switcher */}
           <div className="mb-5 bg-slate-50/80 p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
             <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                Select Portal / Quick Fill Credentials
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Choose a portal · Quick-fill credentials
               </span>
-              <span className="text-[10px] font-bold text-red-600 flex items-center gap-1">
-                <KeyRound size={11} /> Role Enforced
+              <span className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                <KeyRound size={11} /> Portal access
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -321,11 +321,11 @@ export default function LoginPage() {
                     : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-black text-xs">
+                <div className="flex items-center gap-1.5 font-semibold text-xs">
                   <Shield size={13} className="text-red-600" />
                   <span>Admin</span>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-red-600 mt-1">
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
                   admin123
                 </span>
               </button>
@@ -345,11 +345,11 @@ export default function LoginPage() {
                     : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-black text-xs">
+                <div className="flex items-center gap-1.5 font-semibold text-xs">
                   <Briefcase size={13} className="text-red-600" />
                   <span>Staff / Field</span>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-red-600 mt-1">
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
                   Staff@123
                 </span>
               </button>
@@ -369,11 +369,11 @@ export default function LoginPage() {
                     : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-black text-xs">
+                <div className="flex items-center gap-1.5 font-semibold text-xs">
                   <User size={13} className="text-red-600" />
                   <span>Customer</span>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-red-600 mt-1">
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
                   User@123
                 </span>
               </button>
@@ -381,7 +381,7 @@ export default function LoginPage() {
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 mb-4 leading-relaxed font-medium">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 mb-4 leading-relaxed font-medium" role="alert">
               <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-600" />
               <p>{errorMsg}</p>
             </div>
@@ -465,7 +465,7 @@ export default function LoginPage() {
             </label>
 
             <button type="submit" className="login-submit cursor-pointer">
-              Login
+              Sign in
               <ArrowRight size={18} />
             </button>
           </form>

@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className="lms-ui font-sans antialiased">
         <DataProvider>{children}</DataProvider>
       </body>
     </html>

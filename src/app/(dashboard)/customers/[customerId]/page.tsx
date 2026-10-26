@@ -176,7 +176,7 @@ function CustomerDetailsContent() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="mx-auto workspace-page">
       {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -213,13 +213,13 @@ function CustomerDetailsContent() {
             href={`/loans/new?customerId=${customer.id}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-bold text-white shadow-md transition"
           >
-            <Plus size={14} /> Issue New Loan
+            <Plus size={14} /> New Loan
           </Link>
         </div>
       </div>
 
       {notificationMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-semibold animate-fade-in shadow-xs">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-semibold animate-fade-in shadow-xs" role="status">
           <CheckCircle size={18} className="text-emerald-600 shrink-0" />
           <span>{notificationMsg}</span>
         </div>
@@ -256,7 +256,7 @@ function CustomerDetailsContent() {
               <span className="font-mono text-xs font-semibold px-2.5 py-0.5 bg-slate-100 rounded-md text-slate-600">
                 {customer.id}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
                 {customer.occupation || "Employed"}
               </span>
             </div>
@@ -286,7 +286,7 @@ function CustomerDetailsContent() {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Active Loans
             </p>
-            <p className="text-lg font-black text-red-600 mt-0.5">
+            <p className="text-lg font-semibold text-red-600 mt-0.5">
               {customerLoans.filter((l) => l.status === "Active").length} Loans
             </p>
           </div>
@@ -544,17 +544,17 @@ function CustomerDetailsContent() {
               </Link>
             </div>
 
-            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable records table">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto table-scroll" tabIndex={0} role="region" aria-label="Scrollable records table">
+              <table className="w-full text-left text-xs lms-table">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider text-xs">
                   <tr>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Receipt No</th>
-                    <th className="py-2.5 px-4">Loan ID</th>
-                    <th className="py-2.5 px-4">Classification</th>
-                    <th className="py-2.5 px-4">Amount Paid</th>
-                    <th className="py-2.5 px-4">Method / Notes</th>
-                    <th className="py-2.5 px-4 text-right">Official Receipt</th>
+                    <th className="py-2.5 px-4" scope="col">Date</th>
+                    <th className="py-2.5 px-4" scope="col">Receipt No</th>
+                    <th className="py-2.5 px-4" scope="col">Loan ID</th>
+                    <th className="py-2.5 px-4" scope="col">Classification</th>
+                    <th className="py-2.5 px-4" scope="col">Amount Paid</th>
+                    <th className="py-2.5 px-4" scope="col">Method / Notes</th>
+                    <th className="py-2.5 px-4 text-right" scope="col">Official Receipt</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -742,8 +742,8 @@ function CustomerDetailsContent() {
 
       {/* DOCUMENT PREVIEW MODAL */}
       {selectedDocForPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-sm space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 lms-overlay">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-sm space-y-4 animate-in fade-in zoom-in-95 duration-150 lms-dialog">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">{selectedDocForPreview.title}</h3>
@@ -809,8 +809,8 @@ function CustomerDetailsContent() {
 
       {/* UPLOAD DOCUMENT MODAL */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-sm space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 lms-overlay">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-sm space-y-4 animate-in fade-in zoom-in-95 duration-150 lms-dialog">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Upload Identity Document</h3>
@@ -907,7 +907,7 @@ export default function CustomerProfilePage() {
   return (
     <Suspense
       fallback={
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-xs text-slate-400">
+        <div className="mx-auto text-xs text-slate-400 workspace-page">
           Loading customer profile...
         </div>
       }

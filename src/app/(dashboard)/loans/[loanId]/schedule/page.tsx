@@ -147,7 +147,7 @@ export default function LoanSchedulePreviewPage() {
     return (
       <div className="p-8 max-w-4xl mx-auto space-y-4">
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xs text-center space-y-3">
-          <h2 className="text-lg font-black text-slate-900">Loan Facility Not Found</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Loan Facility Not Found</h2>
           <p className="text-xs text-slate-600 font-medium">The requested loan schedule record could not be located.</p>
           <Link
             href="/loans"
@@ -188,7 +188,7 @@ export default function LoanSchedulePreviewPage() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto workspace-page">
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -200,12 +200,12 @@ export default function LoanSchedulePreviewPage() {
               <ArrowLeft size={13} /> Facility {loan.id}
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
               Amortization Schedule
             </span>
           </div>
 
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1.5 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1.5 flex items-center gap-2">
             Repayment Schedule: <span className="font-mono text-red-700">{loan.id}</span>
           </h1>
 
@@ -242,47 +242,47 @@ export default function LoanSchedulePreviewPage() {
       {/* ── Summary Financial Metrics Strip ─────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
             Loan Amount
           </span>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">
+          <div className="text-lg font-semibold text-slate-900 font-mono mt-1">
             {MONEY(loan.principal || loan.amount || 0)}
           </div>
-          <span className="text-[10px] text-slate-600 font-medium">Disbursed Principal</span>
+          <span className="text-[11px] text-slate-600 font-medium">Disbursed Principal</span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
             Interest Structure
           </span>
-          <div className="text-lg font-black text-rose-700 font-mono mt-1">
+          <div className="text-lg font-semibold text-rose-700 font-mono mt-1">
             {MONEY(loan.interest || 0)}
           </div>
-          <span className="text-[10px] text-slate-600 font-medium">
+          <span className="text-[11px] text-slate-600 font-medium">
             {loan.interestRate}% ({loan.ratePeriod})
           </span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
             Total Repayable
           </span>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">
+          <div className="text-lg font-semibold text-slate-900 font-mono mt-1">
             {MONEY(loan.totalRepayment || 0)}
           </div>
-          <span className="text-[10px] text-slate-600 font-medium">
+          <span className="text-[11px] text-slate-600 font-medium">
             Across {loan.duration} installments
           </span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
             Installment Amount
           </span>
-          <div className="text-lg font-black text-red-600 font-mono mt-1">
+          <div className="text-lg font-semibold text-red-600 font-mono mt-1">
             {MONEY(loan.installment || 0)}
           </div>
-          <span className="text-[10px] text-slate-600 font-medium">
+          <span className="text-[11px] text-slate-600 font-medium">
             Per {loan.repaymentFrequency.toLowerCase()} cycle
           </span>
         </div>
@@ -292,7 +292,7 @@ export default function LoanSchedulePreviewPage() {
       <section className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-base font-black text-slate-900 tracking-tight">
+            <h2 className="text-base font-semibold text-slate-900 tracking-tight">
               Detailed Installment Breakdown ({scheduleRows.length} Cycles)
             </h2>
             <p className="text-xs text-slate-600 font-medium mt-0.5">
@@ -301,29 +301,29 @@ export default function LoanSchedulePreviewPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
               <CheckCircle2 size={11} className="text-emerald-700" /> Settled
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
               <Clock size={11} className="text-amber-700" /> Due Today
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
               <AlertTriangle size={11} className="text-rose-700" /> Overdue
             </span>
           </div>
         </div>
 
-        <div className="overflow-x-auto min-w-full">
-          <table className="w-full text-left text-xs min-w-[760px]">
-            <thead className="bg-slate-50 text-[10px] text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
+        <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+          <table className="w-full text-left text-xs min-w-[760px] lms-table">
+            <thead className="bg-slate-50 text-[11px] text-slate-700 font-semibold uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Cycle #</th>
-                <th className="py-3 px-4">Due Date</th>
-                <th className="py-3 px-4 text-right">Principal</th>
-                <th className="py-3 px-4 text-right">Interest</th>
-                <th className="py-3 px-4 text-right">Installment Amount</th>
-                <th className="py-3 px-4 text-right">Remaining Balance</th>
-                <th className="py-3 px-4 text-center">Status</th>
+                <th className="py-3 px-4" scope="col">Cycle #</th>
+                <th className="py-3 px-4" scope="col">Due Date</th>
+                <th className="py-3 px-4 text-right" scope="col">Principal</th>
+                <th className="py-3 px-4 text-right" scope="col">Interest</th>
+                <th className="py-3 px-4 text-right" scope="col">Installment Amount</th>
+                <th className="py-3 px-4 text-right" scope="col">Remaining Balance</th>
+                <th className="py-3 px-4 text-center" scope="col">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -352,7 +352,7 @@ export default function LoanSchedulePreviewPage() {
                   <td className="py-3 px-4 text-right font-mono font-semibold text-slate-700">
                     {MONEY(r.interestComponent)}
                   </td>
-                  <td className="py-3 px-4 text-right font-mono font-black text-slate-900">
+                  <td className="py-3 px-4 text-right font-mono font-semibold text-slate-900">
                     {MONEY(r.installmentAmount)}
                   </td>
                   <td className="py-3 px-4 text-right font-mono font-bold text-slate-700">
@@ -360,19 +360,19 @@ export default function LoanSchedulePreviewPage() {
                   </td>
                   <td className="py-3 px-4 text-center">
                     {r.status === "PAID" ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
                         <CheckCircle2 size={11} className="text-emerald-700" /> Settled
                       </span>
                     ) : r.status === "OVERDUE" ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
                         <AlertTriangle size={11} className="text-rose-700" /> Overdue
                       </span>
                     ) : r.status === "DUE_TODAY" ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                         <Clock size={11} className="text-amber-700" /> Due Today
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                         Scheduled
                       </span>
                     )}

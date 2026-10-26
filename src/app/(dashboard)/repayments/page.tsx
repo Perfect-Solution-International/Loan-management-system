@@ -15,7 +15,6 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
-import { Modal } from "@/components/ui";
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { ReceiptModal } from "@/components/modals/ReceiptModal";
@@ -95,7 +94,7 @@ export default function RepaymentsCollectionsPage() {
     if (!editingPayment) return;
     const numAmount = Number(editAmount);
     if (!numAmount || numAmount <= 0) {
-      alert("Please enter a valid amount.");
+      alert("Enter a payment amount greater than zero.");
       return;
     }
 
@@ -183,8 +182,8 @@ export default function RepaymentsCollectionsPage() {
 
     const completionMsg =
       willSettleLoan
-        ? `Repayment recorded successfully. Loan ${selectedLoan.loanNo || selectedLoan.id} is now fully SETTLED and status has been updated to COMPLETED!`
-        : `Repayment of ${MONEY(numEnteredAmount)} recorded successfully!`;
+        ? `Repayment recorded. Loan ${selectedLoan.loanNo || selectedLoan.id} is fully settled and marked as completed.`
+        : `Repayment of ${MONEY(numEnteredAmount)} recorded.`;
 
     setNotificationMsg(completionMsg);
     setAmount("");
@@ -216,11 +215,15 @@ export default function RepaymentsCollectionsPage() {
   }, [payments, loans, customers, searchTerm, typeFilter]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3">
+    <section className="min-h-screen bg-slate-50">
+      <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Repayments</h2>
+        <p>Record loan repayments, review transactions, and print receipts.</p>
+      </div>
         {/* ═══ Action Bar & Notification ═════════════════════════════════════ */}
         {notificationMsg && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in shadow-xs">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2.5 text-emerald-800 text-xs font-bold animate-fade-in shadow-xs" role="status">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
               <span>{notificationMsg}</span>
@@ -228,7 +231,7 @@ export default function RepaymentsCollectionsPage() {
             <button
               type="button"
               onClick={() => setNotificationMsg("")}
-              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer"
+              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer" aria-label="Close"
             >
               <X size={14} />
             </button>
@@ -237,11 +240,11 @@ export default function RepaymentsCollectionsPage() {
 
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest bg-red-50 border border-red-200/60 px-2 py-0.5 rounded-md">
-              Collections Terminal
+            <span className="text-[11px] font-bold text-red-600 uppercase tracking-widest bg-red-50 border border-red-200/60 px-2 py-0.5 rounded-md">
+              Repayments
             </span>
             <span className="text-xs text-slate-500 font-semibold hidden sm:inline">
-              Record recoveries & generate receipts
+              Record repayments and issue receipts
             </span>
           </div>
 
@@ -255,19 +258,19 @@ export default function RepaymentsCollectionsPage() {
         </div>
 
         {/* ═══ Summary Cards (Customer Theme Micro KPIs) ═════════════════════ */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
               <Banknote size={16} className="text-red-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                Total Inflows
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                Total collections
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {MONEY(totalCollectionsAllTime)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 {payments.length} transactions
               </p>
             </div>
@@ -278,13 +281,13 @@ export default function RepaymentsCollectionsPage() {
               <CreditCard size={16} className="text-emerald-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Capital Recovered
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-emerald-600 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-emerald-600 leading-tight">
                 {MONEY(totalCapitalRepaid)}
               </p>
-              <p className="text-[10px] text-emerald-700 font-semibold truncate">
+              <p className="text-[11px] text-emerald-700 font-semibold truncate">
                 Principal recovered
               </p>
             </div>
@@ -295,13 +298,13 @@ export default function RepaymentsCollectionsPage() {
               <Receipt size={16} className="text-purple-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Interest Earned
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-purple-700 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-purple-700 leading-tight">
                 {MONEY(totalInterestCollected)}
               </p>
-              <p className="text-[10px] text-purple-700 font-medium truncate">
+              <p className="text-[11px] text-purple-700 font-medium truncate">
                 Gross revenue
               </p>
             </div>
@@ -312,13 +315,13 @@ export default function RepaymentsCollectionsPage() {
               <CheckCircle2 size={16} className="text-amber-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                Settled Facilities
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                Completed loans
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {completedLoansCount}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 100% paid off contracts
               </p>
             </div>
@@ -332,14 +335,14 @@ export default function RepaymentsCollectionsPage() {
             <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
               <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                    Post Repayment Entry
+                  <h2 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
+                    Record a repayment
                   </h2>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Select active credit contract and log remittance
+                    Select a loan and enter the payment details.
                   </p>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
                   POS TERMINAL
                 </span>
               </div>
@@ -347,13 +350,13 @@ export default function RepaymentsCollectionsPage() {
               <form onSubmit={handleRecordRepayment} className="space-y-3.5">
                 {/* Loan Dropdown */}
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-1">
                     Select Loan Contract *
                   </label>
                   <select
                     value={selectedLoanId}
                     onChange={(e) => setSelectedLoanId(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition" id="field-app-dashboard-repayments-page-1"
                   >
                     {loans.length === 0 ? (
                       <option value="">No loan contracts available</option>
@@ -373,7 +376,7 @@ export default function RepaymentsCollectionsPage() {
 
                 {/* Payment Type Tabs */}
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                     Payment Classification *
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -400,7 +403,7 @@ export default function RepaymentsCollectionsPage() {
                 {/* Amount, Method, Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div>
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-2">
                       Amount (LKR) *
                     </label>
                     <input
@@ -411,12 +414,12 @@ export default function RepaymentsCollectionsPage() {
                       placeholder="0.00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition" id="field-app-dashboard-repayments-page-2"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-3">
                       Payment Method
                     </label>
                     <select
@@ -426,7 +429,7 @@ export default function RepaymentsCollectionsPage() {
                           e.target.value as "Cash" | "Bank Transfer" | "Cheque"
                         )
                       }
-                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition" id="field-app-dashboard-repayments-page-3"
                     >
                       <option value="Cash">Cash On Hand</option>
                       <option value="Bank Transfer">Bank Transfer / Deposit</option>
@@ -435,7 +438,7 @@ export default function RepaymentsCollectionsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-4">
                       Collection Date
                     </label>
                     <input
@@ -444,7 +447,7 @@ export default function RepaymentsCollectionsPage() {
                       autoComplete="off"
                       value={paymentDate}
                       onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition" id="field-app-dashboard-repayments-page-4"
                     />
                   </div>
                 </div>
@@ -452,7 +455,7 @@ export default function RepaymentsCollectionsPage() {
                 {/* Notes & Staff Collector */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-5">
                       Collection Officer
                     </label>
                     <input
@@ -460,12 +463,12 @@ export default function RepaymentsCollectionsPage() {
                       autoComplete="off"
                       value={collectedBy}
                       onChange={(e) => setCollectedBy(e.target.value)}
-                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition" id="field-app-dashboard-repayments-page-5"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-6">
                       Reference / Cashier Notes
                     </label>
                     <input
@@ -474,7 +477,7 @@ export default function RepaymentsCollectionsPage() {
                       placeholder="Optional notes or receipt ref"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                      className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition" id="field-app-dashboard-repayments-page-6"
                     />
                   </div>
                 </div>
@@ -512,7 +515,7 @@ export default function RepaymentsCollectionsPage() {
             <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                 <div>
-                  <h3 className="font-extrabold text-xs tracking-wider text-slate-300 uppercase">
+                  <h3 className="font-bold text-xs tracking-wider text-slate-300 uppercase">
                     Contract Position
                   </h3>
                   <p className="text-sm font-bold text-white font-mono mt-0.5">
@@ -520,7 +523,7 @@ export default function RepaymentsCollectionsPage() {
                   </p>
                 </div>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                     (selectedLoan?.status || "").toLowerCase() === "completed"
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                       : (selectedLoan?.status || "").toLowerCase() === "overdue"
@@ -534,12 +537,12 @@ export default function RepaymentsCollectionsPage() {
 
               {selectedCustomer && (
                 <div className="flex items-center gap-2.5 p-2.5 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs">
-                  <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
                     {selectedCustomer.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-white text-xs truncate">{selectedCustomer.name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono">NIC: {selectedCustomer.nic}</p>
+                    <p className="text-[11px] text-slate-400 font-mono">NIC: {selectedCustomer.nic}</p>
                   </div>
                 </div>
               )}
@@ -562,14 +565,14 @@ export default function RepaymentsCollectionsPage() {
 
                 <div className="flex justify-between py-1 border-b border-slate-800 text-[11px]">
                   <span className="text-slate-400 font-medium">Total Settled to Date</span>
-                  <span className="font-black text-emerald-400 font-mono">
+                  <span className="font-semibold text-emerald-400 font-mono">
                     {MONEY(totalPaid)}
                   </span>
                 </div>
 
                 <div className="flex justify-between py-1.5 border-b border-slate-800">
                   <span className="text-slate-200 font-bold text-xs">Current Balance Due</span>
-                  <span className="font-black text-amber-400 text-sm font-mono">
+                  <span className="font-semibold text-amber-400 text-sm font-mono">
                     {MONEY(balanceDue)}
                   </span>
                 </div>
@@ -577,7 +580,7 @@ export default function RepaymentsCollectionsPage() {
                 {numEnteredAmount > 0 && (
                   <div className="flex justify-between py-1.5 px-3 bg-red-950/60 rounded-xl border border-red-800/60 mt-2">
                     <span className="text-rose-300 font-semibold text-xs">New Balance After</span>
-                    <span className="font-black text-white text-xs font-mono">
+                    <span className="font-semibold text-white text-xs font-mono">
                       {MONEY(newBalanceAfter)}
                     </span>
                   </div>
@@ -587,7 +590,7 @@ export default function RepaymentsCollectionsPage() {
               {/* Repayment Progress Bar */}
               {selectedLoan && (
                 <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                  <div className="flex justify-between text-[11px] text-slate-400 font-bold">
                     <span>Settlement Ratio</span>
                     <span className="font-bold text-white">
                       {selectedLoan.totalRepayment > 0
@@ -628,20 +631,20 @@ export default function RepaymentsCollectionsPage() {
                 placeholder="Search receipt, loan, borrower, or notes…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition"
+                className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition" aria-label="Search receipt, loan, borrower, or notes…"
               />
               {searchTerm && (
                 <button
                   type="button"
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5" aria-label="Clear search"
                 >
                   <X size={12} />
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5 table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
               {(["ALL", "Capital", "Interest", "Other"] as const).map((t) => (
                 <button
                   key={t}
@@ -659,18 +662,18 @@ export default function RepaymentsCollectionsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+          <div className="overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left text-sm whitespace-nowrap lms-table">
+              <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                 <tr>
-                  <th className="py-3 px-5">Receipt / Payment ID</th>
-                  <th className="py-3 px-5">Date</th>
-                  <th className="py-3 px-5">Borrower & Loan</th>
-                  <th className="py-3 px-5">Type</th>
-                  <th className="py-3 px-5">Method</th>
-                  <th className="py-3 px-5">Collected By</th>
-                  <th className="py-3 px-5 text-right">Amount</th>
-                  <th className="py-3 px-5 text-right">Actions</th>
+                  <th className="py-3 px-5" scope="col">Receipt / Payment ID</th>
+                  <th className="py-3 px-5" scope="col">Date</th>
+                  <th className="py-3 px-5" scope="col">Borrower & Loan</th>
+                  <th className="py-3 px-5" scope="col">Type</th>
+                  <th className="py-3 px-5" scope="col">Method</th>
+                  <th className="py-3 px-5" scope="col">Collected By</th>
+                  <th className="py-3 px-5 text-right" scope="col">Amount</th>
+                  <th className="py-3 px-5 text-right" scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -692,14 +695,14 @@ export default function RepaymentsCollectionsPage() {
                           <span className="font-bold text-slate-900 text-xs block">
                             {cust?.name || "Customer"}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="text-[11px] text-slate-500 font-mono">
                             {loan?.loanNo || p.loanId}
                           </span>
                         </div>
                       </td>
                       <td className="py-3 px-5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
                             p.type === "Capital"
                               ? "bg-blue-100 text-blue-800"
                               : p.type === "Interest"
@@ -716,7 +719,7 @@ export default function RepaymentsCollectionsPage() {
                       <td className="py-3 px-5 text-xs text-slate-600">
                         {p.collectedBy || "Admin Officer"}
                       </td>
-                      <td className="py-3 px-5 text-right font-black font-mono text-slate-900 text-xs">
+                      <td className="py-3 px-5 text-right font-semibold font-mono text-slate-900 text-xs">
                         {MONEY(p.amount)}
                       </td>
                       <td className="py-3 px-5 text-right">
@@ -782,18 +785,18 @@ export default function RepaymentsCollectionsPage() {
 
       {/* ═══ ADMIN EXCLUSIVE: EDIT PAYMENT MODAL ════════════════════════════ */}
       {isAdmin && editingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150 lms-overlay">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 lms-dialog">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                   <Edit size={15} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  <h3 className="text-sm font-semibold text-slate-900 leading-tight">
                     Edit Payment Record
                   </h3>
-                  <p className="text-[10px] text-slate-500 font-mono">
+                  <p className="text-[11px] text-slate-500 font-mono">
                     Receipt: {editingPayment.receiptNo || editingPayment.id}
                   </p>
                 </div>
@@ -801,7 +804,7 @@ export default function RepaymentsCollectionsPage() {
               <button
                 type="button"
                 onClick={() => setEditingPayment(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer" aria-label="Close"
               >
                 <X size={14} />
               </button>
@@ -809,7 +812,7 @@ export default function RepaymentsCollectionsPage() {
 
             <form onSubmit={handleConfirmEditPayment} className="space-y-3">
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-7">
                   Repayment Amount (LKR) *
                 </label>
                 <input
@@ -819,13 +822,13 @@ export default function RepaymentsCollectionsPage() {
                   required
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
-                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 font-mono font-bold text-sm"
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 font-mono font-bold text-sm" id="field-app-dashboard-repayments-page-7"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-8">
                     Payment Date
                   </label>
                   <input
@@ -833,12 +836,12 @@ export default function RepaymentsCollectionsPage() {
                     required
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
-                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold" id="field-app-dashboard-repayments-page-8"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-9">
                     Type
                   </label>
                   <select
@@ -846,7 +849,7 @@ export default function RepaymentsCollectionsPage() {
                     onChange={(e) =>
                       setEditType(e.target.value as Payment["type"])
                     }
-                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold" id="field-app-dashboard-repayments-page-9"
                   >
                     <option value="Capital">Capital</option>
                     <option value="Interest">Interest</option>
@@ -857,7 +860,7 @@ export default function RepaymentsCollectionsPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-10">
                   Payment Method
                 </label>
                 <select
@@ -865,7 +868,7 @@ export default function RepaymentsCollectionsPage() {
                   onChange={(e) =>
                     setEditMethod(e.target.value as "Cash" | "Bank Transfer" | "Cheque")
                   }
-                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold" id="field-app-dashboard-repayments-page-10"
                 >
                   <option value="Cash">Cash</option>
                   <option value="Bank Transfer">Bank Transfer</option>
@@ -874,7 +877,7 @@ export default function RepaymentsCollectionsPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-repayments-page-11">
                   Admin Modification Notes
                 </label>
                 <input
@@ -882,7 +885,7 @@ export default function RepaymentsCollectionsPage() {
                   placeholder="e.g. Corrected installment breakdown"
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs"
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs" id="field-app-dashboard-repayments-page-11"
                 />
               </div>
 
@@ -908,15 +911,15 @@ export default function RepaymentsCollectionsPage() {
 
       {/* ═══ ADMIN EXCLUSIVE: DELETE PAYMENT CONFIRMATION MODAL ══════════════ */}
       {isAdmin && deletingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150 lms-overlay">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 lms-dialog">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <Trash2 size={20} />
               </div>
               <div>
-                <h3 className="text-base font-black text-slate-900 leading-tight">
-                  Delete Repayment Record?
+                <h3 className="text-base font-semibold text-slate-900 leading-tight">
+                  Delete this repayment?
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
                   Are you sure you want to delete repayment receipt{" "}
@@ -931,7 +934,7 @@ export default function RepaymentsCollectionsPage() {
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
                 <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-                <span>Financial Ledger Reversal</span>
+                <span>Effect on the loan balance</span>
               </div>
               <p className="text-[11px] text-amber-800">
                 Deleting this record will reverse the collected amount, recalculate the loan balance, and revert the loan status back if it was previously completed.
@@ -951,12 +954,12 @@ export default function RepaymentsCollectionsPage() {
                 onClick={handleConfirmDeletePayment}
                 className="px-4 h-8 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
               >
-                Confirm Delete
+                Delete repayment
               </button>
             </div>
           </div>
-        </Modal>
+        </div>
       )}
-    </main>
+    </section>
   );
 }

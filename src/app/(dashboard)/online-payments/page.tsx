@@ -201,17 +201,21 @@ export default function OnlinePaymentsPage() {
   };
 
   return (
-    <div className="p-3 sm:p-5 max-w-7xl mx-auto space-y-3">
+    <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Online payment slips</h2>
+        <p>Review submitted bank slips and track approval decisions.</p>
+      </div>
       {/* ── Notification Feedback Toast ────────────────────────────────────── */}
       {notificationMsg && (
-        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-2xs animate-in fade-in duration-200">
+        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-2xs animate-in fade-in duration-200" role="status">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
             <span>{notificationMsg}</span>
           </div>
           <button
             onClick={() => setNotificationMsg("")}
-            className="text-emerald-700 hover:text-emerald-950 p-1 cursor-pointer"
+            className="text-emerald-700 hover:text-emerald-950 p-1 cursor-pointer" aria-label="Close"
           >
             <X size={14} />
           </button>
@@ -225,7 +229,7 @@ export default function OnlinePaymentsPage() {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition shadow-2xs"
         >
           <Receipt size={13} />
-          <span>Repayments Ledger</span>
+          <span>Repayment Ledger</span>
         </Link>
       </div>
 
@@ -234,18 +238,18 @@ export default function OnlinePaymentsPage() {
         {/* Pending Card */}
         <div className="bg-gradient-to-br from-amber-50/90 via-white to-amber-50/40 border border-amber-200/90 p-2.5 sm:p-3 rounded-xl shadow-2xs hover:border-amber-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
               <Clock size={12} className="text-amber-700" />
               Pending Review
             </span>
-            <span className="font-mono font-bold text-amber-900 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200">
+            <span className="font-mono font-bold text-amber-900 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200">
               {counts.pending} Pending
             </span>
           </div>
-          <p className="text-lg sm:text-xl font-black text-slate-950 font-mono tracking-tight leading-tight mt-1">
+          <p className="text-lg sm:text-xl font-semibold text-slate-950 font-mono tracking-tight leading-tight mt-1">
             {MONEY(summaryMetrics.pendingTotal)}
           </p>
-          <div className="flex items-center justify-between mt-1 pt-1 border-t border-amber-200/60 text-[10px]">
+          <div className="flex items-center justify-between mt-1 pt-1 border-t border-amber-200/60 text-[11px]">
             <span className="text-slate-500">Slips Awaiting Sign-Off</span>
             <span className="font-bold text-amber-800">Awaiting Action</span>
           </div>
@@ -254,18 +258,18 @@ export default function OnlinePaymentsPage() {
         {/* Completed Card */}
         <div className="bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/40 border border-emerald-200/90 p-2.5 sm:p-3 rounded-xl shadow-2xs hover:border-emerald-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
               <CheckCircle2 size={12} className="text-emerald-700" />
               Approved &amp; Reconciled
             </span>
-            <span className="font-mono font-bold text-emerald-900 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">
+            <span className="font-mono font-bold text-emerald-900 text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">
               {counts.completed} Approved
             </span>
           </div>
-          <p className="text-lg sm:text-xl font-black text-slate-950 font-mono tracking-tight leading-tight mt-1">
+          <p className="text-lg sm:text-xl font-semibold text-slate-950 font-mono tracking-tight leading-tight mt-1">
             {MONEY(summaryMetrics.completedTotal)}
           </p>
-          <div className="flex items-center justify-between mt-1 pt-1 border-t border-emerald-200/60 text-[10px]">
+          <div className="flex items-center justify-between mt-1 pt-1 border-t border-emerald-200/60 text-[11px]">
             <span className="text-slate-500">Credited to Loan Accounts</span>
             <span className="font-bold text-emerald-700">Reconciled</span>
           </div>
@@ -274,18 +278,18 @@ export default function OnlinePaymentsPage() {
         {/* Total Submitted */}
         <div className="bg-white border border-slate-200/90 p-2.5 sm:p-3 rounded-xl shadow-2xs hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
               <CreditCard size={12} className="text-slate-600" />
               Total Online Volume
             </span>
-            <span className="font-mono font-bold text-slate-800 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
+            <span className="font-mono font-bold text-slate-800 text-[11px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
               {counts.all} Total
             </span>
           </div>
-          <p className="text-lg sm:text-xl font-black text-slate-950 font-mono tracking-tight leading-tight mt-1">
+          <p className="text-lg sm:text-xl font-semibold text-slate-950 font-mono tracking-tight leading-tight mt-1">
             {MONEY(summaryMetrics.totalSubmitted)}
           </p>
-          <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-100 text-[10px]">
+          <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-100 text-[11px]">
             <span className="text-slate-500">Total Online Slip Records</span>
             <span className="font-bold text-slate-700">All Slips</span>
           </div>
@@ -295,7 +299,7 @@ export default function OnlinePaymentsPage() {
       {/* ── Filter Tabs & Search Bar ───────────────────────────────────────── */}
       <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
         {/* Status Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3 overflow-x-auto">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3 overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
           <button
             type="button"
             onClick={() => setActiveTab("ALL")}
@@ -307,7 +311,7 @@ export default function OnlinePaymentsPage() {
           >
             <span>All Slips</span>
             <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+              className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
                 activeTab === "ALL" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-800"
               }`}
             >
@@ -326,10 +330,10 @@ export default function OnlinePaymentsPage() {
           >
             <span>Pending Review</span>
             <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+              className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
                 activeTab === "PENDING"
                   ? "bg-white/25 text-white"
-                  : "bg-amber-200/80 text-amber-950 font-black"
+                  : "bg-amber-200/80 text-amber-950 font-semibold"
               }`}
             >
               {counts.pending}
@@ -347,10 +351,10 @@ export default function OnlinePaymentsPage() {
           >
             <span>Complete / Approved</span>
             <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+              className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
                 activeTab === "COMPLETED"
                   ? "bg-white/25 text-white"
-                  : "bg-emerald-200/80 text-emerald-950 font-black"
+                  : "bg-emerald-200/80 text-emerald-950 font-semibold"
               }`}
             >
               {counts.completed}
@@ -368,10 +372,10 @@ export default function OnlinePaymentsPage() {
           >
             <span>Declined</span>
             <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+              className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
                 activeTab === "REJECTED"
                   ? "bg-white/25 text-white"
-                  : "bg-rose-200/80 text-rose-950 font-black"
+                  : "bg-rose-200/80 text-rose-950 font-semibold"
               }`}
             >
               {counts.rejected}
@@ -388,7 +392,7 @@ export default function OnlinePaymentsPage() {
               placeholder="Search by customer name, NIC, phone, loan ID, or bank ref..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium"
+              className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium" aria-label="Search by customer name, NIC, phone, loan ID, or bank ref..."
             />
           </div>
 
@@ -416,7 +420,7 @@ export default function OnlinePaymentsPage() {
             <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
               <CreditCard size={24} />
             </div>
-            <h3 className="text-sm font-bold text-slate-800">No Online Payment Slips Found</h3>
+            <h3 className="text-sm font-bold text-slate-800">No payment slips match your filters</h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
               {searchQuery || bankFilter !== "ALL" || activeTab !== "ALL"
                 ? "No payment slips match your active search or filter criteria. Try adjusting your filters."
@@ -424,18 +428,18 @@ export default function OnlinePaymentsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left border-collapse text-xs lms-table">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
-                  <th className="py-3 px-4">Slip ID & Date</th>
-                  <th className="py-3 px-4">Borrower Details</th>
-                  <th className="py-3 px-4">Loan Reference</th>
-                  <th className="py-3 px-4">Bank & Transaction Ref</th>
-                  <th className="py-3 px-4 text-right">Amount Paid</th>
-                  <th className="py-3 px-4 text-center">Slip Proof</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="py-3 px-4" scope="col">Slip ID & Date</th>
+                  <th className="py-3 px-4" scope="col">Borrower Details</th>
+                  <th className="py-3 px-4" scope="col">Loan Reference</th>
+                  <th className="py-3 px-4" scope="col">Bank & Transaction Ref</th>
+                  <th className="py-3 px-4 text-right" scope="col">Amount Paid</th>
+                  <th className="py-3 px-4 text-center" scope="col">Slip Proof</th>
+                  <th className="py-3 px-4 text-center" scope="col">Status</th>
+                  <th className="py-3 px-4 text-right" scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -452,7 +456,7 @@ export default function OnlinePaymentsPage() {
                         <span className="font-mono font-bold text-slate-900 block">
                           {item.id}
                         </span>
-                        <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                           <Calendar size={11} /> {item.paymentDate}
                         </span>
                       </td>
@@ -465,7 +469,7 @@ export default function OnlinePaymentsPage() {
                         >
                           {item.customerName}
                         </Link>
-                        <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
                           {item.customerNic && <span>NIC: {item.customerNic}</span>}
                           {item.customerPhone && <span>· Tel: {item.customerPhone}</span>}
                         </div>
@@ -480,7 +484,7 @@ export default function OnlinePaymentsPage() {
                           {item.loanNo || item.loanId}
                         </Link>
                         {targetLoan && (
-                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                          <span className="text-[11px] text-slate-500 block mt-0.5">
                             Facility: {MONEY(targetLoan.principal || targetLoan.amount || 0)}
                           </span>
                         )}
@@ -492,17 +496,17 @@ export default function OnlinePaymentsPage() {
                           <Building size={12} className="text-slate-400 shrink-0" />
                           <span className="truncate max-w-[170px]">{item.bankName}</span>
                         </span>
-                        <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 border border-slate-200">
+                        <span className="font-mono text-[11px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 border border-slate-200">
                           Ref: {item.referenceNumber}
                         </span>
                       </td>
 
                       {/* Amount Paid */}
                       <td className="py-3.5 px-4 text-right">
-                        <span className="font-mono font-black text-sm text-slate-950 block">
+                        <span className="font-mono font-semibold text-sm text-slate-950 block">
                           {MONEY(item.amount)}
                         </span>
-                        <span className="text-[10px] font-semibold text-emerald-700 block">
+                        <span className="text-[11px] font-semibold text-emerald-700 block">
                           Bank Transfer
                         </span>
                       </td>
@@ -523,24 +527,24 @@ export default function OnlinePaymentsPage() {
                       {/* Status */}
                       <td className="py-3.5 px-4 text-center">
                         {item.status === "PENDING" && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                             <Clock size={11} /> Pending Review
                           </span>
                         )}
                         {item.status === "COMPLETED" && (
                           <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
                               <CheckCircle2 size={11} /> Complete
                             </span>
                             {item.receiptNo && (
-                              <span className="font-mono text-[9px] text-slate-600 block">
+                              <span className="font-mono text-[11px] text-slate-600 block">
                                 {item.receiptNo}
                               </span>
                             )}
                           </div>
                         )}
                         {item.status === "REJECTED" && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
                             <XCircle size={11} /> Declined
                           </span>
                         )}
@@ -613,7 +617,7 @@ export default function OnlinePaymentsPage() {
 
                         {item.status === "REJECTED" && (
                           <span
-                            className="text-[10px] text-slate-500 italic max-w-[140px] truncate block ml-auto"
+                            className="text-[11px] text-slate-500 italic max-w-[140px] truncate block ml-auto"
                             title={item.reviewNotes}
                           >
                             {item.reviewNotes || "Declined by admin"}
@@ -632,11 +636,11 @@ export default function OnlinePaymentsPage() {
       {/* ── MODAL 1: VIEW FULL BANK SLIP ───────────────────────────────────── */}
       {selectedSlip && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setSelectedSlip(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col"
+            className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -645,7 +649,7 @@ export default function OnlinePaymentsPage() {
                   <ImageIcon size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
+                  <h3 className="text-base font-semibold text-slate-900">
                     Bank Transfer Deposit Slip
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
@@ -656,7 +660,7 @@ export default function OnlinePaymentsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedSlip(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -665,7 +669,7 @@ export default function OnlinePaymentsPage() {
             {/* Slip Details Banner */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Borrower
                 </span>
                 <span className="font-bold text-slate-900 truncate block">
@@ -673,15 +677,15 @@ export default function OnlinePaymentsPage() {
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Amount Paid
                 </span>
-                <span className="font-mono font-black text-slate-900">
+                <span className="font-mono font-semibold text-slate-900">
                   {MONEY(selectedSlip.amount)}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Bank Name
                 </span>
                 <span className="font-bold text-slate-900 truncate block">
@@ -689,7 +693,7 @@ export default function OnlinePaymentsPage() {
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Transfer Date
                 </span>
                 <span className="font-mono font-bold text-slate-900">
@@ -706,17 +710,17 @@ export default function OnlinePaymentsPage() {
 
                 if (slipImgError || !safeUrl) {
                   return (
-                    <div className="w-full max-w-md bg-white rounded-2xl p-5 border border-slate-200 shadow-xl space-y-3.5 text-left text-slate-800 animate-in zoom-in-95 duration-150">
+                    <div className="w-full max-w-md bg-white rounded-2xl p-5 border border-slate-200 shadow-xl space-y-3.5 text-left text-slate-800 animate-in zoom-in-95 duration-150 lms-dialog">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
                             <Building size={20} />
                           </div>
                           <div>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-red-600 block">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-red-600 block">
                               Bank Deposit Slip
                             </span>
-                            <h4 className="text-sm font-black text-slate-900 leading-tight">
+                            <h4 className="text-sm font-semibold text-slate-900 leading-tight">
                               {selectedSlip.bankName}
                             </h4>
                           </div>
@@ -728,21 +732,21 @@ export default function OnlinePaymentsPage() {
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Borrower</span>
+                          <span className="text-[11px] text-slate-400 font-bold uppercase block">Borrower</span>
                           <span className="font-bold text-slate-900 truncate block">{selectedSlip.customerName}</span>
-                          {selectedSlip.customerNic && <span className="text-[10px] text-slate-500 block">NIC: {selectedSlip.customerNic}</span>}
+                          {selectedSlip.customerNic && <span className="text-[11px] text-slate-500 block">NIC: {selectedSlip.customerNic}</span>}
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Facility ID</span>
+                          <span className="text-[11px] text-slate-400 font-bold uppercase block">Facility ID</span>
                           <span className="font-mono font-bold text-red-600">{selectedSlip.loanNo || selectedSlip.loanId}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Transfer Date</span>
+                          <span className="text-[11px] text-slate-400 font-bold uppercase block">Transfer Date</span>
                           <span className="font-mono text-slate-700">{selectedSlip.paymentDate}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Submitted At</span>
-                          <span className="text-slate-600 text-[10px]">
+                          <span className="text-[11px] text-slate-400 font-bold uppercase block">Submitted At</span>
+                          <span className="text-slate-600 text-[11px]">
                             {selectedSlip.submittedAt ? new Date(selectedSlip.submittedAt).toLocaleTimeString() : "-"}
                           </span>
                         </div>
@@ -750,10 +754,10 @@ export default function OnlinePaymentsPage() {
 
                       <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-bold text-emerald-800 uppercase block">Amount Paid</span>
-                          <span className="text-xl font-black font-mono text-emerald-700">{MONEY(selectedSlip.amount)}</span>
+                          <span className="text-[11px] font-bold text-emerald-800 uppercase block">Amount Paid</span>
+                          <span className="text-xl font-semibold font-mono text-emerald-700">{MONEY(selectedSlip.amount)}</span>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
                           <CheckCircle2 size={12} className="text-emerald-600" /> Electronic Slip
                         </span>
                       </div>
@@ -842,11 +846,11 @@ export default function OnlinePaymentsPage() {
       {/* ── MODAL 2: CONFIRM APPROVAL MODAL ────────────────────────────────── */}
       {approvingPayment && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setApprovingPayment(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4"
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -854,7 +858,7 @@ export default function OnlinePaymentsPage() {
                 <CheckCircle2 size={22} />
               </div>
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900">
                   Accept & Reconcile Payment Slip
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -876,7 +880,7 @@ export default function OnlinePaymentsPage() {
               </div>
               <div className="flex justify-between text-slate-700">
                 <span>Amount to Credit:</span>
-                <span className="font-mono font-black text-sm text-emerald-800">
+                <span className="font-mono font-semibold text-sm text-emerald-800">
                   {MONEY(approvingPayment.amount)}
                 </span>
               </div>
@@ -895,7 +899,7 @@ export default function OnlinePaymentsPage() {
             </div>
 
             <div className="space-y-1 text-xs">
-              <label className="font-bold text-slate-700 block">
+              <label className="font-bold text-slate-700 block" htmlFor="field-app-dashboard-online-payments-page-1">
                 Verification Remarks / Sign-off Note (Optional):
               </label>
               <input
@@ -903,7 +907,7 @@ export default function OnlinePaymentsPage() {
                 placeholder="e.g. Bank statement confirmed. Transfer matched to company BOC account."
                 value={approvalNotes}
                 onChange={(e) => setApprovalNotes(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-semibold"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-semibold" id="field-app-dashboard-online-payments-page-1"
               />
             </div>
 
@@ -930,11 +934,11 @@ export default function OnlinePaymentsPage() {
       {/* ── MODAL 3: REJECT/DECLINE MODAL ──────────────────────────────────── */}
       {rejectingPayment && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setRejectingPayment(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4"
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -942,7 +946,7 @@ export default function OnlinePaymentsPage() {
                 <XCircle size={22} />
               </div>
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900">
                   Decline Payment Slip
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -952,7 +956,7 @@ export default function OnlinePaymentsPage() {
             </div>
 
             <div className="space-y-1 text-xs">
-              <label className="font-bold text-slate-700 block">
+              <label className="font-bold text-slate-700 block" htmlFor="field-app-dashboard-online-payments-page-2">
                 Decline Reason / Remarks (Required):
               </label>
               <textarea
@@ -961,7 +965,7 @@ export default function OnlinePaymentsPage() {
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500 text-xs font-semibold"
-                required
+                required id="field-app-dashboard-online-payments-page-2"
               />
             </div>
 
