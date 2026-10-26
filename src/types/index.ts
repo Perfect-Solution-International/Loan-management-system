@@ -25,9 +25,9 @@ export interface Customer {
   gender?: string;
   primaryContact?: string;
   address: string;
-  village: string;
-  town: string;
-  district: string;
+  village?: string;
+  town?: string;
+  district?: string;
   occupation?: string;
   monthlyIncome: number;
   emergencyContact?: string;
@@ -46,9 +46,11 @@ export interface Customer {
   existingLoanNotes?: string;
   priorRepaymentHistory?: string;
   initialOutstandingBalance?: number;
+  password?: string;
 }
 
 export type LoanStatus = "Pending" | "Active" | "Completed" | "Rejected" | "Overdue";
+export type RepaymentType = "Capital + Interest" | "Interest Only";
 
 export interface Loan {
   id: string;
@@ -61,8 +63,9 @@ export interface Loan {
   interestDeduction: number;
   otherFees: number;
   interestRate: number;
-  ratePeriod: "Daily" | "Weekly" | "Monthly";
+  ratePeriod: "Daily" | "Weekly" | "Monthly" | "Flat";
   repaymentFrequency: "Daily" | "Weekly" | "Monthly";
+  repaymentType?: RepaymentType;
   duration: number;
   issueDate: string;
   firstPaymentDate: string;
@@ -72,6 +75,15 @@ export interface Loan {
   totalRepayment: number;
   netDisbursement: number;
   installment: number;
+  guarantorName?: string;
+  guarantorNic?: string;
+  guarantorPhone?: string;
+  guarantorRelationship?: string;
+  guarantorAddress?: string;
+  disbursementMethod?: "Cash" | "Bank Transfer" | "Cheque";
+  approvedBy?: string;
+  approvedAt?: string;
+  notes?: string;
 }
 
 export interface Payment {
@@ -82,9 +94,38 @@ export interface Payment {
   date: string;
   type: "Capital" | "Interest" | "Other";
   notes?: string;
-  method?: "Cash" | "Bank Transfer" | "Cheque";
+  method?: "Cash" | "Bank Transfer" | "Cheque" | "Card" | "Credit Card" | "Debit Card" | "LankaQR" | "Online Gateway";
   collectedBy?: string;
   receiptNo?: string;
+}
+
+export type OnlinePaymentStatus = "PENDING" | "COMPLETED" | "REJECTED";
+
+export interface OnlinePayment {
+  id: string;
+  loanId: string;
+  loanNo?: string;
+  customerId: string;
+  customerName: string;
+  customerPhone?: string;
+  customerNic?: string;
+  amount: number;
+  paymentDate: string;
+  submittedAt: string;
+  bankName: string;
+  referenceNumber?: string;
+  slipUrl: string;
+  slipFileName?: string;
+  slipFileType?: string;
+  status: OnlinePaymentStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  receiptNo?: string;
+  notes?: string;
+  paymentMethod?: "BANK_SLIP" | "CARD" | "LANKA_QR";
+  cardLast4?: string;
+  cardBrand?: string;
 }
 
 export interface LoanCalculation {
@@ -95,6 +136,10 @@ export interface LoanCalculation {
   totalRepayment: number;
   installmentAmount: number;
   numberOfInstallments: number;
+  repaymentType?: RepaymentType;
+  periodicInterest?: number;
+  capitalAtMaturity?: number;
+  finalInstallmentAmount?: number;
 }
 
 export interface SystemSettings {
@@ -127,5 +172,6 @@ export interface StaffUser {
   branch: string;
   status: "Active" | "Inactive";
   joinedDate: string;
+  password?: string;
   permissions: StaffPermissions;
 }

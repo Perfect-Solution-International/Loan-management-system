@@ -1,120 +1,1535 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  User,
+  MapPin,
+  FileText,
+  DollarSign,
+  Calculator,
+  PlusCircle,
+  Check,
+  ChevronRight,
+  AlertTriangle,
+  ShieldCheck,
+  Search,
+  CheckCircle2,
+  ArrowLeft,
+  ArrowRight,
+  FileCheck2,
+  UserCheck,
+} from "lucide-react";
 import { useData } from "@/providers/data-provider";
-import type { Customer, Loan } from "@/types";
+import { MONEY } from "@/constants";
+import { calculateLoanDetails } from "@/lib/loan-calculator";
+import type { Customer, Loan, Payment, CustomerDocument, RepaymentType } from "@/types";
+
+type WizardStep = "select" | "review" | "form" | "done";
 
 interface NewLoanFormProps {
-  onSuccess?: () => void;
+  initialCustomerId?: string;
+  onSuccess?: (loanId: string) => void;
+  onCancel?: () => void;
+  isModal?: boolean;
 }
 
-export function NewLoanForm({ onSuccess }: NewLoanFormProps) {
-  const { customers, addLoan } = useData();
-  const [customerId, setCustomerId] = useState(customers[0]?.id || "");
-  const [amount, setAmount] = useState<number>(100000);
-  const [duration, setDuration] = useState<number>(12);
-  const [interestRate, setInterestRate] = useState<number>(3);
+function getNextRepaymentDate(dateStr: string, freq: "Monthly" | "Weekly" | "Daily"): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return "";
+  const [year, month, day] = parts;
+  const d = new Date(year, month - 1, day);
+  if (isNaN(d.getTime())) return "";
 
+  if (freq === "Daily") {
+    d.setDate(d.getDate() + 1);
+  } else if (freq === "Weekly") {
+    d.setDate(d.getDate() + 7);
+  } else if (freq === "Monthly") {
+    d.setMonth(d.getMonth() + 1);
+  }
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dt = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dt}`;
+}
+
+export function NewLoanForm({
+  initialCustomerId = "",
+  onSuccess,
+  onCancel,
+}: NewLoanFormProps) {
+  const router = useRouter();
+  const { customers, loans, payments, documents, addLoan, settings } = useData();
+
+  // ── Step State ────────────────────────────────────────────────────────────
+  const [step, setStep] = useState<WizardStep>(initialCustomerId ? "review" : "select");
+
+  // ── Customer Selection State ──────────────────────────────────────────────
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId);
+  const [customerSearch, setCustomerSearch] = useState("");
+
+  // ── Loan Terms State (Defaults: 30 days tenure, 10% rate, Capital + Interest) ──
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const defaultFirstPaymentStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1); // Tomorrow for daily schedule
+    return d.toISOString().slice(0, 10);
+  }, []);
+
+  const [grossAmount, setGrossAmount] = useState<string>("");
+  const [interestRate, setInterestRate] = useState<string>("10");
+  const [ratePeriod, setRatePeriod] = useState<"Monthly" | "Weekly" | "Daily" | "Flat">("Monthly");
+  const [frequency, setFrequency] = useState<"Monthly" | "Weekly" | "Daily">("Daily");
+  const [repaymentType, setRepaymentType] = useState<RepaymentType>("Capital + Interest");
+  const [duration, setDuration] = useState<string>("30");
+  const [purpose, setPurpose] = useState<string>("");
+  const [issueDate, setIssueDate] = useState<string>(todayStr);
+  const [firstPaymentDate, setFirstPaymentDate] = useState<string>(defaultFirstPaymentStr);
+  const [disbursementMethod, setDisbursementMethod] = useState<"Cash" | "Bank Transfer" | "Cheque">("Cash");
+
+  const handleIssueDateChange = (val: string) => {
+    setIssueDate(val);
+    if (val) {
+      setFirstPaymentDate(getNextRepaymentDate(val, frequency));
+    }
+  };
+
+  const handleFrequencyChange = (newFreq: "Monthly" | "Weekly" | "Daily") => {
+    setFrequency(newFreq);
+    if (issueDate) {
+      setFirstPaymentDate(getNextRepaymentDate(issueDate, newFreq));
+    }
+  };
+
+  // ── Upfront Deductions & Fees (Completely blank initial values) ────────────
+  const [capitalDeduction, setCapitalDeduction] = useState<string>("");
+  const [interestDeduction, setInterestDeduction] = useState<string>("");
+  const [processingFee, setProcessingFee] = useState<string>("");
+  const [adminFee, setAdminFee] = useState<string>("");
+  const [otherFees, setOtherFees] = useState<string>("");
+
+  // ── Guarantor Information (Completely blank initial values) ───────────────
+  const [hasGuarantor, setHasGuarantor] = useState<boolean>(false);
+  const [guarantorName, setGuarantorName] = useState<string>("");
+  const [guarantorNic, setGuarantorNic] = useState<string>("");
+  const [guarantorPhone, setGuarantorPhone] = useState<string>("");
+  const [guarantorRelationship, setGuarantorRelationship] = useState<string>("");
+  const [guarantorAddress, setGuarantorAddress] = useState<string>("");
+
+  // ── Contract Notes & State ────────────────────────────────────────────────
+  const [notes, setNotes] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedLoanId, setSubmittedLoanId] = useState("");
+
+  // ── Selected Customer Profile Data ────────────────────────────────────────
+  const selectedCustomer = useMemo(
+    () => customers.find((c: Customer) => c.id === selectedCustomerId) ?? null,
+    [customers, selectedCustomerId]
+  );
+
+  // Existing liability calculations for selected customer
+  const customerFinancialSnapshot = useMemo(() => {
+    if (!selectedCustomer) {
+      return {
+        customerLoans: [] as Loan[],
+        customerPayments: [] as Payment[],
+        customerDocs: [] as CustomerDocument[],
+        outstanding: 0,
+        activeLoansCount: 0,
+        totalPaid: 0,
+        isActive: true,
+      };
+    }
+    const customerLoans = loans.filter((l) => l.customerId === selectedCustomer.id);
+    const custLoanIds = customerLoans.map((l) => l.id);
+    const customerPayments = payments.filter(
+      (p) => p.customerId === selectedCustomer.id || custLoanIds.includes(p.loanId)
+    );
+    const customerDocs = documents.filter((d) => d.customerId === selectedCustomer.id);
+    const totalRepayable = customerLoans.reduce((s, l) => s + (l.totalRepayment || 0), 0);
+    const totalPaid = customerPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const outstanding = Math.max(0, totalRepayable - totalPaid);
+    const activeLoansCount = customerLoans.filter((l) => l.status === "Active" || l.status === "Overdue").length;
+    const isActive = (selectedCustomer.status || "").toUpperCase() === "ACTIVE";
+
+    return {
+      customerLoans,
+      customerPayments,
+      customerDocs,
+      outstanding,
+      activeLoansCount,
+      totalPaid,
+      isActive,
+    };
+  }, [selectedCustomer, loans, payments, documents]);
+
+  // Customer filter for dropdown and list
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return customers;
+    const q = customerSearch.toLowerCase();
+    return customers.filter((c: Customer) =>
+      [c.id, c.name, c.fullName, c.phone, c.nic, c.town, c.district].join(" ").toLowerCase().includes(q)
+    );
+  }, [customers, customerSearch]);
+
+  // ── Live Financial Calculations ───────────────────────────────────────────
+  const calculations = useMemo(() => {
+    const gross = Number(grossAmount) || 0;
+    const rate = Number(interestRate) || 0;
+    const dur = Math.max(1, Number(duration) || 1);
+    const capDed = Number(capitalDeduction) || 0;
+    const intDed = Number(interestDeduction) || 0;
+    const pFee = Number(processingFee) || 0;
+    const aFee = Number(adminFee) || 0;
+    const oFees = Number(otherFees) || 0;
+    const totalExtraFees = pFee + aFee + oFees;
+
+    const res = calculateLoanDetails(
+      gross,
+      capDed,
+      intDed,
+      rate,
+      dur,
+      (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily" | "Flat",
+      (frequency || "Daily") as "Monthly" | "Weekly" | "Daily",
+      repaymentType,
+      totalExtraFees
+    );
+
+    return {
+      gross: res.grossAmount,
+      totalDeductions: res.totalDeductions,
+      netDisbursement: res.netDisbursement,
+      totalInterest: res.totalInterest,
+      totalRepayment: res.totalRepayment,
+      installmentAmount: res.installmentAmount,
+      numberOfInstallments: res.numberOfInstallments,
+      repaymentType: res.repaymentType,
+      periodicInterest: res.periodicInterest,
+      capitalAtMaturity: res.capitalAtMaturity,
+      finalInstallmentAmount: res.finalInstallmentAmount,
+    };
+  }, [
+    grossAmount,
+    interestRate,
+    ratePeriod,
+    frequency,
+    repaymentType,
+    duration,
+    capitalDeduction,
+    interestDeduction,
+    processingFee,
+    adminFee,
+    otherFees,
+  ]);
+
+  // Schedule preview table
+  const schedulePreview = useMemo(() => {
+    if (!grossAmount || Number(grossAmount) <= 0) return [];
+    const count = Math.min(calculations.numberOfInstallments, 5);
+    const list = [];
+    const base = new Date(firstPaymentDate || todayStr);
+
+    for (let i = 1; i <= count; i++) {
+      const d = new Date(base);
+      if (frequency === "Daily") {
+        d.setDate(d.getDate() + (i - 1));
+      } else if (frequency === "Weekly") {
+        d.setDate(d.getDate() + (i - 1) * 7);
+      } else {
+        d.setMonth(d.getMonth() + (i - 1));
+      }
+      const isFinal = i === calculations.numberOfInstallments;
+      const amt = (isFinal
+        ? calculations.finalInstallmentAmount
+        : calculations.installmentAmount) ?? calculations.installmentAmount ?? 0;
+      const typeLabel = repaymentType === "Interest Only"
+        ? (isFinal ? "Capital + Interest" : "Interest Only")
+        : (isFinal ? "Final Installment" : "Principal + Interest");
+
+      list.push({
+        num: i,
+        date: isNaN(d.getTime()) ? todayStr : d.toISOString().slice(0, 10),
+        amount: amt,
+        typeLabel,
+        isFinal,
+      });
+    }
+    return list;
+  }, [calculations, firstPaymentDate, frequency, todayStr, grossAmount, repaymentType]);
+
+  // ── Step Navigation Handlers ──────────────────────────────────────────────
+  const handleSelectCustomer = (id: string) => {
+    setSelectedCustomerId(id);
+  };
+
+  const handleGoToReview = () => {
+    if (!selectedCustomerId) {
+      setErrorMsg("Please select a borrower to continue.");
+      return;
+    }
+    setErrorMsg("");
+    setStep("review");
+  };
+
+  const handleGoToForm = () => {
+    setErrorMsg("");
+    setStep("form");
+  };
+
+  // ── Form Submission ───────────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cust = customers.find((c: Customer) => c.id === customerId);
-    const gross = Number(amount) || 0;
-    const rate = Number(interestRate) || 0;
-    const dur = Number(duration) || 12;
-    const totalInterest = (gross * rate) / 100;
-    const totalRepayment = gross + totalInterest;
+    setErrorMsg("");
+
+    if (!selectedCustomerId) {
+      setErrorMsg("Please select a customer / borrower to proceed.");
+      setStep("select");
+      return;
+    }
+    if (!grossAmount || Number(grossAmount) <= 0) {
+      setErrorMsg("Please enter a valid loan principal amount.");
+      return;
+    }
+    if (!duration || Number(duration) <= 0) {
+      setErrorMsg("Please specify the loan duration / installments.");
+      return;
+    }
+    if (hasGuarantor && !guarantorName.trim()) {
+      setErrorMsg("Please enter the guarantor's full name, or untick 'Guarantor Required'.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const year = new Date().getFullYear();
+    const highest = loans.reduce((max, l) => {
+      const m = (l.loanNo || l.id).match(/(\d{3,4})$/);
+      const n = m ? parseInt(m[1], 10) : 0;
+      return n > max ? n : max;
+    }, 0);
+    const newId = `LN-${year}-${String(highest + 1).padStart(3, "0")}`;
 
     const newLoan: Loan = {
-      id: `LN-${Date.now().toString().slice(-4)}`,
-      customerId,
-      customerName: cust?.name || "Customer",
-      principal: gross,
-      amount: gross,
-      capitalDeduction: 0,
-      interestDeduction: 0,
-      otherFees: 0,
-      interestRate: rate,
-      ratePeriod: "Monthly",
-      repaymentFrequency: "Monthly",
-      duration: dur,
-      issueDate: new Date().toISOString().slice(0, 10),
-      firstPaymentDate: new Date().toISOString().slice(0, 10),
+      id: newId,
+      loanNo: newId,
+      customerId: selectedCustomerId,
+      customerName: selectedCustomer?.fullName || selectedCustomer?.name || "Customer",
+      principal: calculations.gross,
+      amount: calculations.gross,
+      capitalDeduction: Number(capitalDeduction) || 0,
+      interestDeduction: Number(interestDeduction) || 0,
+      otherFees:
+        Number(otherFees || 0) + Number(processingFee || 0) + Number(adminFee || 0),
+      interestRate: Number(interestRate) || 0,
+      ratePeriod: (ratePeriod || "Monthly") as "Monthly" | "Weekly" | "Daily" | "Flat",
+      repaymentFrequency: (frequency || "Daily") as "Monthly" | "Weekly" | "Daily",
+      repaymentType: repaymentType,
+      duration: Number(duration) || 30,
+      issueDate: issueDate || todayStr,
+      firstPaymentDate: firstPaymentDate || defaultFirstPaymentStr,
+      purpose: purpose.trim() || undefined,
       status: "Active",
-      interest: totalInterest,
-      totalRepayment,
-      netDisbursement: gross,
-      installment: totalRepayment / dur,
-      loanNo: `LN-${Date.now().toString().slice(-4)}`,
+      interest: calculations.totalInterest,
+      totalRepayment: calculations.totalRepayment,
+      netDisbursement: calculations.netDisbursement,
+      installment: calculations.installmentAmount,
+      guarantorName: hasGuarantor ? guarantorName.trim() || undefined : undefined,
+      guarantorNic: hasGuarantor ? guarantorNic.trim().toUpperCase() || undefined : undefined,
+      guarantorPhone: hasGuarantor ? guarantorPhone.trim() || undefined : undefined,
+      guarantorRelationship: hasGuarantor ? guarantorRelationship || undefined : undefined,
+      guarantorAddress: hasGuarantor ? guarantorAddress.trim() || undefined : undefined,
+      disbursementMethod: (disbursementMethod || "Cash") as "Cash" | "Bank Transfer" | "Cheque",
+      notes: notes.trim() || undefined,
     };
 
     addLoan(newLoan);
-    if (onSuccess) onSuccess();
+    setSubmittedLoanId(newId);
+    setStep("done");
+
+    if (onSuccess) {
+      onSuccess(newId);
+    } else {
+      setTimeout(() => {
+        router.push(`/loans/${newId}`);
+      }, 1500);
+    }
   };
 
+  // Success screen
+  if (step === "done" && submittedLoanId) {
+    return (
+      <div className="p-8 text-center space-y-5 bg-white rounded-3xl border border-slate-200">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+          <CheckCircle2 size={36} />
+        </div>
+        <div>
+          <h3 className="text-xl font-black text-slate-900">Loan Contract Issued!</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            Contract <span className="font-mono font-bold text-red-600">{submittedLoanId}</span> has been successfully issued to{" "}
+            <strong>{selectedCustomer?.fullName || selectedCustomer?.name}</strong>.
+          </p>
+        </div>
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-mono max-w-sm mx-auto space-y-1.5 text-left">
+          <div className="flex justify-between">
+            <span className="text-slate-500">Loan Amount:</span>
+            <span className="font-bold text-slate-800">{MONEY(calculations.gross)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Net Disbursed:</span>
+            <span className="font-bold text-emerald-600">{MONEY(calculations.netDisbursement)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Installment:</span>
+            <span className="font-bold text-red-600">{MONEY(calculations.installmentAmount)} / {frequency}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-          Customer
-        </label>
-        <select
-          value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
-          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-        >
-          {customers.map((c: Customer) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+    <div className="space-y-6">
+      {/* ── CLICKABLE TABS / STEPPER WIZARD ─────────────────────────────────── */}
+      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Tab 1: Select Borrower */}
+          <button
+            type="button"
+            onClick={() => setStep("select")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              step === "select"
+                ? "bg-red-600 text-white shadow-xs"
+                : selectedCustomer
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                : "bg-slate-100 text-slate-800 hover:bg-slate-200"
+            }`}
+          >
+            {selectedCustomer && step !== "select" ? (
+              <Check size={14} className="text-emerald-700 stroke-[3]" />
+            ) : (
+              <span
+                className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                  step === "select"
+                    ? "bg-white/25 text-white"
+                    : "bg-slate-200 text-slate-800"
+                }`}
+              >
+                1
+              </span>
+            )}
+            <span className={step === "select" ? "text-white font-bold" : selectedCustomer ? "text-emerald-900 font-bold" : "text-slate-800 font-bold"}>
+              1. Select Borrower
+            </span>
+          </button>
+
+          <ChevronRight size={14} className="text-slate-400 shrink-0" />
+
+          {/* Tab 2: Review Profile */}
+          <button
+            type="button"
+            disabled={!selectedCustomer}
+            onClick={() => selectedCustomer && setStep("review")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              step === "review"
+                ? "bg-red-600 text-white shadow-xs"
+                : selectedCustomer
+                ? "bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
+                : "bg-slate-100/60 text-slate-400 border border-slate-200/50 cursor-not-allowed"
+            }`}
+          >
+            <span
+              className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                step === "review"
+                  ? "bg-white/25 text-white"
+                  : "bg-slate-300 text-slate-800"
+              }`}
+            >
+              2
+            </span>
+            <span className={step === "review" ? "text-white font-bold" : selectedCustomer ? "text-slate-800 font-bold" : "text-slate-400 font-bold"}>
+              2. Review Profile
+            </span>
+          </button>
+
+          <ChevronRight size={14} className="text-slate-400 shrink-0" />
+
+          {/* Tab 3: Loan Details */}
+          <button
+            type="button"
+            disabled={!selectedCustomer}
+            onClick={() => selectedCustomer && setStep("form")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              step === "form"
+                ? "bg-red-600 text-white shadow-xs"
+                : selectedCustomer
+                ? "bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
+                : "bg-slate-100/60 text-slate-400 border border-slate-200/50 cursor-not-allowed"
+            }`}
+          >
+            <span
+              className={`w-4 h-4 rounded-full text-center text-[10px] font-bold leading-4 ${
+                step === "form"
+                  ? "bg-white/25 text-white"
+                  : "bg-slate-300 text-slate-800"
+              }`}
+            >
+              3
+            </span>
+            <span className={step === "form" ? "text-white font-bold" : selectedCustomer ? "text-slate-800 font-bold" : "text-slate-400 font-bold"}>
+              3. Loan Details
+            </span>
+          </button>
+        </div>
+
+        {selectedCustomer && (
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <span>Selected:</span>
+            <span className="font-bold text-slate-900 truncate max-w-[180px]">
+              {selectedCustomer.fullName || selectedCustomer.name}
+            </span>
+            <span className="font-mono text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[10px]">
+              {selectedCustomer.id}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-          Loan Amount (LKR)
-        </label>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(Number(e.target.value))}
-          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-        />
-      </div>
+      {errorMsg && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold flex items-center gap-2">
+          <AlertTriangle size={16} className="shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
-      <div>
-        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-          Interest Rate (%)
-        </label>
-        <input
-          type="number"
-          value={interestRate}
-          onChange={(e) => setInterestRate(Number(e.target.value))}
-          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-        />
-      </div>
+      {/* ── STEP 1: SELECT BORROWER ────────────────────────────────────────── */}
+      {step === "select" && (
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-4">
+          <div className="p-6 border-b border-slate-100">
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">
+              Step 1: Select a Borrower
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Choose a customer from the directory to review their profile and issue a loan.
+            </p>
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-          Installments Count
-        </label>
-        <input
-          type="number"
-          value={duration}
-          onChange={(e) => setDuration(Number(e.target.value))}
-          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-        />
-      </div>
+          <div className="p-6 space-y-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
+              <input
+                type="text"
+                autoComplete="off"
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+                placeholder="Search by customer name, NIC number, phone, town, or ID..."
+                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 transition shadow-2xs"
+              />
+            </div>
 
-      <button
-        type="submit"
-        className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs uppercase"
-      >
-        Disburse Loan
-      </button>
-    </form>
+            {/* Customer List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+              {filteredCustomers.map((c) => {
+                const isSelected = selectedCustomerId === c.id;
+                const custLoans = loans.filter((l) => l.customerId === c.id);
+                const custLoanIds = custLoans.map((l) => l.id);
+                const custPayments = payments.filter(
+                  (p) => p.customerId === c.id || custLoanIds.includes(p.loanId)
+                );
+                const totalRepayable = custLoans.reduce((s, l) => s + (l.totalRepayment || 0), 0);
+                const totalPaid = custPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+                const outstanding = Math.max(0, totalRepayable - totalPaid);
+
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => handleSelectCustomer(c.id)}
+                    className={`p-4 rounded-2xl border transition text-left cursor-pointer space-y-2.5 ${
+                      isSelected
+                        ? "bg-red-50/70 border-red-500 ring-2 ring-red-500/30 shadow-xs"
+                        : "bg-white border-slate-200/90 hover:border-red-300 hover:shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {c.photoUrl ? (
+                        <img
+                          src={c.photoUrl}
+                          alt={c.name}
+                          className="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center shrink-0">
+                          {(c.fullName || c.name || "C").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                            {c.id}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                              (c.status || "").toUpperCase() === "ACTIVE"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {c.status || "Active"}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-black text-slate-900 truncate mt-0.5">
+                          {c.fullName || c.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 font-mono">NIC: {c.nic}</p>
+                        <p className="text-[11px] text-slate-600 truncate">
+                          {c.address ? `${c.address} · ` : ""}{c.phone}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        Outstanding: <strong className="font-mono text-slate-700">{MONEY(outstanding)}</strong>
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                          isSelected
+                            ? "bg-red-600 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check size={12} /> Selected
+                          </>
+                        ) : (
+                          "Select"
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Actions for Step 1 */}
+          <div className="p-5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
+            <div>
+              {selectedCustomer ? (
+                <p className="text-xs text-slate-600">
+                  Selected borrower:{" "}
+                  <strong className="text-slate-900">
+                    {selectedCustomer.fullName || selectedCustomer.name}
+                  </strong>{" "}
+                  ({selectedCustomer.id})
+                </p>
+              ) : (
+                <p className="text-xs text-slate-400 italic">Please select a borrower to enable the next step.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              disabled={!selectedCustomerId}
+              onClick={handleGoToReview}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+            >
+              <span>Next: Review Profile</span>
+              <ChevronRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 2: REVIEW PROFILE ─────────────────────────────────────────── */}
+      {step === "review" && selectedCustomer && (
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-6">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                Step 2: Review Borrower Profile Details
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Verify customer identity, residency, and liability history before configuring loan details.
+              </p>
+            </div>
+            <span className="text-xs font-bold text-red-600 font-mono bg-red-50 px-2.5 py-1 rounded-lg">
+              Customer ID: {selectedCustomer.id}
+            </span>
+          </div>
+
+          <div className="px-6 space-y-6">
+            {/* Profile Banner */}
+            <div className="p-6 bg-gradient-to-r from-black via-[#2a040b] to-[#4a0512] border border-red-950 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center gap-5 shadow-sm">
+              {selectedCustomer.photoUrl ? (
+                <img
+                  src={selectedCustomer.photoUrl}
+                  alt={selectedCustomer.name}
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-white/60 shadow-md shrink-0 bg-slate-100"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-white/20 border border-white/40 text-white font-black text-3xl flex items-center justify-center shrink-0">
+                  {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-rose-200 uppercase tracking-widest bg-red-950/60 border border-red-900/40 px-2.5 py-0.5 rounded-full">
+                    Borrower Dossier
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      (selectedCustomer.status || "").toUpperCase() === "ACTIVE"
+                        ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
+                        : "bg-amber-400/20 text-amber-200 border border-amber-400/40"
+                    }`}
+                  >
+                    {selectedCustomer.status || "Active"}
+                  </span>
+                </div>
+                <h3 className="text-xl font-black">
+                  {selectedCustomer.fullName || selectedCustomer.name}
+                </h3>
+                <p className="text-xs text-zinc-300 font-mono">
+                  NIC: <strong>{selectedCustomer.nic}</strong> · Mobile: {selectedCustomer.phone}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Active Contracts
+                </span>
+                <span className="text-xl font-black text-slate-900 mt-1 block">
+                  {customerFinancialSnapshot.activeLoansCount}
+                </span>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Total Outstanding Liability
+                </span>
+                <span className="text-xl font-black font-mono text-amber-600 mt-1 block">
+                  {MONEY(customerFinancialSnapshot.outstanding)}
+                </span>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Lifetime Repayments Paid
+                </span>
+                <span className="text-xl font-black font-mono text-emerald-600 mt-1 block">
+                  {MONEY(customerFinancialSnapshot.totalPaid)}
+                </span>
+              </div>
+            </div>
+
+            {/* Borrower Essential Dossier */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                  <User size={14} className="text-red-600" /> Identity &amp; Contact Details
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">NIC Number:</span>
+                    <span className="font-mono font-bold text-slate-900">{selectedCustomer.nic}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Primary Phone:</span>
+                    <span className="font-bold text-slate-900">{selectedCustomer.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Alternate Phone:</span>
+                    <span className="font-bold text-slate-700">{selectedCustomer.alternatePhone || "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Email Address:</span>
+                    <span className="font-bold text-slate-700">{selectedCustomer.email || "—"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                  <MapPin size={14} className="text-red-600" /> Residential Address
+                </h4>
+                <div>
+                  <span className="font-bold text-slate-900 text-xs break-words">
+                    {selectedCustomer.address || "—"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Documents preview if any */}
+            {(selectedCustomer.nicFrontUrl || selectedCustomer.nicBackUrl || customerFinancialSnapshot.customerDocs.length > 0) && (
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+                <h4 className="font-bold text-slate-800 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+                  <FileText size={14} className="text-purple-600" /> Attached Identity Documents
+                </h4>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {selectedCustomer.nicFrontUrl && (
+                    <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-bold rounded-lg flex items-center gap-1.5">
+                      <Check size={12} /> NIC Front Uploaded
+                    </span>
+                  )}
+                  {selectedCustomer.nicBackUrl && (
+                    <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-bold rounded-lg flex items-center gap-1.5">
+                      <Check size={12} /> NIC Back Uploaded
+                    </span>
+                  )}
+                  {customerFinancialSnapshot.customerDocs.map((doc) => (
+                    <span
+                      key={doc.id}
+                      className="px-3 py-1 bg-purple-50 border border-purple-200 text-purple-700 font-bold rounded-lg flex items-center gap-1.5"
+                    >
+                      <FileCheck2 size={12} /> {doc.title}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Actions for Step 2 */}
+          <div className="p-5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setStep("select")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            >
+              <ArrowLeft size={14} /> Back: Change Borrower
+            </button>
+            <button
+              type="button"
+              onClick={handleGoToForm}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
+            >
+              <span>Next: Configure Loan Details</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 3: CONFIGURE LOAN DETAILS ─────────────────────────────────── */}
+      {step === "form" && selectedCustomer && (
+        <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off">
+          {/* Selected Borrower Mini Banner */}
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {selectedCustomer.photoUrl ? (
+                <img
+                  src={selectedCustomer.photoUrl}
+                  alt={selectedCustomer.name}
+                  className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center shrink-0">
+                  {(selectedCustomer.fullName || selectedCustomer.name || "C").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-black text-slate-900 truncate">{selectedCustomer.fullName || selectedCustomer.name}</p>
+                <p className="text-[11px] text-slate-500 font-mono truncate">
+                  NIC: <strong className="text-slate-800">{selectedCustomer.nic}</strong> · {selectedCustomer.phone} ·{" "}
+                  {selectedCustomer.town || "Sri Lanka"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setStep("review")}
+                className="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition cursor-pointer shadow-2xs leading-tight"
+              >
+                View Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep("select")}
+                className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer shadow-2xs leading-tight"
+              >
+                Change Borrower
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+            {/* Left 2 Columns: Form Parameters */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* 1. Loan Terms & Structure */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
+                <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                  <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                    <DollarSign size={18} />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900">1. Loan Terms &amp; Structure</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Loan Amount */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700">
+                        Loan Amount (LKR) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {["50000", "100000", "200000", "500000"].map((preset) => {
+                          const isSelected = grossAmount === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setGrossAmount(preset)}
+                              className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
+                                isSelected
+                                  ? "bg-red-600 text-white border-red-600 shadow-xs"
+                                  : "bg-white text-slate-900 border-slate-300 hover:bg-slate-100 hover:text-black"
+                              }`}
+                            >
+                              <span className={isSelected ? "text-white font-bold" : "text-slate-900 font-bold"}>
+                                {(Number(preset) / 1000).toFixed(0)}k
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <input
+                      type="number"
+                      min="5000"
+                      step="1000"
+                      autoComplete="off"
+                      required
+                      value={grossAmount}
+                      onChange={(e) => setGrossAmount(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-sm font-mono font-black rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Repayment Scheme */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700">
+                        Repayment Scheme <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[11px] font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                        {repaymentType}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setRepaymentType("Capital + Interest")}
+                        className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+                          repaymentType === "Capital + Interest"
+                            ? "bg-red-50/80 border-red-500 ring-2 ring-red-500/20 text-slate-900 shadow-2xs"
+                            : "bg-white border-slate-300 hover:bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                            <span
+                              className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                                repaymentType === "Capital + Interest"
+                                  ? "border-red-600 bg-red-600"
+                                  : "border-slate-400 bg-white"
+                              }`}
+                            >
+                              {repaymentType === "Capital + Interest" && (
+                                <span className="w-1 h-1 bg-white rounded-full" />
+                              )}
+                            </span>
+                            Capital + Interest (Standard)
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-1 pl-5">
+                            Equal periodic installments covering both principal and interest.
+                          </p>
+                        </div>
+                        {repaymentType === "Capital + Interest" && (
+                          <Check size={16} className="text-red-600 shrink-0 ml-2" />
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setRepaymentType("Interest Only")}
+                        className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+                          repaymentType === "Interest Only"
+                            ? "bg-red-50/80 border-red-500 ring-2 ring-red-500/20 text-slate-900 shadow-2xs"
+                            : "bg-white border-slate-300 hover:bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                            <span
+                              className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                                repaymentType === "Interest Only"
+                                  ? "border-red-600 bg-red-600"
+                                  : "border-slate-400 bg-white"
+                              }`}
+                            >
+                              {repaymentType === "Interest Only" && (
+                                <span className="w-1 h-1 bg-white rounded-full" />
+                              )}
+                            </span>
+                            Interest Only
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-1 pl-5">
+                            Regular installments cover only interest; capital repaid at maturity.
+                          </p>
+                        </div>
+                        {repaymentType === "Interest Only" && (
+                          <Check size={16} className="text-red-600 shrink-0 ml-2" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Interest Rate */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">
+                      Interest Rate (%) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      autoComplete="off"
+                      required
+                      value={interestRate}
+                      onChange={(e) => setInterestRate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Rate Period */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Rate Period</label>
+                    <select
+                      value={ratePeriod}
+                      onChange={(e) => setRatePeriod(e.target.value as "Monthly" | "Weekly" | "Daily" | "Flat")}
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                    >
+                      <option value="">-- Select Rate Period --</option>
+                      <option value="Monthly">Per Month (Standard)</option>
+                      <option value="Weekly">Per Week</option>
+                      <option value="Daily">Per Day</option>
+                      <option value="Flat">Flat (Entire Term)</option>
+                    </select>
+                  </div>
+
+                  {/* Repayment Frequency */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Repayment Frequency</label>
+                    <select
+                      value={frequency}
+                      onChange={(e) => handleFrequencyChange(e.target.value as "Monthly" | "Weekly" | "Daily")}
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                    >
+                      <option value="">-- Select Frequency --</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="Daily">Daily</option>
+                    </select>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">
+                      Duration (No. of Installments) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      autoComplete="off"
+                      required
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Loan Purpose */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-xs font-bold text-slate-700">Loan Purpose</label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      value={purpose}
+                      onChange={(e) => setPurpose(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Dates */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Issue Date *</label>
+                    <input
+                      type="date"
+                      required
+                      autoComplete="off"
+                      value={issueDate}
+                      onChange={(e) => handleIssueDateChange(e.target.value)}
+                      className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">First Repayment Date *</label>
+                    <input
+                      type="date"
+                      required
+                      autoComplete="off"
+                      value={firstPaymentDate}
+                      onChange={(e) => setFirstPaymentDate(e.target.value)}
+                      className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Upfront Deductions & Fees */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                      <Calculator size={18} />
+                    </div>
+                    <h3 className="text-sm font-black text-slate-900">Fees</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const gross = Number(grossAmount) || 0;
+                        if (!interestRate) {
+                          if (frequency === "Daily") {
+                            setInterestRate(String(settings.defaultDailyRate ?? 0.15));
+                            setRatePeriod("Daily");
+                          } else if (frequency === "Weekly") {
+                            setInterestRate(String(settings.defaultWeeklyRate ?? 0.8));
+                            setRatePeriod("Weekly");
+                          } else {
+                            setInterestRate(String(settings.defaultMonthlyRate ?? 3.0));
+                            setRatePeriod("Monthly");
+                          }
+                        }
+                        if (gross > 0 && !capitalDeduction) {
+                          const capRate = settings.defaultCapitalDeductionRate ?? 1.5;
+                          setCapitalDeduction(String(Math.round((gross * capRate) / 100)));
+                        }
+                        if (!processingFee) {
+                          setProcessingFee(String(settings.defaultProcessingFee ?? 1500));
+                        }
+                        if (!adminFee) {
+                          setAdminFee(String(settings.defaultAdminFee ?? 500));
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                      title="Auto-fill standard fee baseline from system settings"
+                    >
+                      ⚡ Standard System Baseline
+                    </button>
+                    <span className="font-mono text-xs font-bold text-red-600">
+                      - {MONEY(calculations.totalDeductions)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-600">Document Charge (LKR)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      autoComplete="off"
+                      value={capitalDeduction}
+                      onChange={(e) => setCapitalDeduction(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-600">Interest Deduction (LKR)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      autoComplete="off"
+                      value={interestDeduction}
+                      onChange={(e) => setInterestDeduction(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-600">Processing Fee (LKR)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      autoComplete="off"
+                      value={processingFee}
+                      onChange={(e) => setProcessingFee(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-600">Other Fees (LKR)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      autoComplete="off"
+                      value={otherFees}
+                      onChange={(e) => setOtherFees(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-600">Disbursement Mode</label>
+                    <select
+                      value={disbursementMethod}
+                      onChange={(e) => setDisbursementMethod(e.target.value as "Cash" | "Bank Transfer" | "Cheque")}
+                      className="w-full px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300"
+                    >
+                      <option value="">-- Select Mode --</option>
+                      <option value="Cash">Cash Handover</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cheque">Crossed Cheque</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Guarantor Information */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+                      <ShieldCheck size={18} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900">3. Necessary Guarantor Details</h3>
+                      <p className="text-[11px] text-slate-600 font-medium">Security guarantor details registered with this loan.</p>
+                    </div>
+                  </div>
+
+                  {/* Checkbox toggle: Guarantor Required */}
+                  <label className="flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer select-none transition shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={hasGuarantor}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setHasGuarantor(checked);
+                        if (!checked) {
+                          setGuarantorName("");
+                          setGuarantorNic("");
+                          setGuarantorPhone("");
+                          setGuarantorRelationship("");
+                          setGuarantorAddress("");
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 accent-red-600 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-800">
+                      Guarantor Required
+                    </span>
+                  </label>
+                </div>
+
+                {!hasGuarantor ? (
+                  <div className="p-4 bg-slate-50/80 border border-dashed border-slate-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-slate-600">
+                    <div className="flex items-center gap-2.5">
+                      <UserCheck size={16} className="text-slate-400 shrink-0" />
+                      <span>No guarantor is currently required for this loan. Tick <strong>Guarantor Required</strong> above to enter guarantor information.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHasGuarantor(true)}
+                      className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline shrink-0 cursor-pointer"
+                    >
+                      + Add Guarantor
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1 animate-in fade-in duration-200">
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Guarantor Full Legal Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        name="form_guarantor_fullname"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={guarantorName}
+                        onChange={(e) => setGuarantorName(e.target.value)}
+                        placeholder="e.g. Kamal Perera"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Relationship to Borrower</label>
+                      <select
+                        name="form_guarantor_relationship"
+                        value={guarantorRelationship}
+                        onChange={(e) => setGuarantorRelationship(e.target.value)}
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                      >
+                        <option value="">-- Select Relationship --</option>
+                        <option value="Spouse">Spouse</option>
+                        <option value="Parent">Parent</option>
+                        <option value="Sibling">Sibling</option>
+                        <option value="Business Partner">Business Partner</option>
+                        <option value="Relative">Relative</option>
+                        <option value="Friend / Colleague">Friend / Colleague</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Guarantor NIC Number</label>
+                      <input
+                        type="text"
+                        name="form_guarantor_nic"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={guarantorNic}
+                        onChange={(e) => setGuarantorNic(e.target.value)}
+                        placeholder="e.g. 198512345678 / 851234567V"
+                        className="w-full px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Guarantor Contact Phone</label>
+                      <input
+                        type="tel"
+                        name="form_guarantor_phone"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={guarantorPhone}
+                        onChange={(e) => setGuarantorPhone(e.target.value)}
+                        placeholder="e.g. 0771234567"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-3">
+                      <label className="text-xs font-bold text-slate-700">Guarantor Residential Address</label>
+                      <input
+                        type="text"
+                        name="form_guarantor_address"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={guarantorAddress}
+                        onChange={(e) => setGuarantorAddress(e.target.value)}
+                        placeholder="Street, City, District"
+                        className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Additional Contract Notes */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-3">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <FileText size={16} className="text-slate-500" />
+                  <h4 className="text-xs font-bold text-slate-800 uppercase">4. Contract Remarks &amp; Notes</h4>
+                </div>
+                <textarea
+                  rows={2}
+                  autoComplete="off"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 resize-none font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Financial Summary & Submit */}
+            <div className="space-y-4 sticky top-6">
+              <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-5 border border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Calculator size={18} className="text-rose-400" />
+                    <h3 className="font-black text-sm tracking-tight">Financial Summary</h3>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    Live
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-800">
+                    <span className="text-slate-400">Loan Amount</span>
+                    <span className="font-mono font-bold text-slate-100">{MONEY(calculations.gross)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-1 border-b border-slate-800">
+                    <span className="text-slate-400">Total Deductions</span>
+                    <span className="font-mono font-bold text-red-400">
+                      - {MONEY(calculations.totalDeductions)}
+                    </span>
+                  </div>
+
+                  {/* Net Cash Disbursement */}
+                  <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                        Net Disbursement
+                      </span>
+                      <span className="text-[10px] text-slate-400">Borrower cashout</span>
+                    </div>
+                    <span className="font-mono text-base font-black text-emerald-400">
+                      {MONEY(calculations.netDisbursement)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-1 border-b border-slate-800">
+                    <span className="text-slate-400">Total Interest ({interestRate || 0}%)</span>
+                    <span className="font-mono font-bold text-rose-300">
+                      + {MONEY(calculations.totalInterest)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-1 border-b border-slate-800">
+                    <span className="text-slate-300 font-bold">Total Repayment</span>
+                    <span className="font-mono font-black text-white text-sm">
+                      {MONEY(calculations.totalRepayment)}
+                    </span>
+                  </div>
+
+                  {repaymentType === "Interest Only" ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
+                        <div>
+                          <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                            Periodic Interest Payment
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            {calculations.numberOfInstallments} cycles ({frequency})
+                          </span>
+                        </div>
+                        <span className="font-mono text-base font-black text-rose-400">
+                          {MONEY(calculations.installmentAmount)}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 bg-zinc-900/90 border border-zinc-700/60 rounded-xl flex justify-between items-center text-xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider block">
+                            Capital at Maturity
+                          </span>
+                          <span className="text-[10px] text-zinc-400">Final balloon payment</span>
+                        </div>
+                        <span className="font-mono font-bold text-white">
+                          {MONEY(calculations.capitalAtMaturity || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-[#24040a] border border-red-500/30 rounded-xl flex justify-between items-center">
+                      <div>
+                        <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                          {frequency} Installment
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {calculations.numberOfInstallments} equal payments
+                        </span>
+                      </div>
+                      <span className="font-mono text-lg font-black text-rose-400">
+                        {MONEY(calculations.installmentAmount)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Installment breakdown preview */}
+                {schedulePreview.length > 0 && (
+                  <div className="space-y-1.5 pt-1 border-t border-slate-800 text-[11px]">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                      <span>Installment Schedule Preview</span>
+                      <span>{repaymentType}</span>
+                    </div>
+                    {schedulePreview.map((item) => (
+                      <div
+                        key={item.num}
+                        className="flex items-center justify-between p-1.5 bg-slate-800/60 rounded-lg text-[10px] font-mono text-slate-300"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>
+                            #{item.num} · {item.date}
+                          </span>
+                          {item.isFinal && (
+                            <span className="text-[9px] font-sans font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              Maturity
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-rose-300">{MONEY(item.amount || 0)}</span>
+                          {repaymentType === "Interest Only" && (
+                            <span className="block text-[8px] text-slate-400 font-sans">
+                              {item.typeLabel}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <PlusCircle size={16} />
+                    <span>Active Loan</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStep("review")}
+                    className="w-full py-2.5 text-xs font-bold text-slate-200 bg-zinc-850 hover:bg-zinc-800 hover:text-white border border-zinc-700/80 rounded-xl transition cursor-pointer text-center block"
+                  >
+                    ← Back: Review Profile
+                  </button>
+
+                  {onCancel && (
+                    <button
+                      type="button"
+                      onClick={onCancel}
+                      className="w-full py-2 text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer text-center"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 
 export default NewLoanForm;
-

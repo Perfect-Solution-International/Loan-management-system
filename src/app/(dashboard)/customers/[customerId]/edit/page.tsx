@@ -17,7 +17,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useData } from "@/providers/data-provider";
-import type { Customer, CustomerStatus } from "@/types";
+import type { Customer } from "@/types";
 
 const SRI_LANKA_DISTRICTS = [
   "Colombo",
@@ -148,8 +148,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
-            PORTFOLIO / EDIT CUSTOMER
+          <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
+            CUSTOMER PROFILE / EDIT
           </p>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
             Edit Customer Profile
@@ -178,7 +178,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <div className="p-2 bg-red-50 text-red-600 rounded-xl">
                 <Camera size={18} />
               </div>
               <div>
@@ -209,7 +209,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                   <img
                     src={form.photoUrl}
                     alt="Customer Preview"
-                    className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-100"
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-red-500 shadow-md bg-slate-100"
                   />
                   <button
                     type="button"
@@ -238,7 +238,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold cursor-pointer transition">
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold cursor-pointer transition">
                   <Upload size={14} /> Upload Photograph
                   <input
                     type="file"
@@ -264,7 +264,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         {/* Dedicated NIC Front & Back Images */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <FileText size={18} />
             </div>
             <div>
@@ -310,10 +310,10 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-blue-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
-                  <Upload size={22} className="text-blue-500" />
-                  <span className="text-xs font-semibold text-slate-700">Upload NIC Front</span>
-                  <span className="text-xs text-slate-400">PNG, JPG, WebP</span>
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-400 bg-white hover:bg-red-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
+                  <Upload size={22} className="text-red-500" />
+                  <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -356,10 +356,10 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                   </div>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-blue-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
-                  <Upload size={22} className="text-blue-500" />
-                  <span className="text-xs font-semibold text-slate-700">Upload NIC Back</span>
-                  <span className="text-xs text-slate-400">PNG, JPG, WebP</span>
+                <label className="border-2 border-dashed border-slate-300 hover:border-red-400 bg-white hover:bg-red-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
+                  <Upload size={22} className="text-red-500" />
+                  <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -378,57 +378,29 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
               <UserCheck size={18} />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Personal Identity & NIC</h2>
+            <h2 className="text-sm font-bold text-slate-900">Personal Identity & NIC</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-1">Full Name</label>
+          <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Residential Address</label>
               <input
                 type="text"
-                name="fullName"
-                value={form.fullName}
+                name="address"
+                value={form.address}
                 onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-1"/>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-2">NIC Number</label>
-              <input
-                type="text"
-                name="nic"
-                value={form.nic}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-semibold uppercase"
-               id="ui-field-2"/>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-3">Gender</label>
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
-               id="ui-field-3">
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
+                placeholder="Full residential address"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
           </div>
-        </div>
 
         {/* Residential Location */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <MapPin size={18} />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Residential Address, Village & Town</h2>
+            <h2 className="text-sm font-bold text-slate-900">Residential Address</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -439,8 +411,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="address"
                 value={form.address}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-4"/>
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -450,8 +422,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="village"
                 value={form.village}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-5"/>
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -461,8 +433,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="town"
                 value={form.town}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-6"/>
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -471,8 +443,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold bg-white"
-               id="ui-field-7">
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold bg-white"
+              >
                 {SRI_LANKA_DISTRICTS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -486,7 +458,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
         {/* Contact & Communication Details */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <Phone size={18} />
             </div>
             <h2 className="text-sm font-semibold text-slate-900">Contact & Communication Details</h2>
@@ -501,8 +473,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 value={form.phone}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-8"/>
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -512,8 +484,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="alternatePhone"
                 value={form.alternatePhone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-9"/>
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -523,9 +495,8 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="customer@example.com"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs font-semibold"
-               id="ui-field-10"/>
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+              />
             </div>
           </div>
         </div>
@@ -540,7 +511,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
           </Link>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer"
           >
             <Save size={16} /> Save Changes
           </button>
@@ -567,7 +538,7 @@ function EditCustomerContent() {
           </p>
           <Link
             href="/customers"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-semibold"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold"
           >
             <ArrowLeft size={14} /> Back to Customers
           </Link>

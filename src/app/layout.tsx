@@ -3,8 +3,12 @@ import "./globals.css";
 import { DataProvider } from "@/providers/data-provider";
 
 export const metadata: Metadata = {
-  title: "PSI One LMS - Loan Management System",
-  description: "Centralized web application for loan operations",
+  title: 'PSI One Loan Management System',
+  description: 'Centralized web application for loan operations',
+  icons: {
+    icon: '/logos/psi-logo.png',
+    apple: '/logos/psi-logo.png',
+  },
 };
 
 export default function RootLayout({
