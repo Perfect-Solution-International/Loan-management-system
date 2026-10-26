@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ChartNoAxesCombined,
@@ -9,7 +10,6 @@ import {
   FileClock,
   FileText,
   HandCoins,
-  Landmark,
   LayoutDashboard,
   LogIn,
   Settings2,
@@ -67,13 +67,15 @@ export default function Sidebar({
         className="app-brand"
         aria-label="PSI One overview"
       >
-        <span className="brand-mark">
-          <Landmark size={21} strokeWidth={1.7} />
-        </span>
+        <Image
+          src="/logos/icon.png"
+          alt="PSI One logo"
+          width={40}
+          height={40}
+          className="h-10 w-10 shrink-0 object-contain"
+        />
         <span>
-          <strong>
-            PSI One<span className="text-blue-200">.</span>
-          </strong>
+          
           <small>LOAN MANAGEMENT</small>
         </span>
       </Link>

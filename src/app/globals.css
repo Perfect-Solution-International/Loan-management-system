@@ -1180,9 +1180,10 @@
 /* Sign-in screen presentation. Existing form behavior is preserved. */
 .login-page {
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: 1.02fr 0.98fr;
+  grid-template-rows: minmax(0, 1fr);
   background: #ffffff;
   overflow: hidden;
   font-family: var(--font-sans);
@@ -1529,7 +1530,6 @@
 @media (max-width: 850px) {
   .login-page {
     grid-template-columns: 1fr;
-    min-height: 100dvh;
   }
 
   .login-visual {
@@ -1537,7 +1537,7 @@
   }
 
   .login-form-side {
-    min-height: 100vh;
+    min-height: 0;
     padding: 35px 22px 75px;
     background:
       radial-gradient(ellipse at top right, #f0efff, transparent 48%),
@@ -1566,6 +1566,73 @@
   .login-form-side {
     padding-right: 20px;
     padding-left: 20px;
+  }
+}
+
+@media (max-height: 760px) {
+  .login-form-side {
+    padding-top: 20px;
+    padding-bottom: 48px;
+  }
+
+  .login-mobile-brand {
+    margin-bottom: 18px;
+  }
+
+  .login-welcome-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+  }
+
+  .login-intro {
+    margin-bottom: 18px;
+  }
+
+  .login-input-wrap {
+    margin-bottom: 14px;
+  }
+
+  .login-security-note {
+    margin-top: 14px;
+  }
+
+  .login-demo-note {
+    margin: 14px 0 8px;
+  }
+
+  .login-copyright {
+    bottom: 14px;
+  }
+}
+
+@media (max-height: 620px) {
+  .login-mobile-brand {
+    margin-bottom: 12px;
+  }
+
+  .login-welcome-icon {
+    display: none;
+  }
+
+  .login-form-wrap h2 {
+    font-size: 22px;
+  }
+
+  .login-intro {
+    margin-bottom: 12px;
+  }
+
+  .login-input-wrap {
+    margin-bottom: 10px;
+  }
+
+  .login-security-note {
+    margin-top: 10px;
+  }
+
+  .login-demo-note {
+    margin-top: 10px;
   }
 }
 
