@@ -199,6 +199,16 @@ export default function FieldStaffPortal() {
   >("ALL");
   const [onlineSlipsSearch, setOnlineSlipsSearch] = useState<string>("");
   const [selectedSlipImage, setSelectedSlipImage] = useState<OnlinePayment | null>(null);
+  const [fieldSlipImgError, setFieldSlipImgError] = useState(false);
+
+  const getSafeFieldSlipUrl = (url?: string): string => {
+    if (!url) return "";
+    if (url.startsWith("data:image/svg+xml;utf8,")) {
+      const raw = url.replace("data:image/svg+xml;utf8,", "");
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(raw);
+    }
+    return url;
+  };
 
   // New Customer Registration Form State
   const [newCustName, setNewCustName] = useState("");
@@ -2560,7 +2570,7 @@ export default function FieldStaffPortal() {
                           <td className="py-3 px-4 text-center">
                             <button
                               type="button"
-                              onClick={() => setSelectedSlipImage(item)}
+                              onClick={() => { setSelectedSlipImage(item); setFieldSlipImgError(false); }}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/60 rounded-lg transition cursor-pointer"
                             >
                               <ImageIcon size={13} />
@@ -4130,21 +4140,54 @@ export default function FieldStaffPortal() {
 
             {/* Slip Image Preview */}
             <div className="flex-1 overflow-auto bg-slate-900 rounded-2xl p-2 min-h-[260px] max-h-[440px] flex items-center justify-center border border-slate-800">
-              {selectedSlipImage.slipUrl ? (
-                <img
-                  src={selectedSlipImage.slipUrl}
-                  alt="Customer Bank Deposit Slip"
-                  className="max-h-full max-w-full object-contain rounded-xl shadow-lg"
-                />
-              ) : (
-                <div className="text-center text-slate-400 p-6">
-                  <ImageIcon size={36} className="mx-auto mb-2 opacity-40" />
-                  <p className="text-xs">No direct image file attached.</p>
-                  <p className="text-[10px] font-mono mt-1 text-slate-500">
-                    Ref: {selectedSlipImage.referenceNumber}
-                  </p>
-                </div>
-              )}
+              {(() => {
+                const safeUrl = getSafeFieldSlipUrl(selectedSlipImage.slipUrl);
+                const isPdf = safeUrl.startsWith("data:application/pdf") || (selectedSlipImage.slipFileName || "").toLowerCase().endsWith(".pdf");
+
+                if (fieldSlipImgError || !safeUrl) {
+                  return (
+                    <div className="w-full max-w-md bg-white rounded-2xl p-4 text-left border border-slate-200 shadow-xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="text-[10px] font-black uppercase text-red-600">Bank Deposit Slip</span>
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{selectedSlipImage.referenceNumber}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block">Borrower</span>
+                          <span className="font-bold text-slate-900">{selectedSlipImage.customerName}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block">Bank</span>
+                          <span className="font-bold text-slate-900">{selectedSlipImage.bankName}</span>
+                        </div>
+                      </div>
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-emerald-800">Amount Paid</span>
+                        <span className="text-lg font-black font-mono text-emerald-700">{MONEY(selectedSlipImage.amount)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isPdf) {
+                  return (
+                    <iframe
+                      src={safeUrl}
+                      title="Deposit Slip PDF"
+                      className="w-full h-80 rounded-xl border border-slate-700 bg-white"
+                    />
+                  );
+                }
+
+                return (
+                  <img
+                    src={safeUrl}
+                    alt="Customer Bank Deposit Slip"
+                    onError={() => setFieldSlipImgError(true)}
+                    className="max-h-full max-w-full object-contain rounded-xl shadow-lg"
+                  />
+                );
+              })()}
             </div>
 
             {/* Action Bar inside Slip Modal */}

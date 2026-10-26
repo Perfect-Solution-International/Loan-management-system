@@ -43,6 +43,7 @@ import type { Payment, OnlinePayment, Loan } from "@/types";
 export interface LoanDueInfo {
   isSettled: boolean;
   isTodayPaid: boolean;
+  hasPendingSlip?: boolean;
   cycle: number;
   totalCycles: number;
   dueDate: string;
@@ -92,13 +93,43 @@ function formatFriendlyDate(dateStr?: string): string {
 export function getLoanNextDueInfo(
   loan: Loan,
   allRepayments: Payment[],
-  todayStr: string
+  todayStr: string,
+  onlinePaymentsList: OnlinePayment[] = []
 ): LoanDueInfo {
   const payable = getLoanTotalRepayment(loan);
   const loanPayments = allRepayments.filter(
     (p) => p.loanId === loan.id || (loan.customerId && p.customerId === loan.customerId && !p.loanId)
   );
-  const totalPaid = loanPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
+  // Check for completed online slips (already approved)
+  const completedOnlineSlips = (onlinePaymentsList || []).filter(
+    (op) =>
+      (op.loanId === loan.id || (loan.customerId && op.customerId === loan.customerId)) &&
+      op.status === "COMPLETED"
+  );
+
+  // Check for pending online slips awaiting admin verification
+  const pendingOnlineSlips = (onlinePaymentsList || []).filter(
+    (op) =>
+      (op.loanId === loan.id || (loan.customerId && op.customerId === loan.customerId)) &&
+      op.status === "PENDING"
+  );
+  const hasPendingSlip = pendingOnlineSlips.length > 0;
+
+  const existingKeys = new Set(
+    loanPayments.map((p) => `${(p.date || "").slice(0, 10)}_${Number(p.amount) || 0}`)
+  );
+  const totalPaidFromPayments = loanPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const totalPaidFromSlips = completedOnlineSlips
+    .filter((op) => {
+      const pDate = (op.paymentDate || op.submittedAt || todayStr).slice(0, 10);
+      const amt = Number(op.amount) || 0;
+      return !existingKeys.has(`${pDate}_${amt}`);
+    })
+    .reduce((s, op) => s + (Number(op.amount) || 0), 0);
+
+  // Only approved / confirmed payments count towards loan totalPaid
+  const totalPaid = totalPaidFromPayments + totalPaidFromSlips;
   const outstanding = Math.max(0, Math.round((payable - totalPaid) * 100) / 100);
 
   const duration = Math.max(1, loan.duration || 1);
@@ -107,6 +138,7 @@ export function getLoanNextDueInfo(
     return {
       isSettled: true,
       isTodayPaid: false,
+      hasPendingSlip: false,
       cycle: duration,
       totalCycles: duration,
       dueDate: "-",
@@ -130,6 +162,15 @@ export function getLoanNextDueInfo(
 
   let runningBalance = payable;
   let accumulatedPaid = totalPaid;
+
+  const hasPaymentToday =
+    loanPayments.some(
+      (p) => (p.date || "").slice(0, 10) === todayStr && (Number(p.amount) || 0) > 0
+    ) ||
+    completedOnlineSlips.some((op) => {
+      const pDate = (op.paymentDate || op.submittedAt || todayStr).slice(0, 10);
+      return pDate === todayStr && (Number(op.amount) || 0) > 0;
+    });
 
   for (let i = 1; i <= duration; i++) {
     const dueDate = new Date(startDate.getTime());
@@ -163,7 +204,7 @@ export function getLoanNextDueInfo(
 
     runningBalance = Math.max(0, runningBalance - installmentAmt);
 
-    if (accumulatedPaid >= installmentAmt - 0.001) {
+    if (accumulatedPaid >= installmentAmt - 1.0) {
       accumulatedPaid -= installmentAmt;
       continue;
     }
@@ -174,7 +215,6 @@ export function getLoanNextDueInfo(
     const diffDays = Math.round((dueTime - todayTime) / (1000 * 60 * 60 * 24));
 
     const isDaily = frequency.toLowerCase() === "daily";
-    const hasPaymentToday = loanPayments.some((p) => p.date === todayStr);
     const isTodayPaid = hasPaymentToday || (isDaily && diffDays === 1 && i > 1);
 
     let status: "OVERDUE" | "DUE_TODAY" | "DUE_TOMORROW" | "UPCOMING" = "UPCOMING";
@@ -183,21 +223,30 @@ export function getLoanNextDueInfo(
     if (diffDays < 0) {
       status = "OVERDUE";
       const absDays = Math.abs(diffDays);
-      badgeText = `Overdue by ${absDays} ${absDays === 1 ? "day" : "days"}`;
+      badgeText = hasPendingSlip ? "Slip Under Review" : `Overdue by ${absDays} ${absDays === 1 ? "day" : "days"}`;
     } else if (diffDays === 0) {
-      status = "DUE_TODAY";
-      badgeText = "Due Today";
+      if (isTodayPaid) {
+        status = "DUE_TOMORROW";
+        badgeText = "PAID FOR TODAY";
+      } else if (hasPendingSlip) {
+        status = "DUE_TODAY";
+        badgeText = "Slip Under Review";
+      } else {
+        status = "DUE_TODAY";
+        badgeText = "Due Today";
+      }
     } else if (diffDays === 1) {
       status = "DUE_TOMORROW";
-      badgeText = isTodayPaid ? "Paid Today" : "Due Tomorrow";
+      badgeText = isTodayPaid ? "PAID FOR TODAY" : (hasPendingSlip ? "Slip Under Review" : "Due Tomorrow");
     } else {
       status = "UPCOMING";
-      badgeText = isTodayPaid ? "Paid Today" : `Due in ${diffDays} days`;
+      badgeText = isTodayPaid ? "PAID FOR TODAY" : (hasPendingSlip ? "Slip Under Review" : `Due in ${diffDays} days`);
     }
 
     return {
       isSettled: false,
       isTodayPaid,
+      hasPendingSlip,
       cycle: i,
       totalCycles: duration,
       dueDate: dueDateStr,
@@ -228,7 +277,12 @@ export default function CustomerDashboardPage() {
 
   // Session customer state & today's date
   const [sessionCustomerId, setSessionCustomerId] = useState<string>("");
-  const [todayStr, setTodayStr] = useState<string>("2026-10-15");
+  const [todayStr, setTodayStr] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return new Date().toISOString().slice(0, 10);
+    }
+    return "2026-10-21";
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -309,6 +363,36 @@ export default function CustomerDashboardPage() {
     return null;
   }, [customerLoans, activeLoanId]);
 
+  // ── Combine official repayments with uploaded customer online payment slips ──
+  const effectiveRepayments = useMemo(() => {
+    const list = [...repayments];
+    const existingKeys = new Set(
+      repayments.map((p) => `${(p.date || "").slice(0, 10)}_${p.loanId || ""}_${Number(p.amount) || 0}`)
+    );
+    for (const op of onlinePayments || []) {
+      if (op.status !== "COMPLETED") continue;
+      const opDate = (op.paymentDate || op.submittedAt || todayStr).slice(0, 10);
+      const opAmt = Number(op.amount) || 0;
+      const key = `${opDate}_${op.loanId || ""}_${opAmt}`;
+      if (!existingKeys.has(key)) {
+        list.push({
+          id: op.id,
+          loanId: op.loanId,
+          customerId: op.customerId,
+          amount: opAmt,
+          date: opDate,
+          type: "Capital",
+          method: op.paymentMethod === "CARD" ? "Card" : "Bank Transfer",
+          collectedBy: "Customer Online Portal (Slip)",
+          receiptNo: op.receiptNo || op.id,
+          notes: `Online Slip: ${op.bankName || "Bank Transfer"} (Ref: ${op.referenceNumber || op.id})`,
+        });
+        existingKeys.add(key);
+      }
+    }
+    return list;
+  }, [repayments, onlinePayments, todayStr]);
+
   // Pre-calculate statistics for each customer loan
   const loanStats = useMemo(() => {
     const statsMap = new Map<
@@ -325,7 +409,7 @@ export default function CustomerDashboardPage() {
     customerLoans.forEach((loan) => {
       const payable = getLoanTotalRepayment(loan);
 
-      const loanPayments = repayments.filter(
+      const loanPayments = effectiveRepayments.filter(
         (p) =>
           p.loanId === loan.id ||
           (currentCustomer?.id && p.customerId === currentCustomer.id && !p.loanId)
@@ -344,7 +428,7 @@ export default function CustomerDashboardPage() {
     });
 
     return statsMap;
-  }, [customerLoans, repayments, currentCustomer?.id]);
+  }, [customerLoans, effectiveRepayments, currentCustomer?.id]);
 
   // Portfolio overview totals across all facilities
   const portfolioSummary = useMemo(() => {
@@ -378,12 +462,12 @@ export default function CustomerDashboardPage() {
   const customerPayments = useMemo(() => {
     if (!currentCustomer?.id) return [];
     if (!currentLoan) {
-      return repayments.filter((p) => p.customerId === currentCustomer.id);
+      return effectiveRepayments.filter((p) => p.customerId === currentCustomer.id);
     }
-    return repayments.filter(
+    return effectiveRepayments.filter(
       (p) => p.loanId === currentLoan.id || p.customerId === currentCustomer.id
     );
-  }, [repayments, currentLoan, currentCustomer?.id]);
+  }, [effectiveRepayments, currentLoan, currentCustomer?.id]);
 
   // Calculate financial totals
   const totalPrincipal = currentLoan ? currentLoan.principal || currentLoan.amount || 0 : 0;
@@ -406,16 +490,19 @@ export default function CustomerDashboardPage() {
   const loanDueMap = useMemo(() => {
     const map = new Map<string, LoanDueInfo>();
     customerLoans.forEach((loan) => {
-      map.set(loan.id, getLoanNextDueInfo(loan, repayments, todayStr));
+      map.set(loan.id, getLoanNextDueInfo(loan, effectiveRepayments, todayStr, onlinePayments));
     });
     return map;
-  }, [customerLoans, repayments, todayStr]);
+  }, [customerLoans, effectiveRepayments, onlinePayments, todayStr]);
 
   // Next Due Info for currently selected loan (if any)
   const currentLoanDue = useMemo(() => {
     if (!currentLoan) return null;
-    return loanDueMap.get(currentLoan.id) || getLoanNextDueInfo(currentLoan, repayments, todayStr);
-  }, [currentLoan, loanDueMap, repayments, todayStr]);
+    return (
+      loanDueMap.get(currentLoan.id) ||
+      getLoanNextDueInfo(currentLoan, effectiveRepayments, todayStr, onlinePayments)
+    );
+  }, [currentLoan, loanDueMap, effectiveRepayments, onlinePayments, todayStr]);
 
   // Upcoming installment calculations
   const nextInstallmentAmount = currentLoanDue?.installmentAmount || currentLoan?.installment || (totalPayable > 0 ? Math.round((totalPayable / (currentLoan?.duration || 1)) * 100) / 100 : 0);
@@ -461,19 +548,25 @@ export default function CustomerDashboardPage() {
   };
 
   const handleGatewaySuccess = (receiptNo?: string) => {
-    if (receiptNo) {
-      setActiveTab("history");
-      const match = repayments.find((p) => p.receiptNo === receiptNo);
-      if (match) {
-        setReceiptToPrint(match);
-      }
-    } else {
-      setActiveTab("slips");
-    }
+    setUploadSuccessMsg(
+      receiptNo
+        ? `Payment verified and credited! Official receipt #${receiptNo} generated. Today's installment is marked as PAID.`
+        : "Payment successfully recorded and credited to your loan facility. Today's installment is PAID."
+    );
   };
 
   // Viewing Slip Details Modal
   const [viewingSlip, setViewingSlip] = useState<OnlinePayment | null>(null);
+  const [customerSlipImgError, setCustomerSlipImgError] = useState(false);
+
+  const getSafeCustomerSlipUrl = (url?: string): string => {
+    if (!url) return "";
+    if (url.startsWith("data:image/svg+xml;utf8,")) {
+      const raw = url.replace("data:image/svg+xml;utf8,", "");
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(raw);
+    }
+    return url;
+  };
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState("");
 
   // Customer's online payment slips
@@ -826,7 +919,12 @@ export default function CustomerDashboardPage() {
                         {urgentDueInfo.due.isTodayPaid ? (
                           <>
                             <CheckCircle2 size={13} className="shrink-0" />
-                            <span>Paid for Today &bull; අද දින ගෙවා ඇත</span>
+                            <span>Paid for Today</span>
+                          </>
+                        ) : urgentDueInfo.due.hasPendingSlip ? (
+                          <>
+                            <Clock size={13} className="shrink-0" />
+                            <span>Slip Under Review</span>
                           </>
                         ) : (
                           <>
@@ -851,12 +949,21 @@ export default function CustomerDashboardPage() {
                     <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 pt-0.5">
                       <div className="flex items-baseline gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          {urgentDueInfo.due.isTodayPaid ? "Today's Status:" : "Next Due Installment:"}
+                          {urgentDueInfo.due.isTodayPaid
+                            ? "Today's Status:"
+                            : urgentDueInfo.due.hasPendingSlip
+                            ? "Verification Status:"
+                            : "Next Due Installment:"}
                         </span>
                         {urgentDueInfo.due.isTodayPaid ? (
                           <span className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight flex items-center gap-1.5">
                             <Check size={26} className="text-emerald-600 stroke-[3]" />
                             PAID
+                          </span>
+                        ) : urgentDueInfo.due.hasPendingSlip ? (
+                          <span className="text-xl sm:text-2xl font-black font-mono text-amber-700 tracking-tight flex items-center gap-1.5">
+                            <Clock size={20} className="text-amber-600" />
+                            PENDING APPROVAL
                           </span>
                         ) : (
                           <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 tracking-tight">
@@ -883,6 +990,11 @@ export default function CustomerDashboardPage() {
                           <CheckCircle2 size={13} /> Today&apos;s daily collection payment is received and credited.
                         </span>
                       )}
+                      {urgentDueInfo.due.hasPendingSlip && !urgentDueInfo.due.isTodayPaid && (
+                        <span className="text-amber-700 font-bold flex items-center gap-1">
+                          <Clock size={13} /> Bank transfer slip submitted &bull; Awaiting admin approval before credit.
+                        </span>
+                      )}
                       <span>
                         Remaining Balance: <b className="font-mono text-slate-800">{MONEY(loanStats.get(urgentDueInfo.loan.id)?.outstanding || 0)}</b>
                       </span>
@@ -892,6 +1004,51 @@ export default function CustomerDashboardPage() {
                         </span>
                       )}
                     </p>
+                  </div>
+
+                  {/* Right Column: Prominent Pay Now Action inside the alert banner */}
+                  <div className="flex items-center gap-2 shrink-0 md:self-center">
+                    {urgentDueInfo.due.isTodayPaid ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-xs shadow-emerald-600/30">
+                          <CheckCircle2 size={14} />
+                          <span>Paid for Today</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenGateway(urgentDueInfo.loan.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
+                          title="Pay next installment in advance"
+                        >
+                          <CreditCard size={12} className="text-slate-400" />
+                          <span>Pay Advance</span>
+                        </button>
+                      </div>
+                    ) : urgentDueInfo.due.hasPendingSlip ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-xs shadow-amber-500/30">
+                          <Clock size={14} />
+                          <span>Slip Under Review</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("slips")}
+                          className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
+                        >
+                          <span>View Slip</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenGateway(urgentDueInfo.loan.id)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-md shadow-red-600/30 cursor-pointer active:scale-[0.98]"
+                        title={`Pay installment of ${MONEY(urgentDueInfo.due.installmentAmount || urgentDueInfo.loan.installment || 0)}`}
+                      >
+                        <CreditCard size={15} className="text-white" />
+                        <span>Pay Now</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1023,7 +1180,7 @@ export default function CustomerDashboardPage() {
                   percent: 0,
                   paymentsCount: 0,
                 };
-                const dueInfo = loanDueMap.get(loan.id) || getLoanNextDueInfo(loan, repayments, todayStr);
+                const dueInfo = loanDueMap.get(loan.id) || getLoanNextDueInfo(loan, effectiveRepayments, todayStr, onlinePayments);
 
                 const statusLower = (loan.status || "").toLowerCase();
                 const statusClass =
@@ -1054,7 +1211,7 @@ export default function CustomerDashboardPage() {
                           dueInfo.isTodayPaid ? (
                             <>
                               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1 shadow-2xs">
-                                <CheckCircle2 size={11} className="text-emerald-600" /> Paid Today &bull; අද දින ගෙවා ඇත
+                                <CheckCircle2 size={11} className="text-emerald-600" /> Paid Today
                               </span>
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-200 flex items-center gap-1">
                                 <Calendar size={11} className="text-slate-500" /> Next Due: {dueInfo.dueDate}
@@ -1085,45 +1242,10 @@ export default function CustomerDashboardPage() {
 
                       {/* Action Buttons in Header */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {hasDue ? (
-                          dueInfo.isTodayPaid ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs">
-                                <CheckCircle2 size={13} className="text-emerald-600" />
-                                <span>Paid for Today</span>
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenGateway(loan.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
-                                title="Pay next installment in advance"
-                              >
-                                <CreditCard size={12} className="text-slate-400" />
-                                <span>Pay Advance</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenGateway(loan.id)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer active:scale-[0.99]"
-                              title={`Pay installment of ${MONEY(dueInfo.installmentAmount || loan.installment || 0)}`}
-                            >
-                              <CreditCard size={13} className="text-white" />
-                              <span>Pay Now</span>
-                            </button>
-                          )
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
-                            <CheckCircle2 size={13} className="text-emerald-600" />
-                            <span>Fully Settled</span>
-                          </span>
-                        )}
-
                         <button
                           type="button"
                           onClick={() => setActiveLoanId(loan.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
                         >
                           <Eye size={13} className="text-slate-500" />
                           <span>View Schedule</span>
@@ -1248,7 +1370,7 @@ export default function CustomerDashboardPage() {
                       percent: 0,
                       paymentsCount: 0,
                     };
-                    const dueInfo = loanDueMap.get(loan.id) || getLoanNextDueInfo(loan, repayments, todayStr);
+                    const dueInfo = loanDueMap.get(loan.id) || getLoanNextDueInfo(loan, effectiveRepayments, todayStr, onlinePayments);
 
                     const statusLower = (loan.status || "").toLowerCase();
                     const statusClass =
@@ -1413,15 +1535,31 @@ export default function CustomerDashboardPage() {
                         <div className="mt-4 flex items-center gap-2">
                           {(stats?.outstanding || 0) > 0 && loan.status !== "Completed" ? (
                             <>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenGateway(loan.id)}
-                                className="flex-1 py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer active:scale-[0.99]"
-                                title="Pay installment now"
-                              >
-                                <CreditCard size={14} className="text-white" />
-                                <span>Pay Now</span>
-                              </button>
+                              {dueInfo.isTodayPaid ? (
+                                <div className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs">
+                                  <CheckCircle2 size={13} className="text-emerald-600" />
+                                  <span>Paid for Today</span>
+                                </div>
+                              ) : dueInfo.hasPendingSlip ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab("slips")}
+                                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs hover:bg-amber-100 transition cursor-pointer"
+                                >
+                                  <Clock size={13} className="text-amber-600" />
+                                  <span>Slip Under Review</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenGateway(loan.id)}
+                                  className="flex-1 py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-xs shadow-red-600/25 cursor-pointer active:scale-[0.99]"
+                                  title="Pay installment now"
+                                >
+                                  <CreditCard size={14} className="text-white" />
+                                  <span>Pay Now</span>
+                                </button>
+                              )}
 
                               <button
                                 type="button"
@@ -1945,7 +2083,7 @@ export default function CustomerDashboardPage() {
                               <div className="inline-flex items-center gap-1.5 justify-end">
                                 <button
                                   type="button"
-                                  onClick={() => setViewingSlip(op)}
+                                  onClick={() => { setViewingSlip(op); setCustomerSlipImgError(false); }}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition cursor-pointer"
                                   title="View Uploaded Bank Slip"
                                 >
@@ -2316,12 +2454,51 @@ export default function CustomerDashboardPage() {
             </div>
 
             {/* Slip Image View */}
-            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-center">
-              <img
-                src={viewingSlip.slipUrl}
-                alt="Bank Slip"
-                className="max-h-72 mx-auto rounded-lg object-contain shadow-xs border border-slate-200/80"
-              />
+            <div className="bg-slate-900 rounded-2xl p-3 border border-slate-800 text-center min-h-[220px] flex items-center justify-center">
+              {(() => {
+                const safeUrl = getSafeCustomerSlipUrl(viewingSlip.slipUrl);
+                const isPdf = safeUrl.startsWith("data:application/pdf") || (viewingSlip.slipFileName || "").toLowerCase().endsWith(".pdf");
+
+                if (customerSlipImgError || !safeUrl) {
+                  return (
+                    <div className="w-full bg-white rounded-xl p-4 text-left border border-slate-200 shadow-sm space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="text-[10px] font-black uppercase text-red-600">Electronic Bank Slip</span>
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{viewingSlip.referenceNumber || viewingSlip.id}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-bold">Bank</span>
+                          <span className="font-bold text-slate-900 text-xs">{viewingSlip.bankName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block font-bold">Deposited</span>
+                          <span className="font-mono font-black text-emerald-600 text-sm">{MONEY(viewingSlip.amount)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isPdf) {
+                  return (
+                    <iframe
+                      src={safeUrl}
+                      title="Bank Slip PDF"
+                      className="w-full h-72 rounded-lg border border-slate-700 bg-white"
+                    />
+                  );
+                }
+
+                return (
+                  <img
+                    src={safeUrl}
+                    alt="Bank Slip"
+                    onError={() => setCustomerSlipImgError(true)}
+                    className="max-h-72 mx-auto rounded-lg object-contain shadow-md"
+                  />
+                );
+              })()}
             </div>
 
             {/* Slip metadata breakdown */}
@@ -2379,6 +2556,7 @@ export default function CustomerDashboardPage() {
           customer={currentCustomer}
           loans={customerLoans}
           initialLoanId={gatewayLoanId}
+          todayDate={todayStr}
           onPaymentSuccess={handleGatewaySuccess}
         />
       )}
