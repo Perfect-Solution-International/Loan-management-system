@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Building2,
   ChartNoAxesCombined,
-  ChevronRight,
   CircleAlert,
   ClipboardList,
   FileClock,
@@ -79,14 +77,6 @@ export default function Sidebar({
           <small>LOAN MANAGEMENT</small>
         </span>
       </Link>
-      <div className="sidebar-workspace">
-        <Building2 size={17} />
-        <div className="flex-1">
-          <p>Lending workspace</p>
-          <small>Browser demo · LKR</small>
-        </div>
-        <ChevronRight size={13} />
-      </div>
       <nav className="sidebar-navigation" aria-label="Main navigation">
         {groups.map((group) => (
           <div className="nav-group" key={group.label}>
@@ -120,11 +110,6 @@ export default function Sidebar({
         ))}
       </nav>
       <div className="sidebar-footer">
-        <p>
-          Prototype workspace
-          <br />
-          Records are stored in this browser.
-        </p>
         <Link href="/login" onClick={onNavigate}>
           <LogIn size={15} />
           Sign-in preview
