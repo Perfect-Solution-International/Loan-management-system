@@ -1809,6 +1809,58 @@ select option {
   gap: 24px;
 }
 
+/* Keep sign-in within the viewport without changing registration scrolling. */
+body:has(.login-page-fixed) {
+  overflow: hidden;
+}
+
+.login-page-fixed {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.login-page-fixed .login-form-side {
+  min-height: 0;
+  padding-block: 20px;
+}
+
+@media (max-height: 800px) {
+  .login-page-fixed .login-visual-content { padding-block: 24px; }
+  .login-page-fixed .login-mobile-brand { margin-bottom: 16px; }
+  .login-page-fixed .login-welcome-icon { width: 36px; height: 36px; margin-bottom: 12px; }
+  .login-page-fixed .login-eyebrow { margin-bottom: 6px; }
+  .login-page-fixed .login-intro { margin-bottom: 16px; line-height: 1.5; }
+  .login-page-fixed .login-portal-switcher { margin-bottom: 16px; }
+  .login-page-fixed .login-input-wrap { height: 44px; margin-bottom: 12px; }
+  .login-page-fixed .login-remember { margin-bottom: 14px !important; }
+  .login-page-fixed .login-security-note { margin-top: 14px; }
+}
+
+@media (max-height: 680px) {
+  .login-page-fixed .login-form-side { padding-block: 12px; }
+  .login-page-fixed .login-welcome-icon { display: none; }
+  .login-page-fixed .login-form-wrap h2 { font-size: 24px; margin-bottom: 6px; }
+  .login-page-fixed .login-mobile-brand { margin-bottom: 12px; }
+  .login-page-fixed .login-intro { font-size: 13px; margin-bottom: 12px; }
+  .login-page-fixed .login-portal-switcher { padding: 8px; margin-bottom: 12px; }
+  .login-page-fixed .login-portal-switcher button { padding: 8px; }
+  .login-page-fixed .login-form > label,
+  .login-page-fixed .login-password-heading label { margin-bottom: 6px; }
+  .login-page-fixed .login-submit { height: 44px; }
+  .login-page-fixed .login-security-note { margin-top: 12px; }
+}
+
+@media (max-height: 600px) {
+  .login-page-fixed .login-mobile-brand { margin-bottom: 6px; }
+  .login-page-fixed .login-intro { margin-bottom: 8px; }
+  .login-page-fixed .login-portal-switcher { margin-bottom: 8px; }
+  .login-page-fixed .login-portal-switcher > div:first-child { margin-bottom: 4px; }
+  .login-page-fixed .login-input-wrap { margin-bottom: 8px; }
+  .login-page-fixed .login-remember { margin-bottom: 8px !important; }
+  .login-page-fixed .login-security-note { margin-top: 8px; }
+}
+
 .receipt-modal {
   width: min(480px, calc(100vw - 32px));
 }

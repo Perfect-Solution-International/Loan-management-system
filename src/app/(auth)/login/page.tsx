@@ -215,7 +215,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="login-page">
+    <main className="login-page login-page-fixed">
       {/* Left side - Branding */}
       <section className="login-visual">
         <div className="login-visual-glow login-glow-one" />
@@ -297,7 +297,7 @@ export default function LoginPage() {
           </p>
 
           {/* Professional Role / Portal Switcher */}
-          <div className="mb-5 bg-slate-50/80 p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <div className="login-portal-switcher mb-5 bg-slate-50/80 p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
             <div className="flex items-center justify-between mb-2 px-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 Choose a portal · Quick-fill credentials
