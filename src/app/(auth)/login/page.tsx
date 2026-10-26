@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -478,9 +477,6 @@ export default function LoginPage() {
             </span>
           </div>
 
-          <Link href="/" className="login-back-link text-slate-500 mt-4 hover:text-slate-800 transition">
-            ← Return to main homepage
-          </Link>
         </div>
 
       </section>
