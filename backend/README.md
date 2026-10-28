@@ -34,7 +34,9 @@ backend/
 │   │   ├── 005_create_audit_logs.sql
 │   │   ├── 006_create_system_settings.sql
 │   │   ├── 007_create_online_payments.sql
-│   │   └── 008_create_loan_notes.sql
+│   │   ├── 008_create_loan_notes.sql
+│   │   ├── 009_create_roles.sql
+│   │   └── 010_link_users_role.sql
 │   └── seed.sql                     # Initial demo data & seeds
 ├── handlers/
 │   ├── auth_handler.go              # Login, me, user management
@@ -90,7 +92,9 @@ docker-compose up -d
    psql -X -U postgres -d loan_management_db -v ON_ERROR_STOP=1 --single-transaction @migrationArgs -f database/seed.sql
    ```
 
-Each numbered migration creates one table with its indexes and related sequence. Apply all files in filename order, then seed data. The SQL uses `IF NOT EXISTS` and seeds use `ON CONFLICT DO NOTHING`, so existing tables and seed records are preserved. Existing installations that ran `001_init.sql` and `002_frontend_integration.sql` can apply the new files without resetting the database.
+Each table has its own create migration with its indexes and related sequence. Later migrations add relationships or other schema changes. Apply all files in filename order, then seed data. The SQL uses `IF NOT EXISTS` and seeds use `ON CONFLICT DO NOTHING`, so existing tables and seed records are preserved. Existing installations that ran `001_init.sql` and `002_frontend_integration.sql` can apply the new files without resetting the database.
+
+The `roles` catalog includes `Admin`, `Staff`, and `Customer`, plus the existing staff roles (`Administrator`, `Loan Officer`, `Collection Agent`, `Auditor`). Migration `010_link_users_role.sql` preserves existing assignments and enforces `users.role` referencing `roles.name`. Assigned roles cannot be deleted or renamed. Existing permission checks continue to use the staff role names.
 
 ---
 

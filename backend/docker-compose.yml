@@ -21,6 +21,8 @@ services:
       - ./database/migrations/006_create_system_settings.sql:/docker-entrypoint-initdb.d/006_create_system_settings.sql:ro
       - ./database/migrations/007_create_online_payments.sql:/docker-entrypoint-initdb.d/007_create_online_payments.sql:ro
       - ./database/migrations/008_create_loan_notes.sql:/docker-entrypoint-initdb.d/008_create_loan_notes.sql:ro
+      - ./database/migrations/009_create_roles.sql:/docker-entrypoint-initdb.d/009_create_roles.sql:ro
+      - ./database/migrations/010_link_users_role.sql:/docker-entrypoint-initdb.d/010_link_users_role.sql:ro
       - ./database/seed.sql:/docker-entrypoint-initdb.d/999_seed.sql:ro
 
 volumes:

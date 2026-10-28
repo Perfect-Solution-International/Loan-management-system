@@ -1,6 +1,14 @@
 -- ============================================================================
 -- INITIAL SEED DATA FOR LOAN MANAGEMENT SYSTEM (PRODUCTION / CLEAN SLATE)
 -- ============================================================================
+-- Default account roles
+INSERT INTO
+    roles (name)
+VALUES
+    ('Admin'),
+    ('Staff'),
+    ('Customer') ON CONFLICT (name) DO NOTHING;
+
 -- 1. Default System Settings
 INSERT INTO
     system_settings (
@@ -29,7 +37,8 @@ VALUES
         3
     ) ON CONFLICT (id) DO NOTHING;
 
--- 2. Authorized Staff Users & Administrators
+-- 2. One default user for each account role (fresh database seeds).
+-- Preserve existing accounts and password hashes when seeds are rerun.
 INSERT INTO
     users (
         id,
@@ -48,7 +57,7 @@ VALUES
         'Ajith Wickramasinghe',
         'admin@psione.lk',
         '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
-        'Administrator',
+        'Admin',
         'Colombo Central',
         'Active',
         '2025-01-15',
@@ -57,35 +66,24 @@ VALUES
     (
         'STF-02',
         'Chaminda Bandara',
-        'chaminda.b@psione.lk',
+        'staff@psione.lk',
         '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
-        'Loan Officer',
+        'Staff',
         'Colombo Central',
         'Active',
         '2025-04-10',
-        '{"approveLoans": true, "recordRepayments": true, "exportReports": true, "manageSettings": false, "manageCustomers": true}'
-    ),
-    (
-        'STF-03',
-        'Dinithi Jayawardena',
-        'dinithi.j@psione.lk',
-        '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
-        'Collection Agent',
-        'Gampaha Branch',
-        'Active',
-        '2025-08-01',
         '{"approveLoans": false, "recordRepayments": true, "exportReports": false, "manageSettings": false, "manageCustomers": true}'
     ),
     (
-        'USR-001',
-        'Supun Perera',
-        'admin@example.com',
+        'CUS-01',
+        'Customer Account',
+        'customer@psione.lk',
         '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
-        'Administrator',
-        'Colombo Head Office',
+        'Customer',
+        'Colombo Central',
         'Active',
-        '2024-01-15',
-        '{"approveLoans": true, "recordRepayments": true, "exportReports": true, "manageSettings": true, "manageCustomers": true}'
+        CURRENT_DATE,
+        '{"approveLoans": false, "recordRepayments": false, "exportReports": false, "manageSettings": false, "manageCustomers": false}'
     ) ON CONFLICT (id) DO NOTHING;
 
 -- 3. Initial Audit Trail
