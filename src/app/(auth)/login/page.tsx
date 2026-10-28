@@ -19,7 +19,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
-import { api, saveSession, clearSession } from "@/lib/api-client";
+import { api, ApiError, saveSession, clearSession } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,18 +40,44 @@ export default function LoginPage() {
     setErrorMsg("");
     setSubmitting(true);
     try {
-      if (selectedPortal === "customer") {
-        const result = await api.customerLogin(identifier.trim(), password);
-        saveSession(result.token, "customer");
-        sessionStorage.setItem("customerSessionId", result.customer.id);
-        router.push("/customerdashboard");
-      } else {
+      const authenticateStaff = async () => {
         const result = await api.login(identifier.trim(), password);
-        if (selectedPortal === "admin" && result.user.role !== "Admin")
-          throw new Error("Use the Staff portal for this account.");
-        saveSession(result.token, "staff");
-        router.push(result.user.role === "Admin" ? "/dashboard" : "/field");
+        if (result.user.role !== "Admin" && result.user.role !== "Staff") {
+          throw new Error("This account does not have a supported staff role.");
+        }
+        return { token: result.token, role: result.user.role, id: result.user.id };
+      };
+      const authenticateCustomer = async () => {
+        const result = await api.customerLogin(identifier.trim(), password);
+        return { token: result.token, role: "Customer" as const, id: result.customer.id };
+      };
+      // Accounts are authenticated by separate backend endpoints. The selected
+      // portal only chooses which to try first; authentication decides the role.
+      const attempts = selectedPortal === "customer"
+        ? [authenticateCustomer, authenticateStaff]
+        : [authenticateStaff, authenticateCustomer];
+      let account;
+      try {
+        account = await attempts[0]();
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 401) throw error;
+        try {
+          account = await attempts[1]();
+        } catch (fallbackError) {
+          if (fallbackError instanceof ApiError && fallbackError.status === 401) {
+            throw new Error("Invalid email or password");
+          }
+          throw fallbackError;
+        }
       }
+      const destinations = {
+        Admin: "/dashboard",
+        Staff: "/field",
+        Customer: "/customerdashboard",
+      };
+      saveSession(account.token, account.role === "Customer" ? "customer" : "staff");
+      if (account.role === "Customer") sessionStorage.setItem("customerSessionId", account.id);
+      router.replace(destinations[account.role]);
     } catch (error) {
       clearSession();
       setErrorMsg(error instanceof Error ? error.message : "Login failed");
