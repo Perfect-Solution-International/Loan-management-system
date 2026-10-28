@@ -295,7 +295,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     setCollectAmount(String(item.totalDueToday || item.installmentAmount));
   };
 
-  const handleConfirmCollect = (e: React.FormEvent) => {
+  const handleConfirmCollect = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!collectingItem) return;
 
@@ -316,10 +316,10 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setActiveReceiptPayment(newPayment);
     setNotification(
-      `Receipt ${receiptNo} recorded: ${MONEY(numAmount)} collected from ${
+      `Receipt ${newPayment.receiptNo} recorded: ${MONEY(numAmount)} collected from ${
         collectingItem.customer?.name || collectingItem.loan.customerName
       }. Official receipt generated.`
     );
@@ -332,17 +332,21 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pt-2.5 pb-8 space-y-3 max-w-7xl mx-auto font-sans">
+    <div className="mx-auto font-sans workspace-page">
+      <div className="workspace-heading">
+        <h2>Portfolio overview</h2>
+        <p>Monitor collections, outstanding balances, and accounts that need attention.</p>
+      </div>
       {/* Toast Notification */}
       {notification && (
-        <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs">
+        <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs" role="status">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
             <span>{notification}</span>
           </div>
           <button
             onClick={() => setNotification("")}
-            className="text-emerald-700 hover:text-emerald-900 p-0.5 cursor-pointer"
+            className="text-emerald-700 hover:text-emerald-900 p-0.5 cursor-pointer" aria-label="Close"
           >
             <X size={13} />
           </button>
@@ -350,11 +354,11 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
       )}
 
       {/* ── ZONE 1: THE EXECUTIVE PULSE (HIGH-END METRIC CARDS) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: Today's Collection Performance */}
         <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Today&apos;s Collections
             </span>
             <div className="p-1 rounded-md bg-emerald-50 text-emerald-700 shrink-0">
@@ -362,10 +366,10 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             </div>
           </div>
           <div className="mt-1">
-            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+            <div className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight leading-tight">
               {MONEY(collectionSummary.collectedAmount)}
             </div>
-            <div className="flex items-center justify-between text-[10px] font-medium text-slate-500 mt-1">
+            <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mt-1">
               <span className="truncate">Target: {MONEY(collectionSummary.targetAmount)}</span>
               <span className="font-bold text-emerald-700 shrink-0 font-mono">{collectionSummary.collectionRate}%</span>
             </div>
@@ -382,7 +386,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         {/* Card 2: Active Capital in the Field */}
         <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Capital in the Field
             </span>
             <div className="p-1 rounded-md bg-blue-50 text-blue-700 shrink-0">
@@ -390,14 +394,14 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             </div>
           </div>
           <div className="mt-1">
-            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+            <div className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight leading-tight">
               {MONEY(Math.max(0, outstanding))}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium mt-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1">
               <span>
                 {loans.filter((l) => (l.status || "").toLowerCase() === "active").length} active accounts
               </span>
-              <span className="text-[9px] font-bold bg-blue-50 text-blue-800 px-1.5 py-0.2 rounded font-mono">
+              <span className="text-[11px] font-bold bg-blue-50 text-blue-800 px-1.5 py-0.2 rounded font-mono">
                 {customers.length} clients
               </span>
             </div>
@@ -407,7 +411,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         {/* Card 3: Month-to-Date Revenue & Earnings */}
         <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               This Month Revenue
             </span>
             <div className="p-1 rounded-md bg-amber-50 text-amber-700 shrink-0">
@@ -415,12 +419,12 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             </div>
           </div>
           <div className="mt-1">
-            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+            <div className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight leading-tight">
               {MONEY(monthlyMetrics.totalRevenue)}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium mt-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1">
               <span>Interest + Doc fees</span>
-              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
                 Live Revenue
               </span>
             </div>
@@ -430,7 +434,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         {/* Card 4: Portfolio at Risk (Overdue & Arrears) */}
         <div className="bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Portfolio at Risk
             </span>
             <div className="p-1 rounded-md bg-rose-50 text-rose-700 shrink-0">
@@ -438,14 +442,14 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             </div>
           </div>
           <div className="mt-1">
-            <div className="text-lg sm:text-xl font-black text-rose-600 tracking-tight leading-tight">
+            <div className="text-lg sm:text-xl font-semibold text-rose-600 tracking-tight leading-tight">
               {overdueLoans.length > 0 ? `${overdueLoans.length} Overdue` : "Healthy · 0 Risk"}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium mt-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1">
               <span>
                 {tabCounts.overdue > 0 ? `${tabCounts.overdue} due today delayed` : "No delinquent accounts"}
               </span>
-              <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded font-mono">
+              <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded font-mono">
                 {overdueLoans.length === 0 ? "100% Good" : "Needs Action"}
               </span>
             </div>
@@ -462,7 +466,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             <div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">
+                <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   Today&apos;s Collection Stream
                 </h2>
                 <span className="text-[11px] font-bold text-slate-400 font-mono">
@@ -488,7 +492,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   key={tab.key}
                   type="button"
                   onClick={() => setCollectionFilter(tab.key)}
-                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition cursor-pointer ${
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition cursor-pointer ${
                     collectionFilter === tab.key
                       ? "bg-white text-slate-900 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900"
@@ -536,7 +540,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h4 className="text-xs font-bold text-slate-900 truncate">{bName}</h4>
-                        <span className="text-[10px] font-mono text-slate-400">
+                        <span className="text-[11px] font-mono text-slate-400">
                           {item.loan.loanNo || item.loan.id}
                         </span>
                       </div>
@@ -559,15 +563,15 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   {/* Financial & Action */}
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <div className="text-xs font-black text-slate-900 font-mono">
+                      <div className="text-xs font-semibold text-slate-900 font-mono">
                         {MONEY(item.totalDueToday)}
                       </div>
                       {item.arrearsAmount > 0 ? (
-                        <span className="text-[9px] font-bold text-rose-600 block">
+                        <span className="text-[11px] font-bold text-rose-600 block">
                           incl. {MONEY(item.arrearsAmount)} arrears
                         </span>
                       ) : (
-                        <span className="text-[10px] text-slate-400 block font-medium">
+                        <span className="text-[11px] text-slate-400 block font-medium">
                           {item.repaymentFrequency}
                         </span>
                       )}
@@ -575,14 +579,14 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
 
                     <div>
                       {item.isCollectedToday ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                           <Check size={11} className="stroke-[3]" /> Collected
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleOpenCollect(item)}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded-md text-[10px] font-bold shadow-2xs transition cursor-pointer inline-flex items-center gap-1"
+                          className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded-md text-[11px] font-bold shadow-2xs transition cursor-pointer inline-flex items-center gap-1"
                         >
                           <CreditCard size={11} /> Collect
                         </button>
@@ -618,11 +622,11 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <DollarSign size={16} className="text-slate-700" />
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                   Today&apos;s Cash Movement
                 </h3>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 font-mono">Live In/Out</span>
+              <span className="text-[11px] font-bold text-slate-400 font-mono">Live In/Out</span>
             </div>
 
             <div className="space-y-2 text-xs">
@@ -631,7 +635,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   <ArrowDownRight size={14} />
                   <span>Cash Inflow (Recoveries)</span>
                 </div>
-                <span className="font-mono font-black text-emerald-700">
+                <span className="font-mono font-semibold text-emerald-700">
                   + {MONEY(todayInflow)}
                 </span>
               </div>
@@ -641,7 +645,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   <ArrowUpRight size={14} />
                   <span>Cash Outflow (Loans Disbursed)</span>
                 </div>
-                <span className="font-mono font-black text-rose-700">
+                <span className="font-mono font-semibold text-rose-700">
                   - {MONEY(todayOutflow)}
                 </span>
               </div>
@@ -649,7 +653,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
               <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200/80">
                 <span className="font-bold text-slate-700">Net Daily Movement</span>
                 <span
-                  className={`font-mono font-black text-sm ${
+                  className={`font-mono font-semibold text-sm ${
                     todayNetCash >= 0 ? "text-emerald-700" : "text-rose-600"
                   }`}
                 >
@@ -665,11 +669,11 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-amber-600" />
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                   Action Required
                 </h3>
               </div>
-              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-mono">
                 {urgentAttention.delayed.length + urgentAttention.pendingApp.length} Items
               </span>
             </div>
@@ -681,7 +685,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   className="p-2.5 rounded-lg border border-amber-200 bg-amber-50/40 text-xs flex items-center justify-between gap-2"
                 >
                   <div>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-800 block">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">
                       Underwriting Review
                     </span>
                     <span className="font-bold text-slate-900 text-xs">
@@ -690,7 +694,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   </div>
                   <Link
                     href={`/loans/${l.id}`}
-                    className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-md text-[10px] shrink-0"
+                    className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-md text-[11px] shrink-0"
                   >
                     Review
                   </Link>
@@ -703,20 +707,20 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   className="p-2.5 rounded-lg border border-rose-200 bg-rose-50/40 text-xs flex items-center justify-between gap-2"
                 >
                   <div className="min-w-0">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-rose-800 block">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800 block">
                       Overdue Follow-up
                     </span>
                     <span className="font-bold text-slate-900 truncate block text-xs">
                       {c.customer?.name || c.loan.customerName}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-[11px] text-slate-500 font-mono">
                       Due: {MONEY(c.totalDueToday)}
                     </span>
                   </div>
                   {c.customer?.phone && (
                     <a
                       href={`tel:${c.customer.phone}`}
-                      className="px-2 py-1 bg-slate-900 hover:bg-black text-white font-bold rounded-md text-[10px] shrink-0 inline-flex items-center gap-1"
+                      className="px-2 py-1 bg-slate-900 hover:bg-black text-white font-bold rounded-md text-[11px] shrink-0 inline-flex items-center gap-1"
                     >
                       <Phone size={10} /> Call
                     </a>
@@ -740,14 +744,14 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
         <div className="lg:col-span-8 bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                 6-Month Portfolio Cash Flow
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
                 Actual disbursed capital vs loan repayment collections
               </p>
             </div>
-            <div className="flex items-center gap-3 text-[10px] font-bold">
+            <div className="flex items-center gap-3 text-[11px] font-bold">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-xs bg-red-600 inline-block" />
                 <span className="text-slate-600">Disbursed</span>
@@ -781,7 +785,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                       title={`Collected: ${MONEY(m.collected)}`}
                     />
                   </div>
-                  <span className="text-[10px] text-slate-600 font-bold uppercase">{m.monthLabel}</span>
+                  <span className="text-[11px] text-slate-600 font-bold uppercase">{m.monthLabel}</span>
                 </div>
               );
             })}
@@ -793,7 +797,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
           <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div className="flex items-center gap-2">
               <Activity size={16} className="text-slate-700" />
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                 Live Audit Activity
               </h3>
             </div>
@@ -812,12 +816,12 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="font-bold text-slate-900 text-xs truncate">{a.title}</p>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-mono shrink-0">
+                    <span className="text-[11px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-mono shrink-0">
                       {a.badge}
                     </span>
                   </div>
                   <p className="text-slate-600 font-medium text-[11px] truncate mt-0.5">{a.detail}</p>
-                  <span className="text-[10px] text-slate-400 font-medium">{a.time}</span>
+                  <span className="text-[11px] text-slate-400 font-medium">{a.time}</span>
                 </div>
               </div>
             ))}
@@ -828,10 +832,10 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
       {/* ── COMPACT EXECUTIVE QUICK ACTION PORTALS ── */}
       <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-2.5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+          <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
             Quick Action Portals
           </h3>
-          <span className="text-[10px] font-bold text-slate-500">Fast Navigation</span>
+          <span className="text-[11px] font-bold text-slate-500">Fast Navigation</span>
         </div>
 
         <div className="flex gap-2 flex-wrap pt-0.5">
@@ -839,7 +843,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
             className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
             href="/loans/new?fresh=true"
           >
-            <Plus size={14} /> Issue New Loan
+            <Plus size={14} /> New Loan
           </Link>
           <Link
             className="px-3.5 py-1.5 bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition"
@@ -870,20 +874,20 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
 
       {/* Quick Collect Modal (Dashboard) */}
       {collectingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs lms-overlay">
           <div className="bg-white rounded-2xl max-w-sm w-full border border-slate-200 shadow-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div>
-                <p className="text-[10px] font-black text-red-700 uppercase tracking-wider">
+                <p className="text-[11px] font-semibold text-red-700 uppercase tracking-wider">
                   Quick Field Collection
                 </p>
-                <h3 className="text-sm font-black text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   {collectingItem.customer?.name || collectingItem.loan.customerName}
                 </h3>
               </div>
               <button
                 onClick={() => setCollectingItem(null)}
-                className="text-slate-500 hover:text-slate-800 p-1 cursor-pointer"
+                className="text-slate-500 hover:text-slate-800 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -902,7 +906,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   {MONEY(collectingItem.installmentAmount)}
                 </span>
               </div>
-              <div className="flex justify-between border-t border-slate-200 pt-1 font-black text-slate-900">
+              <div className="flex justify-between border-t border-slate-200 pt-1 font-semibold text-slate-900">
                 <span>Total Expected:</span>
                 <span className="text-red-700">{MONEY(collectingItem.totalDueToday)}</span>
               </div>
@@ -910,7 +914,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
 
             <form onSubmit={handleConfirmCollect} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-900 mb-1">
+                <label className="block font-bold text-slate-900 mb-1" htmlFor="field-modules-dashboard-dashboard-page-1">
                   Amount Received (LKR)
                 </label>
                 <input
@@ -920,12 +924,12 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                   step="any"
                   value={collectAmount}
                   onChange={(e) => setCollectAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 text-slate-900"
+                  className="w-full px-3 py-2 text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 text-slate-900" id="field-modules-dashboard-dashboard-page-1"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-900 mb-1">
+                <label className="block font-bold text-slate-900 mb-1" htmlFor="field-modules-dashboard-dashboard-page-2">
                   Payment Method
                 </label>
                 <select
@@ -935,7 +939,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
                       e.target.value as "Cash" | "Bank Transfer" | "Cheque"
                     )
                   }
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-900 font-semibold"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-900 font-semibold" id="field-modules-dashboard-dashboard-page-2"
                 >
                   <option value="Cash">Cash (Field)</option>
                   <option value="Bank Transfer">Bank Transfer</option>

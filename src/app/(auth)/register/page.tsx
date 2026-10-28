@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   AtSign,
@@ -17,11 +17,11 @@ import {
   UserPlus,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
-import { useData } from "@/providers/data-provider";
-import type { Customer } from "@/types";
+import { api } from "@/lib/api-client";
+
 
 export default function RegisterPage() {
-  const { customers, addCustomer } = useData();
+  const [submitting, setSubmitting] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
@@ -36,20 +36,6 @@ export default function RegisterPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [registeredName, setRegisteredName] = useState("");
   const [assignedId, setAssignedId] = useState("");
-
-  // Helper to generate sequential Customer ID starting from CUS-001, CUS-002, etc.
-  const generateCustomerId = useCallback(() => {
-    const highestNum = customers.reduce((max, c) => {
-      const match = c.id.match(/^CUS-(\d+)$/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        return num > max ? num : max;
-      }
-      return max;
-    }, 0);
-    const nextNum = highestNum + 1;
-    return `CUS-${String(nextNum).padStart(3, "0")}`;
-  }, [customers]);
 
   const validateField = (field: string, value: string): string => {
     switch (field) {
@@ -93,7 +79,7 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors = {
@@ -115,28 +101,13 @@ export default function RegisterPage() {
     const hasError = Object.values(newErrors).some((err) => Boolean(err));
     if (hasError) return;
 
-    // Generate Customer ID and persist customer
-    const newId = generateCustomerId();
-    const newCustomer: Customer = {
-      id: newId,
-      name: form.name.trim(),
-      fullName: form.name.trim(),
-      nic: form.username.trim().toUpperCase(),
-      email: form.email.trim(),
-      phone: "",
-      address: "",
-      village: "",
-      town: "",
-      district: "Colombo",
-      monthlyIncome: 0,
-      status: "Active",
-      registeredAt: new Date().toISOString(),
-    };
-
-    addCustomer(newCustomer);
-    setRegisteredName(form.name.trim());
-    setAssignedId(newId);
-    setIsSuccess(true);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const customer = await api.register(form);
+      setRegisteredName(customer.name); setAssignedId(customer.id); setIsSuccess(true);
+    } catch (error) { setErrors(prev => ({ ...prev, email: error instanceof Error ? error.message : "Registration failed" })); }
+    finally { setSubmitting(false); }
   };
 
   const handleReset = () => {
@@ -433,7 +404,7 @@ export default function RegisterPage() {
                   </p>
                 )}
 
-                <button type="submit" className="login-submit">
+                <button type="submit" disabled={submitting} className="login-submit">
                   Create Account
                   <ArrowRight size={18} />
                 </button>

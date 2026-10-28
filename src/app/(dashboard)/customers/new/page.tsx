@@ -373,7 +373,7 @@ function CustomerRegistrationContent() {
     form.customOutstandingBalance,
   ]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -436,14 +436,14 @@ function CustomerRegistrationContent() {
           )}). ${form.previousRepaymentNotes}`
         : undefined,
       initialOutstandingBalance: computedLoanCalculations?.outstanding,
-      password: "User@123",
+
     };
 
-    addCustomer(newCustomer);
+    if (!(await addCustomer(newCustomer))) return;
 
     // 2. Attach Dedicated NIC Front & Back Documents if uploaded
     if (nicFrontUrl) {
-      addDocument({
+      if (!(await addDocument({
         id: `DOC-NICF-${Date.now()}`,
         customerId: newCustomer.id,
         title: "National Identity Card (Front)",
@@ -454,11 +454,11 @@ function CustomerRegistrationContent() {
         fileUrl: nicFrontUrl,
         uploadedAt: new Date().toISOString().slice(0, 10),
         uploader: "Registration Desk",
-      });
+      }))) return;
     }
 
     if (nicBackUrl) {
-      addDocument({
+      if (!(await addDocument({
         id: `DOC-NICB-${Date.now()}`,
         customerId: newCustomer.id,
         title: "National Identity Card (Back)",
@@ -469,11 +469,11 @@ function CustomerRegistrationContent() {
         fileUrl: nicBackUrl,
         uploadedAt: new Date().toISOString().slice(0, 10),
         uploader: "Registration Desk",
-      });
+      }))) return;
     }
 
     // 2. Attach All Uploaded Identity Documents
-    attachedDocs.forEach((doc, idx) => {
+    for (const [idx, doc] of attachedDocs.entries()) {
       const customerDoc: CustomerDocument = {
         id: `DOC-${Date.now()}-${idx}`,
         customerId: newCustomer.id,
@@ -486,8 +486,8 @@ function CustomerRegistrationContent() {
         uploadedAt: new Date().toISOString().slice(0, 10),
         uploader: "Registration Desk",
       };
-      addDocument(customerDoc);
-    });
+      if (!(await addDocument(customerDoc))) return;
+    }
 
     // 3. Register Existing Loan & Repayment History if present
     if (form.hasExistingLoan && computedLoanCalculations) {
@@ -522,7 +522,7 @@ function CustomerRegistrationContent() {
         installment: computedLoanCalculations.installment,
       };
 
-      addLoan(existingLoan);
+      if (!(await addLoan(existingLoan))) return;
 
       // 4. Create Previous Repayment Record if amount paid > 0
       if (computedLoanCalculations.paid > 0) {
@@ -540,7 +540,7 @@ function CustomerRegistrationContent() {
           collectedBy: "Branch Credit Officer",
           receiptNo: getNextReceiptNo(),
         };
-        addPayment(paymentRecord);
+        if (!(await addPayment(paymentRecord))) return;
       }
     }
 
@@ -552,7 +552,7 @@ function CustomerRegistrationContent() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto workspace-page form-page">
       {/* Top Header */}
       <div className="space-y-3">
         <Link
@@ -562,7 +562,7 @@ function CustomerRegistrationContent() {
         >
           <ArrowLeft size={18} />
         </Link>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
           Customer Registration
         </h1>
       </div>
@@ -579,7 +579,7 @@ function CustomerRegistrationContent() {
               <span>•</span>
               <span className="text-emerald-700 font-sans font-semibold">Active Customer Dossier</span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
               Customer Registered Successfully!
             </h2>
             <p className="text-xs sm:text-sm text-slate-600">
@@ -616,7 +616,7 @@ function CustomerRegistrationContent() {
       ) : (
         <>
           {errorMsg && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold" role="alert">
               {errorMsg}
             </div>
           )}
@@ -639,7 +639,7 @@ function CustomerRegistrationContent() {
                 <button
                   type="button"
                   onClick={() => goToStep(stepNum)}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-all cursor-pointer ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-semibold text-sm transition-all cursor-pointer ${
                     isActive
                       ? "bg-red-600 text-white shadow-md shadow-red-600/20 ring-4 ring-red-100"
                       : isCompleted
@@ -672,9 +672,9 @@ function CustomerRegistrationContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="sm:col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-1">
                     Full Legal Name <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -684,12 +684,12 @@ function CustomerRegistrationContent() {
                     required
                     value={form.fullName}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold" id="field-app-dashboard-customers-new-page-1"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-2">
                     National Identity Card (NIC) <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -699,17 +699,17 @@ function CustomerRegistrationContent() {
                     required
                     value={form.nic}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-mono font-bold uppercase" id="field-app-dashboard-customers-new-page-2"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Gender</label>
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-3">Gender</label>
                   <select
                     name="gender"
                     value={form.gender}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-3"
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
@@ -719,19 +719,19 @@ function CustomerRegistrationContent() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Date of Birth (DOB)</label>
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-4">Date of Birth (DOB)</label>
                   <input
                     type="date"
                     name="dob"
                     autoComplete="off"
                     value={form.dob}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-4"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-5">
                     Contact Number <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -741,24 +741,24 @@ function CustomerRegistrationContent() {
                     required
                     value={form.phone}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-bold" id="field-app-dashboard-customers-new-page-5"
                   />
                 </div>
 
                 <div className="sm:col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Email Address (Optional)</label>
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-6">Email Address (Optional)</label>
                   <input
                     type="email"
                     name="email"
                     autoComplete="off"
                     value={form.email}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-6"
                   />
                 </div>
 
                 <div className="sm:col-span-2 lg:col-span-4 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-7">
                     Address
                   </label>
                   <input
@@ -767,7 +767,7 @@ function CustomerRegistrationContent() {
                     autoComplete="off"
                     value={form.address}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-7"
                   />
                 </div>
               </div>
@@ -788,7 +788,7 @@ function CustomerRegistrationContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Name</label>
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-8">Name</label>
                   <input
                     type="text"
                     name="emergencyContactName"
@@ -796,12 +796,12 @@ function CustomerRegistrationContent() {
                     placeholder="Full name"
                     value={form.emergencyContactName}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-8"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Contact Number</label>
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-9">Contact Number</label>
                   <input
                     type="tel"
                     name="emergencyContactPhone"
@@ -809,17 +809,17 @@ function CustomerRegistrationContent() {
                     placeholder="e.g. 07XXXXXXXX"
                     value={form.emergencyContactPhone}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-9"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Relationship</label>
+                  <label className="text-xs font-bold text-slate-800" htmlFor="field-app-dashboard-customers-new-page-10">Relationship</label>
                   <select
                     name="emergencyContactRelationship"
                     value={form.emergencyContactRelationship}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-new-page-10"
                   >
                     <option value="">Select Relationship</option>
                     <option value="Other">Other</option>
@@ -833,7 +833,7 @@ function CustomerRegistrationContent() {
 
                   {form.emergencyContactRelationship === "Other" && (
                     <div className="pt-1.5 space-y-1 animate-in fade-in duration-150">
-                      <label className="text-[11px] font-bold text-slate-700">Specify Relationship</label>
+                      <label className="text-[11px] font-bold text-slate-700" htmlFor="field-app-dashboard-customers-new-page-11">Specify Relationship</label>
                       <input
                         type="text"
                         name="emergencyContactRelationshipCustom"
@@ -842,7 +842,7 @@ function CustomerRegistrationContent() {
                         value={form.emergencyContactRelationshipCustom}
                         onChange={handleChange}
                         className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-red-300 bg-red-50/20 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                        autoFocus
+                        autoFocus id="field-app-dashboard-customers-new-page-11"
                       />
                     </div>
                   )}
@@ -896,7 +896,7 @@ function CustomerRegistrationContent() {
                         Customer Photograph
                       </span>
                       {form.photoUrl && (
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                           ✓ Uploaded
                         </span>
                       )}
@@ -914,7 +914,7 @@ function CustomerRegistrationContent() {
                             <p className="text-[11px] font-bold text-slate-800 truncate">
                               Customer Photo
                             </p>
-                            <p className="text-[10px] text-slate-500">Portrait Image</p>
+                            <p className="text-[11px] text-slate-500">Portrait Image</p>
                           </div>
                           <button
                             type="button"
@@ -929,7 +929,7 @@ function CustomerRegistrationContent() {
                       <label className="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-red-50/30 transition text-center min-h-[160px]">
                         <Camera size={24} className="text-slate-400 mb-2" />
                         <span className="text-xs font-bold text-slate-700">Upload Photograph</span>
-                        <span className="text-[10px] text-slate-400 mt-1">JPG, PNG, WEBP</span>
+                        <span className="text-[11px] text-slate-400 mt-1">JPG, PNG, WEBP</span>
                         <input
                           type="file"
                           accept="image/png, image/jpeg, image/webp"
@@ -950,7 +950,7 @@ function CustomerRegistrationContent() {
                         NIC Front Image
                       </span>
                       {nicFrontUrl && (
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                           ✓ Uploaded
                         </span>
                       )}
@@ -968,7 +968,7 @@ function CustomerRegistrationContent() {
                             <p className="text-[11px] font-bold text-slate-800 truncate">
                               {nicFrontFileName || "nic_front.jpg"}
                             </p>
-                            <p className="text-[10px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
+                            <p className="text-[11px] text-slate-500">{nicFrontFileSize || "Image file"}</p>
                           </div>
                           <button
                             type="button"
@@ -1007,7 +1007,7 @@ function CustomerRegistrationContent() {
                         NIC Back Image
                       </span>
                       {nicBackUrl && (
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                           ✓ Uploaded
                         </span>
                       )}
@@ -1025,7 +1025,7 @@ function CustomerRegistrationContent() {
                             <p className="text-[11px] font-bold text-slate-800 truncate">
                               {nicBackFileName || "nic_back.jpg"}
                             </p>
-                            <p className="text-[10px] text-slate-500">{nicBackFileSize || "Image file"}</p>
+                            <p className="text-[11px] text-slate-500">{nicBackFileSize || "Image file"}</p>
                           </div>
                           <button
                             type="button"
@@ -1086,7 +1086,7 @@ function CustomerRegistrationContent() {
                         </div>
                         <div className="truncate">
                           <p className="text-xs font-bold text-slate-800 truncate">{doc.title}</p>
-                          <p className="text-[10px] text-slate-600">
+                          <p className="text-[11px] text-slate-600">
                             {doc.type.replace(/_/g, " ")} · {doc.fileSize} · {doc.fileName}
                           </p>
                         </div>
@@ -1095,7 +1095,7 @@ function CustomerRegistrationContent() {
                         type="button"
                         onClick={() => handleRemoveDoc(doc.id)}
                         className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white rounded-lg transition shrink-0 cursor-pointer"
-                        title="Remove document"
+                        title="Remove document" aria-label="Remove document"
                       >
                         <X size={14} />
                       </button>
@@ -1115,7 +1115,7 @@ function CustomerRegistrationContent() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                    <label className="text-[11px] font-semibold text-slate-500 block mb-1" htmlFor="field-app-dashboard-customers-new-page-12">
                       Document Title
                     </label>
                     <input
@@ -1123,18 +1123,18 @@ function CustomerRegistrationContent() {
                       autoComplete="off"
                       value={newDocTitle}
                       onChange={(e) => setNewDocTitle(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500" id="field-app-dashboard-customers-new-page-12"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                    <label className="text-xs font-bold text-slate-700 block mb-1" htmlFor="field-app-dashboard-customers-new-page-13">
                       Category
                     </label>
                     <select
                       value={newDocType}
                       onChange={(e) => setNewDocType(e.target.value as CustomerDocument["type"])}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500" id="field-app-dashboard-customers-new-page-13"
                     >
                       <option value="other">Other Supporting Document</option>
                       <option value="utility_bill">Utility Bill / Address Proof</option>
@@ -1219,18 +1219,18 @@ function CustomerRegistrationContent() {
                         className="w-16 h-16 rounded-2xl object-cover border-2 border-red-500 shadow-sm shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-700 font-black text-xl flex items-center justify-center shrink-0">
+                      <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-700 font-semibold text-xl flex items-center justify-center shrink-0">
                         {(form.fullName || "C").charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-bold text-slate-500">Customer ID:</span>
-                        <span className="font-mono text-xs font-black text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-lg">
+                        <span className="font-mono text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-lg">
                           {customerId}
                         </span>
                       </div>
-                      <h3 className="text-sm sm:text-base font-black text-slate-900">
+                      <h3 className="text-sm sm:text-base font-semibold text-slate-900">
                         {form.fullName || "No Name Entered"}
                       </h3>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
@@ -1315,11 +1315,11 @@ function CustomerRegistrationContent() {
                       <span className="text-slate-500 block font-medium">Customer Photograph</span>
                       <span className="mt-1 inline-block">
                         {form.photoUrl ? (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                             ✓ Photo Uploaded
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-2.5 py-0.5 rounded-full">
+                          <span className="text-[11px] font-bold text-slate-500 bg-slate-200 px-2.5 py-0.5 rounded-full">
                             Not Uploaded
                           </span>
                         )}
@@ -1330,7 +1330,7 @@ function CustomerRegistrationContent() {
                       <span className="text-slate-500 block font-medium">NIC Images</span>
                       <span className="mt-1 inline-block">
                         <span
-                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                             nicFrontUrl && nicBackUrl
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : nicFrontUrl || nicBackUrl

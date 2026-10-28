@@ -41,7 +41,7 @@ interface ScheduleRow {
 function LoanDetailsContent() {
   const params = useParams();
   const router = useRouter();
-  const { loans, customers, payments, updateLoan } = useData();
+  const { deleteLoan, loans, customers, payments, updateLoan } = useData();
 
   const loanId = (params?.loanId as string) || (params?.id as string);
   const loan = loans.find((l: Loan) => l.id === loanId);
@@ -146,7 +146,7 @@ function LoanDetailsContent() {
     return (
       <div className="p-6 max-w-4xl mx-auto space-y-4">
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xs text-center space-y-4">
-          <h2 className="text-xl font-black text-slate-900">Loan Facility Not Found</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Loan Facility Not Found</h2>
           <p className="text-xs text-slate-600 font-medium max-w-md mx-auto">
             The requested loan record does not exist or has been removed from the registry.
           </p>
@@ -169,38 +169,40 @@ function LoanDetailsContent() {
   const repaymentScheme = loan.repaymentType || "Capital + Interest";
   const isPending = (loan.status || "").toLowerCase() === "pending";
 
-  const handleApprove = () => {
-    updateLoan(loan.id, {
+  const handleApprove = async () => {
+    if (!(await updateLoan(loan.id, {
       status: "Active",
       approvedBy: "Branch Credit Committee",
       approvedAt: new Date().toISOString().slice(0, 10),
       notes: approvalNote ? `${loan.notes ? loan.notes + " | " : ""}Approval Note: ${approvalNote}` : loan.notes,
-    });
+    }))) return;
     setDecisionFeedback("Facility has been approved and moved to ACTIVE lending ledger.");
     setTimeout(() => setDecisionFeedback(""), 6000);
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (confirm("Are you sure you want to REJECT this loan application?")) {
-      updateLoan(loan.id, {
+      if (!(await updateLoan(loan.id, {
         status: "Rejected",
         approvedBy: "Branch Credit Committee (Declined)",
         approvedAt: new Date().toISOString().slice(0, 10),
         notes: approvalNote ? `${loan.notes ? loan.notes + " | " : ""}Rejection Reason: ${approvalNote}` : loan.notes,
-      });
+      }))) return;
       setDecisionFeedback("Loan application has been marked as REJECTED.");
       setTimeout(() => setDecisionFeedback(""), 6000);
     }
   };
 
-  function handleDelete() {
+  async function handleDelete() {
+    if (!loan) return;
     if (confirm("Are you sure you want to delete this loan record? This action cannot be undone.")) {
+      if (!(await deleteLoan(loan.id))) return;
       router.push("/loans");
     }
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto workspace-page">
       {/* ── Decision / Action Toast ─────────────────────────────────────── */}
       {decisionFeedback && (
         <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-xs">
@@ -210,7 +212,7 @@ function LoanDetailsContent() {
           </div>
           <button
             onClick={() => setDecisionFeedback("")}
-            className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer"
+            className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer" aria-label="Close"
           >
             <X size={14} />
           </button>
@@ -220,10 +222,10 @@ function LoanDetailsContent() {
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">
+          <p className="text-[11px] font-semibold text-red-600 uppercase tracking-widest">
             LOANS / FACILITY DETAILS
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
             <span className="font-mono text-red-700">{loan.id}</span>
           </h1>
           <p className="text-xs text-slate-600 font-medium">
@@ -253,7 +255,7 @@ function LoanDetailsContent() {
           <button
             type="button"
             className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl transition cursor-pointer"
-            onClick={handleDelete}
+            onClick={handleDelete} disabled={loan.status !== "Pending" && loan.status !== "Rejected"} title="Only pending or rejected applications without payments can be deleted"
           >
             <Trash2 size={14} /> Delete
           </button>
@@ -269,10 +271,10 @@ function LoanDetailsContent() {
                 <AlertTriangle size={20} />
               </div>
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded">
                   Committee Approval Required
                 </span>
-                <h3 className="text-base font-black text-amber-950 mt-1">
+                <h3 className="text-base font-semibold text-amber-950 mt-1">
                   Credit Committee & Delegated Lending Authority Review
                 </h3>
               </div>
@@ -284,12 +286,12 @@ function LoanDetailsContent() {
           </div>
 
           <p className="text-xs text-amber-900 font-medium">
-            This loan application requires sign-off by an authorized Administrator or Branch Credit Committee member. Review customer KYC, guarantor stakes, and repayment ability before releasing funds.
+            This loan application requires sign-off by an authorized Admin or Branch Credit Committee member. Review customer KYC, guarantor stakes, and repayment ability before releasing funds.
           </p>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-amber-950 mb-1">
+              <label className="block text-xs font-bold text-amber-950 mb-1" htmlFor="field-app-dashboard-loans-loanId-page-1">
                 Committee Approval Notes / Authority Remarks (Optional):
               </label>
               <input
@@ -297,7 +299,7 @@ function LoanDetailsContent() {
                 value={approvalNote}
                 onChange={(e) => setApprovalNote(e.target.value)}
                 placeholder="e.g. Approved under BM limit of LKR 500,000. Guarantor NIC verified."
-                className="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500" id="field-app-dashboard-loans-loanId-page-1"
               />
             </div>
 
@@ -345,7 +347,7 @@ function LoanDetailsContent() {
         <section className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-xs p-6 space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
             <div>
-              <h2 className="text-base font-black text-slate-900 tracking-tight">Financial Overview</h2>
+              <h2 className="text-base font-semibold text-slate-900 tracking-tight">Financial Overview</h2>
               <p className="text-xs text-slate-600 font-medium">Principal, interest structure, and real-time ledger balance.</p>
             </div>
             <div className="flex items-center gap-2">
@@ -370,59 +372,59 @@ function LoanDetailsContent() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Loan Amount</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-slate-900 mt-1 block">
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Loan Amount</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-slate-900 mt-1 block">
                 {MONEY(loan.principal || loan.amount || 0)}
               </strong>
             </div>
 
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Interest Rate</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-rose-700 mt-1 block">
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Interest Rate</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-rose-700 mt-1 block">
                 {loan.interestRate}% ({loan.ratePeriod})
               </strong>
             </div>
 
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Total Interest</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-rose-700 mt-1 block">
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Total Interest</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-rose-700 mt-1 block">
                 {MONEY(loan.interest || 0)}
               </strong>
             </div>
 
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Total Repayment</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-slate-900 mt-1 block">
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Total Repayment</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-slate-900 mt-1 block">
                 {MONEY(loan.totalRepayment || 0)}
               </strong>
             </div>
 
             <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider block">Net Disbursed</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-emerald-800 mt-1 block">
+              <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider block">Net Disbursed</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-emerald-800 mt-1 block">
                 {MONEY(loan.netDisbursement || 0)}
               </strong>
             </div>
 
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
                 {loan.repaymentFrequency} Installment
               </span>
-              <strong className="text-sm sm:text-base font-mono font-black text-red-600 mt-1 block">
+              <strong className="text-sm sm:text-base font-mono font-semibold text-red-600 mt-1 block">
                 {MONEY(loan.installment || 0)}
               </strong>
             </div>
 
             <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider block">Total Remitted</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-emerald-800 mt-1 block">
+              <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider block">Total Remitted</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-emerald-800 mt-1 block">
                 {MONEY(totalPaid)}
               </strong>
             </div>
 
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl">
-              <span className="text-[10px] font-bold text-rose-900 uppercase tracking-wider block">Outstanding Balance</span>
-              <strong className="text-sm sm:text-base font-mono font-black text-rose-800 mt-1 block">
+              <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wider block">Outstanding Balance</span>
+              <strong className="text-sm sm:text-base font-mono font-semibold text-rose-800 mt-1 block">
                 {MONEY(balanceDue)}
               </strong>
             </div>
@@ -445,7 +447,7 @@ function LoanDetailsContent() {
         {/* Borrower Information (1 col) */}
         <section className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 space-y-4">
           <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-base font-black text-slate-900 tracking-tight">Borrower Details</h2>
+            <h2 className="text-base font-semibold text-slate-900 tracking-tight">Borrower Details</h2>
             <p className="text-xs text-slate-600 font-medium">Identity and contact information</p>
           </div>
 
@@ -459,12 +461,12 @@ function LoanDetailsContent() {
                     className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-700 font-extrabold text-base flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-700 font-bold text-base flex items-center justify-center shrink-0">
                     {(customer.fullName || customer.name || "C").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">{customer.fullName || customer.name}</h3>
+                  <h3 className="text-sm font-semibold text-slate-900">{customer.fullName || customer.name}</h3>
                   <p className="text-xs text-slate-600 font-mono font-semibold">
                     ID: {customer.id} · NIC: {customer.nic}
                   </p>
@@ -491,7 +493,7 @@ function LoanDetailsContent() {
 
           {loan.guarantorName && (
             <div className="pt-3 border-t border-slate-100 space-y-1 text-xs">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Security Guarantor</span>
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Security Guarantor</span>
               <p className="font-bold text-slate-900">{loan.guarantorName}</p>
               {loan.guarantorNic && <p className="text-slate-600 font-mono text-[11px]">NIC: {loan.guarantorNic}</p>}
             </div>
@@ -540,17 +542,17 @@ function LoanDetailsContent() {
 
         {/* Tab 1: Repayment Schedule Preview */}
         {activeTab === "schedule" && (
-          <div className="overflow-x-auto min-w-full">
-            <table className="w-full text-left text-xs min-w-[760px]">
-              <thead className="bg-slate-50 text-[10px] text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
+          <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left text-xs min-w-[760px] lms-table">
+              <thead className="bg-slate-50 text-[11px] text-slate-700 font-semibold uppercase tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4">Cycle #</th>
-                  <th className="py-3 px-4">Due Date</th>
-                  <th className="py-3 px-4 text-right">Principal</th>
-                  <th className="py-3 px-4 text-right">Interest</th>
-                  <th className="py-3 px-4 text-right">Installment Amount</th>
-                  <th className="py-3 px-4 text-right">Balance Due</th>
-                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4" scope="col">Cycle #</th>
+                  <th className="py-3 px-4" scope="col">Due Date</th>
+                  <th className="py-3 px-4 text-right" scope="col">Principal</th>
+                  <th className="py-3 px-4 text-right" scope="col">Interest</th>
+                  <th className="py-3 px-4 text-right" scope="col">Installment Amount</th>
+                  <th className="py-3 px-4 text-right" scope="col">Balance Due</th>
+                  <th className="py-3 px-4 text-center" scope="col">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -579,7 +581,7 @@ function LoanDetailsContent() {
                     <td className="py-3 px-4 text-right font-mono font-semibold text-slate-700">
                       {MONEY(r.interestComponent)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono font-black text-slate-900">
+                    <td className="py-3 px-4 text-right font-mono font-semibold text-slate-900">
                       {MONEY(r.installmentAmount)}
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-700">
@@ -587,19 +589,19 @@ function LoanDetailsContent() {
                     </td>
                     <td className="py-3 px-4 text-center">
                       {r.status === "PAID" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
                           <CheckCircle2 size={11} className="text-emerald-700" /> Settled
                         </span>
                       ) : r.status === "OVERDUE" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
                           <AlertTriangle size={11} className="text-rose-700" /> Overdue
                         </span>
                       ) : r.status === "DUE_TODAY" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                           <Clock size={11} className="text-amber-700" /> Due Today
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                           Scheduled
                         </span>
                       )}
@@ -613,16 +615,16 @@ function LoanDetailsContent() {
 
         {/* Tab 2: Repayment History Ledger */}
         {activeTab === "ledger" && (
-          <div className="overflow-x-auto min-w-full">
-            <table className="w-full text-left text-xs min-w-[700px]">
-              <thead className="bg-slate-50 text-[10px] text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
+          <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left text-xs min-w-[700px] lms-table">
+              <thead className="bg-slate-50 text-[11px] text-slate-700 font-semibold uppercase tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-5">Receipt / Payment ID</th>
-                  <th className="py-3 px-5">Remittance Date</th>
-                  <th className="py-3 px-5">Allocation Type</th>
-                  <th className="py-3 px-5">Payment Method</th>
-                  <th className="py-3 px-5 text-right">Amount (LKR)</th>
-                  <th className="py-3 px-5 text-right">Official Receipt</th>
+                  <th className="py-3 px-5" scope="col">Receipt / Payment ID</th>
+                  <th className="py-3 px-5" scope="col">Remittance Date</th>
+                  <th className="py-3 px-5" scope="col">Allocation Type</th>
+                  <th className="py-3 px-5" scope="col">Payment Method</th>
+                  <th className="py-3 px-5 text-right" scope="col">Amount (LKR)</th>
+                  <th className="py-3 px-5 text-right" scope="col">Official Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -633,12 +635,12 @@ function LoanDetailsContent() {
                     </td>
                     <td className="py-3.5 px-5 text-slate-700 font-medium">{p.date}</td>
                     <td className="py-3.5 px-5">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
                         {p.type}
                       </span>
                     </td>
                     <td className="py-3.5 px-5 text-slate-700 font-medium">{p.method || "Cash"}</td>
-                    <td className="py-3.5 px-5 text-right font-mono font-black text-emerald-800">
+                    <td className="py-3.5 px-5 text-right font-mono font-semibold text-emerald-800">
                       {MONEY(p.amount)}
                     </td>
                     <td className="py-3.5 px-5 text-right">

@@ -221,7 +221,7 @@ export default function OverduePage() {
   };
 
   // Submit Overdue Settlement
-  const handleConfirmSettlement = (e: React.FormEvent) => {
+  const handleConfirmSettlement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settlingItem) return;
 
@@ -245,7 +245,7 @@ export default function OverduePage() {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setActiveReceiptPayment(newPayment);
     setToastMessage(
       `Successfully collected ${MONEY(numAmount)} from ${
@@ -303,18 +303,22 @@ export default function OverduePage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3">
+    <section className="min-h-screen bg-slate-50 font-sans">
+      <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Overdue payments</h2>
+        <p>Review overdue accounts and record recovery payments.</p>
+      </div>
         {/* ── Toast Notification ── */}
         {toastMessage && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-fade-in">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-fade-in" role="status">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
               <span>{toastMessage}</span>
             </div>
             <button
               onClick={() => setToastMessage("")}
-              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer"
+              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer" aria-label="Close"
             >
               <X size={14} />
             </button>
@@ -334,13 +338,13 @@ export default function OverduePage() {
               placeholder="Search borrower, NIC, phone, loan number, guarantor…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition"
+              className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition" aria-label="Search borrower, NIC, phone, loan number, guarantor…"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5" aria-label="Clear search"
               >
                 <X size={12} />
               </button>
@@ -370,20 +374,20 @@ export default function OverduePage() {
         </div>
 
         {/* ═══ Financial KPI Metric Cards (Customer Theme Micro KPIs) ════════ */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {/* Card 1: Total Overdue Arrears */}
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
               <DollarSign size={16} className="text-red-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Total Overdue Capital
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-red-600 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-red-600 leading-tight">
                 {MONEY(totalOverdueAmount)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 Accumulated arrears
               </p>
             </div>
@@ -395,13 +399,13 @@ export default function OverduePage() {
               <User size={16} className="text-rose-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Overdue Accounts
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {overdueList.length}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 Requires field contact
               </p>
             </div>
@@ -413,13 +417,13 @@ export default function OverduePage() {
               <AlertTriangle size={16} className="text-amber-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Critical (30+ DPD)
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-amber-700 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-amber-700 leading-tight">
                 {criticalOverdueCount}
               </p>
-              <p className="text-[10px] text-amber-700 font-semibold truncate">
+              <p className="text-[11px] text-amber-700 font-semibold truncate">
                 Priority recovery
               </p>
             </div>
@@ -431,10 +435,10 @@ export default function OverduePage() {
               <ShieldAlert size={16} className="text-red-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-red-600 uppercase tracking-wider truncate">
                 Portfolio At Risk (PAR)
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {parRate}%
               </p>
               <div className="w-24 bg-slate-100 rounded-full h-1.5 mt-1 overflow-hidden">
@@ -450,7 +454,7 @@ export default function OverduePage() {
         {/* ═══ Filter Tabs & Controls Row ════════════════════════════════════ */}
         <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
           {/* Aging Filter Pills */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5 table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
             {[
               { id: "ALL", label: `All (${overdueList.length})` },
               { id: "GRACE", label: "1-14 Days" },
@@ -519,18 +523,18 @@ export default function OverduePage() {
         {/* ═══ Overdue Accounts Ledger Table (Customer Theme) ════════════════ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           {filteredList.length > 0 ? (
-            <div className="overflow-x-auto min-w-full">
-              <table className="w-full text-left text-xs whitespace-nowrap min-w-[900px]">
-                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+            <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+              <table className="w-full text-left text-xs whitespace-nowrap min-w-[900px] lms-table">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                   <tr>
-                    <th className="py-3 px-5">Borrower</th>
-                    <th className="py-3 px-4">Facility</th>
-                    <th className="py-3 px-4">Overdue Aging (DPD)</th>
-                    <th className="py-3 px-4 text-right">Arrears</th>
-                    <th className="py-3 px-4 text-right">Penalty</th>
-                    <th className="py-3 px-4 text-right">Total Past Due</th>
-                    <th className="py-3 px-4">Guarantor</th>
-                    <th className="py-3 px-5 text-right">Recovery Actions</th>
+                    <th className="py-3 px-5" scope="col">Borrower</th>
+                    <th className="py-3 px-4" scope="col">Facility</th>
+                    <th className="py-3 px-4" scope="col">Overdue Aging (DPD)</th>
+                    <th className="py-3 px-4 text-right" scope="col">Arrears</th>
+                    <th className="py-3 px-4 text-right" scope="col">Penalty</th>
+                    <th className="py-3 px-4 text-right" scope="col">Total Past Due</th>
+                    <th className="py-3 px-4" scope="col">Guarantor</th>
+                    <th className="py-3 px-5 text-right" scope="col">Recovery Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -546,7 +550,7 @@ export default function OverduePage() {
                               className="w-8 h-8 rounded-xl object-cover border border-slate-200 shrink-0"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-bold text-[11px] flex items-center justify-center shrink-0">
                               {(item.customer?.name || "B").charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -557,7 +561,7 @@ export default function OverduePage() {
                             >
                               {item.customer?.fullName || item.customer?.name || item.loan.customerName}
                             </Link>
-                            <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                            <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1">
                               <span>NIC: {item.customer?.nic || "—"}</span>
                               {item.customer?.phone && (
                                 <>
@@ -580,7 +584,7 @@ export default function OverduePage() {
                         >
                           {item.loan.loanNo || item.loan.id}
                         </Link>
-                        <span className="text-[10px] text-slate-500 block truncate max-w-[130px]">
+                        <span className="text-[11px] text-slate-500 block truncate max-w-[130px]">
                           {item.loan.purpose || "Business Facility"}
                         </span>
                       </td>
@@ -589,7 +593,7 @@ export default function OverduePage() {
                       <td className="py-3 px-4">
                         <div className="inline-flex items-center gap-1">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
                               item.fin.overdueDays > 60
                                 ? "bg-rose-100 text-rose-800"
                                 : item.fin.overdueDays > 30
@@ -600,7 +604,7 @@ export default function OverduePage() {
                             {item.fin.overdueDays} DPD
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+                        <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
                           {item.fin.missedInstallments} cycle{item.fin.missedInstallments > 1 ? "s" : ""} defaulted
                         </span>
                       </td>
@@ -620,7 +624,7 @@ export default function OverduePage() {
                       </td>
 
                       {/* Total Past Due */}
-                      <td className="py-3 px-4 text-right font-mono font-black text-red-600 text-xs">
+                      <td className="py-3 px-4 text-right font-mono font-semibold text-red-600 text-xs">
                         {MONEY(item.totalOverdueWithPenalty)}
                       </td>
 
@@ -629,7 +633,7 @@ export default function OverduePage() {
                         <p className="font-semibold text-slate-800 text-[11px]">
                           {item.customer?.guarantorName || item.loan.guarantorName || "None"}
                         </p>
-                        <p className="text-[10px] text-slate-500 font-mono">
+                        <p className="text-[11px] text-slate-500 font-mono">
                           {item.customer?.guarantorPhone || item.loan.guarantorPhone || "—"}
                         </p>
                       </td>
@@ -656,7 +660,7 @@ export default function OverduePage() {
                               setReminderCopied(false);
                             }}
                             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition cursor-pointer"
-                            title="Send SMS / WhatsApp Reminder"
+                            title="Send SMS / WhatsApp Reminder" aria-label="Send SMS / WhatsApp Reminder"
                           >
                             <MessageSquare size={12} />
                           </button>
@@ -677,7 +681,7 @@ export default function OverduePage() {
                             type="button"
                             onClick={() => setDemandNoticeItem(item)}
                             className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition cursor-pointer"
-                            title="Formal Letter of Demand"
+                            title="Formal Letter of Demand" aria-label="Formal Letter of Demand"
                           >
                             <FileWarning size={12} />
                           </button>
@@ -702,8 +706,8 @@ export default function OverduePage() {
 
       {/* ── 1. Quick Overdue Settlement Modal ── */}
       {settlingItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-4 lms-overlay">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4 lms-dialog">
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -714,7 +718,7 @@ export default function OverduePage() {
               <button
                 type="button"
                 onClick={() => setSettlingItem(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -743,7 +747,7 @@ export default function OverduePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-overdue-page-1">
                   Amount to Collect (LKR) *
                 </label>
                 <input
@@ -752,19 +756,19 @@ export default function OverduePage() {
                   value={settleAmount}
                   onChange={(e) => setSettleAmount(e.target.value)}
                   className="w-full px-3 py-1.5 h-9 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
+                  required id="field-app-dashboard-overdue-page-1"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-overdue-page-2">
                     Payment Method
                   </label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full px-3 py-1.5 h-9 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 focus:outline-none text-xs"
+                    className="w-full px-3 py-1.5 h-9 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 focus:outline-none text-xs" id="field-app-dashboard-overdue-page-2"
                   >
                     <option value="Cash">Cash (Field)</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -773,7 +777,7 @@ export default function OverduePage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-overdue-page-3">
                     Collector / Officer
                   </label>
                   <input
@@ -781,13 +785,13 @@ export default function OverduePage() {
                     value={collectorName}
                     onChange={(e) => setCollectorName(e.target.value)}
                     className="w-full px-3 py-1.5 h-9 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:outline-none text-xs"
-                    required
+                    required id="field-app-dashboard-overdue-page-3"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-overdue-page-4">
                   Recovery Notes
                 </label>
                 <input
@@ -795,7 +799,7 @@ export default function OverduePage() {
                   value={settleNotes}
                   onChange={(e) => setSettleNotes(e.target.value)}
                   className="w-full px-3 py-1.5 h-9 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none text-xs"
-                  placeholder="e.g. Received partial recovery at borrower doorstep"
+                  placeholder="e.g. Received partial recovery at borrower doorstep" id="field-app-dashboard-overdue-page-4"
                 />
               </div>
 
@@ -821,8 +825,8 @@ export default function OverduePage() {
 
       {/* ── 2. SMS & WhatsApp Reminder Modal ── */}
       {reminderItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-3">
+        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-4 lms-overlay">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-3 lms-dialog">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
@@ -833,7 +837,7 @@ export default function OverduePage() {
               <button
                 type="button"
                 onClick={() => setReminderItem(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -897,19 +901,19 @@ export default function OverduePage() {
 
       {/* ── 3. Formal Letter of Demand / Default Notice Modal ── */}
       {demandNoticeItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 lms-overlay">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150 lms-dialog">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <BrandLogo size="sm" theme="light" />
-                <span className="text-xs font-black uppercase text-red-600 tracking-wider">
+                <span className="text-xs font-semibold uppercase text-red-600 tracking-wider">
                   Formal Notice of Default
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setDemandNoticeItem(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -997,6 +1001,6 @@ export default function OverduePage() {
           onClose={() => setActiveReceiptPayment(null)}
         />
       )}
-    </main>
+    </section>
   );
 }

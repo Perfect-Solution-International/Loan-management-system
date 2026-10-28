@@ -10,7 +10,7 @@ import Sidebar from "@/components/layout/Sidebar";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { loans } = useData();
+  const { loans, currentUser } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -26,28 +26,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     [loans]
   );
 
-  // In the Admin Dashboard portal, ensure Administrator session is active
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const role = localStorage.getItem("psi_user_role");
-      if (!role || role === "Staff" || role !== "Administrator") {
-        localStorage.setItem("psi_user_role", "Administrator");
-        localStorage.setItem("psi_active_staff_id", "STF-01");
-        localStorage.setItem("psi_logged_staff_name", "System Administrator");
-      }
-    }
-  }, []);
-
   // Dynamic header breadcrumb name
   const pageTitle = React.useMemo(() => {
     if (pathname === "/" || pathname === "/dashboard") return "Dashboard";
     if (pathname === "/staffdashboard") return "Staff Dashboard";
-    if (pathname.startsWith("/customers/new")) return "Register Customer";
-    if (pathname.startsWith("/customers/")) return "Borrower Profile";
+    if (pathname.startsWith("/customers/new")) return "New Customer";
+    if (pathname.startsWith("/customers/")) return "Customer Profile";
     if (pathname === "/customers") return "Customer Directory";
-    if (pathname === "/loans/new") return "Issue Loan Facility";
-    if (pathname.startsWith("/loans/")) return "Loan Record";
-    if (pathname === "/loans") return "Loans Directory";
+    if (pathname === "/loans/new") return "New Loan";
+    if (pathname.startsWith("/loans/")) return "Loan Details";
+    if (pathname === "/loans") return "Loan Register";
     if (pathname.startsWith("/collections")) return "Today's Collections";
     if (pathname.startsWith("/overdue")) return "Overdue Payments & Recovery";
     if (pathname.startsWith("/arrears")) return "Delinquency & Arrears";
@@ -61,13 +49,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     return "Portfolio Operations";
   }, [pathname]);
 
-  const isStaffView = pathname === "/staffdashboard";
+  const isStaffView = currentUser?.role === "Staff";
 
   // Role-appropriate notification count
   const notificationCount = isStaffView ? overdueLoans.length : pendingLoans.length;
 
   return (
-    <div className="flex h-screen bg-slate-100/80 overflow-hidden font-sans">
+    <div className="dashboard-shell flex h-dvh bg-slate-100/80 overflow-hidden font-sans">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       {/* ── Desktop & Tablet Sidebar ───────────────────────────────────────── */}
       <div className="hidden md:flex shrink-0">
         <Sidebar />
@@ -91,7 +80,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* ── Main Content Area ──────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Top Navbar */}
-        <header className="h-16 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between shadow-2xs z-10 shrink-0">
+        <header className="workspace-header h-16 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between gap-3 shadow-2xs z-10 shrink-0">
           <div className="flex items-center space-x-3 min-w-0">
             {/* Hamburger Button for Mobile */}
             <button
@@ -99,6 +88,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileMenuOpen(true)}
               className="p-2 text-slate-700 hover:text-red-600 hover:bg-red-50 rounded-xl transition md:hidden cursor-pointer"
               aria-label="Open navigation menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="workspace-navigation"
             >
               <Menu size={19} />
             </button>
@@ -106,12 +97,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             {/* Current Active Location */}
             <div className="flex items-center space-x-2.5 min-w-0">
               <div className="hidden sm:flex items-center space-x-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-red-600 font-mono">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-red-600 font-mono">
                   PSI ONE
                 </span>
                 <span className="text-slate-300">/</span>
               </div>
-              <h1 className="text-sm sm:text-base font-black text-slate-900 truncate tracking-tight">
+              <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate tracking-tight">
                 {pageTitle}
               </h1>
             </div>
@@ -128,6 +119,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
                   title="Admin Notifications"
                   aria-label="View admin notifications"
+                  aria-expanded={notificationsOpen}
+                  aria-controls="workspace-notifications"
                 >
                   {pendingLoans.length > 0 ? (
                     <BellRing size={20} className="text-red-600" />
@@ -135,7 +128,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                     <Bell size={20} />
                   )}
                   {pendingLoans.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[11px] font-semibold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                       {pendingLoans.length}
                     </span>
                   )}
@@ -148,16 +141,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                       className="fixed inset-0 z-40"
                       onClick={() => setNotificationsOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div id="workspace-notifications" className="notification-popover absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
                       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                         <div className="flex items-center gap-2">
                           <Bell size={16} className="text-red-600" />
-                          <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                          <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                             Admin Approval Notifications
                           </span>
                         </div>
                         {pendingLoans.length > 0 && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
                             {pendingLoans.length} Action Required
                           </span>
                         )}
@@ -169,11 +162,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                             <div className="flex items-start gap-2.5">
                               <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 mt-1.5 animate-ping" />
                               <div>
-                                <p className="text-xs font-black text-slate-900">
+                                <p className="text-xs font-semibold text-slate-900">
                                   {pendingLoans.length} Loan Application{pendingLoans.length > 1 ? "s" : ""} Awaiting Approval
                                 </p>
                                 <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">
-                                  Underwriting documents and guarantor checks completed. Requires Credit Committee sign-off.
+                                  Review the application details before making an approval decision.
                                 </p>
                               </div>
                             </div>
@@ -202,9 +195,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className="min-w-0 outline-none">
+        <div id="main-content" role="main" tabIndex={-1} className="workspace-content flex-1 min-h-0 min-w-0 overflow-y-auto outline-none">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );

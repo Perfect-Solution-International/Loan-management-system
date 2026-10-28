@@ -81,10 +81,22 @@ func (h *LoanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 		l.ID = "LN-" + uuid.New().String()[:8]
 	}
 	if l.LoanNo == "" {
-		l.LoanNo = fmt.Sprintf("LN-%d-%s", time.Now().Year(), l.ID[3:])
+		l.LoanNo = fmt.Sprintf("LN-%d-%s", time.Now().Year(), l.ID)
 	}
 	if l.Status == "" {
-		l.Status = "Active"
+		l.Status = "Pending"
+	}
+	claims := r.Context().Value(middleware.UserContextKey).(*middleware.Claims)
+	if claims.Role != "Admin" && !claims.Permissions.ApproveLoans {
+		l.Status = "Pending"
+		l.ApprovedAt = ""
+		l.ApprovedBy = ""
+	}
+	switch l.Status {
+	case "Pending", "Active", "Completed", "Overdue":
+	default:
+		sendJSON(w, 400, map[string]string{"error": "Invalid loan status"})
+		return
 	}
 	if l.IssueDate == "" {
 		l.IssueDate = time.Now().Format("2006-01-02")
@@ -166,7 +178,8 @@ func (h *LoanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateStatusRequest struct {
-	Status string `json:"status"` // Active, Completed, Rejected
+	Notes  *string `json:"notes"`
+	Status string  `json:"status"` // Active, Completed, Rejected
 }
 
 func (h *LoanHandler) UpdateLoanStatus(w http.ResponseWriter, r *http.Request) {
@@ -182,14 +195,21 @@ func (h *LoanHandler) UpdateLoanStatus(w http.ResponseWriter, r *http.Request) {
 		approver = claims.Email
 	}
 
-	if err := h.loanRepo.UpdateStatus(id, req.Status, approver); err != nil {
-		sendJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	switch req.Status {
+	case "Active", "Rejected":
+	default:
+		sendJSON(w, 400, map[string]string{"error": "Only pending loans can be approved or rejected"})
 		return
 	}
-
-	sendJSON(w, http.StatusOK, map[string]string{
-		"message": "Loan status updated to " + req.Status,
-		"id":      id,
-	})
+	if err := h.loanRepo.Decide(id, req.Status, approver, req.Notes); err != nil {
+		fail(w, err)
+		return
+	}
+	loan, err := h.loanRepo.GetByID(id)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	_ = h.auditRepo.Create(&models.AuditLog{ID: "AUD-" + uuid.NewString()[:8], UserName: approver, UserRole: "Staff", Action: "LOAN_" + req.Status, Module: "Loans", Details: "Loan " + id + " marked " + req.Status, Severity: "INFO"})
+	sendJSON(w, 200, loan)
 }
-

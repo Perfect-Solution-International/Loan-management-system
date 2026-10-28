@@ -62,18 +62,18 @@ function SettingsContent() {
   const [notificationMsg, setNotificationMsg] = useState("");
 
   // Handle saving financial configuration
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(formSettings);
+    if (!(await updateSettings(formSettings))) return;
     setNotificationMsg("System configuration & interest rate rules saved successfully!");
     setTimeout(() => setNotificationMsg(""), 4500);
   };
 
   // Handle restoring factory default configuration
-  const handleResetDefaults = () => {
+  const handleResetDefaults = async () => {
     if (confirm("Are you sure you want to restore factory default calculation rules?")) {
+      if (!(await updateSettings(initialSettings))) return;
       setFormSettings(initialSettings);
-      updateSettings(initialSettings);
       setNotificationMsg("System settings restored to factory defaults.");
       setTimeout(() => setNotificationMsg(""), 4500);
     }
@@ -116,15 +116,15 @@ function SettingsContent() {
   }, [simPrincipal, simDuration, formSettings]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="mx-auto workspace-page">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-black text-red-600 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">
             ADMINISTRATION & CONFIGURATION
           </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-            System Settings & Configuration
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">
+            System settings
           </h1>
           <p className="text-xs text-slate-700 font-medium">
             Define default interest rates, deduction rules, fee structures, and security configurations.
@@ -134,7 +134,7 @@ function SettingsContent() {
 
       {/* Notification Toast */}
       {notificationMsg && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between shadow-xs">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between shadow-xs" role="status">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
             <span className="font-semibold">{notificationMsg}</span>
@@ -247,7 +247,7 @@ function SettingsContent() {
                           % / mo
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-600 font-medium">Default for monthly installment products.</p>
+                      <p className="text-[11px] text-slate-600 font-medium">Default for monthly installment products.</p>
                     </div>
 
                     <div className="space-y-1.5">
@@ -274,7 +274,7 @@ function SettingsContent() {
                           % / wk
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-600 font-medium">Default for micro weekly lending.</p>
+                      <p className="text-[11px] text-slate-600 font-medium">Default for micro weekly lending.</p>
                     </div>
 
                     <div className="space-y-1.5">
@@ -301,7 +301,7 @@ function SettingsContent() {
                           % / day
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-600 font-medium">Default for short-term daily merchant loans.</p>
+                      <p className="text-[11px] text-slate-600 font-medium">Default for short-term daily merchant loans.</p>
                     </div>
                   </div>
                 </div>
@@ -347,7 +347,7 @@ function SettingsContent() {
                           %
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-600 font-medium">
+                      <p className="text-[11px] text-slate-600 font-medium">
                         Withheld at disbursement towards capital reserve / security deposit.
                       </p>
                     </div>
@@ -373,7 +373,7 @@ function SettingsContent() {
                           Installment Distributed (Collect with periodic dues)
                         </option>
                       </select>
-                      <p className="text-[10px] text-slate-600 font-medium">
+                      <p className="text-[11px] text-slate-600 font-medium">
                         Governs whether borrower receives Principal minus Interest upfront.
                       </p>
                     </div>
@@ -396,7 +396,7 @@ function SettingsContent() {
                         className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
-                      <p className="text-[10px] text-slate-600 font-medium">
+                      <p className="text-[11px] text-slate-600 font-medium">
                         Documentation, loan verification, and credit assessment fee.
                       </p>
                     </div>
@@ -419,7 +419,7 @@ function SettingsContent() {
                         className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
-                      <p className="text-[10px] text-slate-600 font-medium">
+                      <p className="text-[11px] text-slate-600 font-medium">
                         Stamp duty, notary verification, and account ledger creation fee.
                       </p>
                     </div>
@@ -467,7 +467,7 @@ function SettingsContent() {
                           % / cycle
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-600 font-medium">
+                      <p className="text-[11px] text-slate-600 font-medium">
                         Calculated as a percentage of overdue installment value.
                       </p>
                     </div>
@@ -490,7 +490,7 @@ function SettingsContent() {
                         className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                         required
                       />
-                      <p className="text-[10px] text-slate-600 font-medium">
+                      <p className="text-[11px] text-slate-600 font-medium">
                         Buffer period granted before an unpaid loan triggers Overdue status.
                       </p>
                     </div>
@@ -558,7 +558,7 @@ function SettingsContent() {
                         Live Policy Simulation
                       </h3>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-rose-300 font-semibold border border-red-500/30">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/20 text-rose-300 font-semibold border border-red-500/30">
                       Real-time
                     </span>
                   </div>
@@ -569,7 +569,7 @@ function SettingsContent() {
 
                   <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/10 text-xs">
                     <div>
-                      <label className="text-[11px] font-bold text-white block mb-1">
+                      <label className="text-[11px] font-bold text-white block mb-1" htmlFor="field-app-dashboard-settings-page-1">
                         Test Loan Principal
                       </label>
                       <input
@@ -578,11 +578,11 @@ function SettingsContent() {
                         value={simPrincipal}
                         onChange={(e) => setSimPrincipal(parseFloat(e.target.value) || 0)}
                         className="w-full px-3.5 py-2 text-xs bg-white text-slate-950 font-mono font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
-                        style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
+                        style={{ color: '#0f172a', backgroundColor: '#ffffff' }} id="field-app-dashboard-settings-page-1"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-white block mb-1">
+                      <label className="text-[11px] font-bold text-white block mb-1" htmlFor="field-app-dashboard-settings-page-2">
                         Loan Duration (Months)
                       </label>
                       <input
@@ -592,7 +592,7 @@ function SettingsContent() {
                         value={simDuration}
                         onChange={(e) => setSimDuration(parseInt(e.target.value, 10) || 1)}
                         className="w-full px-3.5 py-2 text-xs bg-white text-slate-950 font-mono font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
-                        style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
+                        style={{ color: '#0f172a', backgroundColor: '#ffffff' }} id="field-app-dashboard-settings-page-2"
                       />
                     </div>
                   </div>
@@ -639,13 +639,13 @@ function SettingsContent() {
                     </div>
 
                     <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                      <p className="text-[10px] text-rose-400 uppercase font-bold tracking-wider">
+                      <p className="text-[11px] text-rose-400 uppercase font-bold tracking-wider">
                         Total Repayment Due
                       </p>
-                      <p className="text-xl font-black font-mono text-rose-300">
+                      <p className="text-xl font-semibold font-mono text-rose-300">
                         {MONEY(simCalculations.totalRepayment)}
                       </p>
-                      <p className="text-[10px] text-slate-300 font-medium mt-1">
+                      <p className="text-[11px] text-slate-300 font-medium mt-1">
                         Monthly Installment: <span className="font-bold text-white font-mono">{MONEY(simCalculations.monthlyInstallment)}</span>
                       </p>
                     </div>
@@ -769,7 +769,7 @@ export default function SettingsPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-xs text-slate-400">
+        <div className="mx-auto text-xs text-slate-400 workspace-page">
           Loading system settings...
         </div>
       }

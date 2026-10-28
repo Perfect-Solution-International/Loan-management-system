@@ -29,7 +29,7 @@ func (r *PaymentRepository) GetAll() ([]models.Payment, error) {
 	}
 	defer rows.Close()
 
-	var payments []models.Payment
+	payments := make([]models.Payment, 0)
 	for rows.Next() {
 		p, err := scanPayment(rows)
 		if err != nil {
@@ -38,7 +38,7 @@ func (r *PaymentRepository) GetAll() ([]models.Payment, error) {
 		payments = append(payments, *p)
 	}
 
-	return payments, nil
+	return payments, rows.Err()
 }
 
 func (r *PaymentRepository) GetByLoanID(loanID string) ([]models.Payment, error) {
@@ -54,7 +54,7 @@ func (r *PaymentRepository) GetByLoanID(loanID string) ([]models.Payment, error)
 	}
 	defer rows.Close()
 
-	var payments []models.Payment
+	payments := make([]models.Payment, 0)
 	for rows.Next() {
 		p, err := scanPayment(rows)
 		if err != nil {
@@ -62,7 +62,7 @@ func (r *PaymentRepository) GetByLoanID(loanID string) ([]models.Payment, error)
 		}
 		payments = append(payments, *p)
 	}
-	return payments, nil
+	return payments, rows.Err()
 }
 
 func (r *PaymentRepository) GetByCustomerID(customerID string) ([]models.Payment, error) {
@@ -78,7 +78,7 @@ func (r *PaymentRepository) GetByCustomerID(customerID string) ([]models.Payment
 	}
 	defer rows.Close()
 
-	var payments []models.Payment
+	payments := make([]models.Payment, 0)
 	for rows.Next() {
 		p, err := scanPayment(rows)
 		if err != nil {
@@ -86,7 +86,7 @@ func (r *PaymentRepository) GetByCustomerID(customerID string) ([]models.Payment
 		}
 		payments = append(payments, *p)
 	}
-	return payments, nil
+	return payments, rows.Err()
 }
 
 func (r *PaymentRepository) GetCount() (int, error) {
@@ -122,14 +122,18 @@ func scanPayment(rows *sql.Rows) (*models.Payment, error) {
 	}
 
 	p.Date = dt.Format("2006-01-02")
-	if notes != nil { p.Notes = *notes }
-	if receiptNo != nil { p.ReceiptNo = *receiptNo }
+	if notes != nil {
+		p.Notes = *notes
+	}
+	if receiptNo != nil {
+		p.ReceiptNo = *receiptNo
+	}
 	return &p, nil
 }
 
 // ── ONLINE PAYMENTS REPOSITORY METHODS ──────────────────────────────────────
 
-func (r *PaymentRepository) GetAllOnlinePayments(status string) ([]models.OnlinePayment, error) {
+func (r *PaymentRepository) GetAllOnlinePayments(status, loanID, customerID string) ([]models.OnlinePayment, error) {
 	query := `
 		SELECT id, loan_id, loan_no, customer_id, customer_name, customer_phone, customer_nic,
 		       amount, payment_date, submitted_at, bank_name, reference_number, slip_url,
@@ -137,21 +141,14 @@ func (r *PaymentRepository) GetAllOnlinePayments(status string) ([]models.Online
 		       receipt_no, notes, payment_method, created_at, updated_at
 		FROM online_payments
 	`
-	var rows *sql.Rows
-	var err error
-	if status != "" && status != "ALL" {
-		query += ` WHERE status = $1 ORDER BY submitted_at DESC`
-		rows, err = r.db.Query(query, status)
-	} else {
-		query += ` ORDER BY submitted_at DESC`
-		rows, err = r.db.Query(query)
-	}
+	query += " WHERE ($1='' OR $1='ALL' OR status=$1) AND ($2='' OR loan_id=$2) AND ($3='' OR customer_id=$3) ORDER BY submitted_at DESC"
+	rows, err := r.db.Query(query, status, loanID, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query online payments: %w", err)
 	}
 	defer rows.Close()
 
-	var list []models.OnlinePayment
+	list := make([]models.OnlinePayment, 0)
 	for rows.Next() {
 		op, err := scanOnlinePayment(rows)
 		if err != nil {
@@ -159,7 +156,7 @@ func (r *PaymentRepository) GetAllOnlinePayments(status string) ([]models.Online
 		}
 		list = append(list, *op)
 	}
-	return list, nil
+	return list, rows.Err()
 }
 
 func (r *PaymentRepository) GetOnlinePaymentByID(id string) (*models.OnlinePayment, error) {
@@ -218,18 +215,42 @@ func scanOnlinePayment(rows *sql.Rows) (*models.OnlinePayment, error) {
 		return nil, err
 	}
 	op.PaymentDate = dt.Format("2006-01-02")
-	if loanNo != nil { op.LoanNo = *loanNo }
-	if phone != nil { op.CustomerPhone = *phone }
-	if nic != nil { op.CustomerNIC = *nic }
-	if ref != nil { op.ReferenceNumber = *ref }
-	if fileName != nil { op.SlipFileName = *fileName }
-	if fileType != nil { op.SlipFileType = *fileType }
-	if reviewer != nil { op.ReviewedBy = *reviewer }
-	if reviewedAt != nil { op.ReviewedAt = *reviewedAt }
-	if revNotes != nil { op.ReviewNotes = *revNotes }
-	if receiptNo != nil { op.ReceiptNo = *receiptNo }
-	if notes != nil { op.Notes = *notes }
-	if method != nil { op.PaymentMethod = *method }
+	if loanNo != nil {
+		op.LoanNo = *loanNo
+	}
+	if phone != nil {
+		op.CustomerPhone = *phone
+	}
+	if nic != nil {
+		op.CustomerNIC = *nic
+	}
+	if ref != nil {
+		op.ReferenceNumber = *ref
+	}
+	if fileName != nil {
+		op.SlipFileName = *fileName
+	}
+	if fileType != nil {
+		op.SlipFileType = *fileType
+	}
+	if reviewer != nil {
+		op.ReviewedBy = *reviewer
+	}
+	if reviewedAt != nil {
+		op.ReviewedAt = *reviewedAt
+	}
+	if revNotes != nil {
+		op.ReviewNotes = *revNotes
+	}
+	if receiptNo != nil {
+		op.ReceiptNo = *receiptNo
+	}
+	if notes != nil {
+		op.Notes = *notes
+	}
+	if method != nil {
+		op.PaymentMethod = *method
+	}
 
 	return &op, nil
 }
@@ -249,20 +270,46 @@ func scanOnlinePaymentRow(row *sql.Row) (*models.OnlinePayment, error) {
 		return nil, err
 	}
 	op.PaymentDate = dt.Format("2006-01-02")
-	if loanNo != nil { op.LoanNo = *loanNo }
-	if phone != nil { op.CustomerPhone = *phone }
-	if nic != nil { op.CustomerNIC = *nic }
-	if ref != nil { op.ReferenceNumber = *ref }
-	if fileName != nil { op.SlipFileName = *fileName }
-	if fileType != nil { op.SlipFileType = *fileType }
-	if reviewer != nil { op.ReviewedBy = *reviewer }
-	if reviewedAt != nil { op.ReviewedAt = *reviewedAt }
-	if revNotes != nil { op.ReviewNotes = *revNotes }
-	if receiptNo != nil { op.ReceiptNo = *receiptNo }
-	if notes != nil { op.Notes = *notes }
-	if method != nil { op.PaymentMethod = *method }
+	if loanNo != nil {
+		op.LoanNo = *loanNo
+	}
+	if phone != nil {
+		op.CustomerPhone = *phone
+	}
+	if nic != nil {
+		op.CustomerNIC = *nic
+	}
+	if ref != nil {
+		op.ReferenceNumber = *ref
+	}
+	if fileName != nil {
+		op.SlipFileName = *fileName
+	}
+	if fileType != nil {
+		op.SlipFileType = *fileType
+	}
+	if reviewer != nil {
+		op.ReviewedBy = *reviewer
+	}
+	if reviewedAt != nil {
+		op.ReviewedAt = *reviewedAt
+	}
+	if revNotes != nil {
+		op.ReviewNotes = *revNotes
+	}
+	if receiptNo != nil {
+		op.ReceiptNo = *receiptNo
+	}
+	if notes != nil {
+		op.Notes = *notes
+	}
+	if method != nil {
+		op.PaymentMethod = *method
+	}
 
 	return &op, nil
 }
 
-
+func (r *PaymentRepository) GetOnlinePaymentsForCustomer(id string) ([]models.OnlinePayment, error) {
+	return r.GetAllOnlinePayments("", "", id)
+}

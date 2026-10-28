@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
+import { clearSession } from "@/lib/api-client";
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
@@ -273,7 +274,7 @@ export function getLoanNextDueInfo(
 }
 
 export default function CustomerDashboardPage() {
-  const { customers, loans, repayments, onlinePayments, addOnlinePayment } = useData();
+  const { currentCustomer: authenticatedCustomer, customers, loans, repayments, onlinePayments, addOnlinePayment } = useData();
 
   // Session customer state & today's date
   const [sessionCustomerId, setSessionCustomerId] = useState<string>("");
@@ -288,7 +289,7 @@ export default function CustomerDashboardPage() {
     if (typeof window !== "undefined") {
       setTodayStr(new Date().toISOString().slice(0, 10));
       const params = new URLSearchParams(window.location.search);
-      const urlId = params.get("customerId");
+      const urlId = authenticatedCustomer?.id || params.get("customerId");
       const stored = sessionStorage.getItem("customerSessionId");
       if (urlId) {
         setSessionCustomerId(urlId);
@@ -301,7 +302,7 @@ export default function CustomerDashboardPage() {
         setActiveLoanId(urlLoanId);
       }
     }
-  }, []);
+  }, [authenticatedCustomer]);
 
   const [lookupQuery, setLookupQuery] = useState<string>("");
   const [lookupError, setLookupError] = useState<string>("");
@@ -681,7 +682,7 @@ export default function CustomerDashboardPage() {
 
   const handleSignOut = () => {
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("customerSessionId");
+      clearSession();
     }
     window.location.href = "/login";
   };
@@ -693,7 +694,7 @@ export default function CustomerDashboardPage() {
           <div className="flex justify-center">
             <BrandLogo size="lg" theme="light" />
           </div>
-          <h2 className="mt-5 text-center text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+          <h2 className="mt-5 text-center text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
             Borrower Portal Login
           </h2>
           <p className="mt-1 text-center text-xs text-slate-500 font-medium">
@@ -705,7 +706,7 @@ export default function CustomerDashboardPage() {
           <div className="bg-white py-6 px-5 sm:px-7 shadow-xs rounded-2xl border border-slate-200 space-y-5">
             <form onSubmit={handleLookup} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" htmlFor="field-app-customerdashboard-page-1">
                   National ID (NIC) or Registered Mobile
                 </label>
                 <input
@@ -717,7 +718,7 @@ export default function CustomerDashboardPage() {
                   }}
                   placeholder="e.g. 199512345678 or 0771234567"
                   className="w-full h-11 px-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
-                  autoFocus
+                  autoFocus id="field-app-customerdashboard-page-1"
                 />
                 {lookupError && (
                   <p className="mt-1.5 text-xs font-semibold text-rose-600 flex items-center gap-1">
@@ -766,10 +767,10 @@ export default function CustomerDashboardPage() {
             <BrandLogo size="md" theme="light" />
             <div className="hidden sm:block h-5 w-px bg-slate-200" />
             <div className="hidden sm:flex items-center gap-2">
-              <span className="text-xs font-black tracking-tight text-slate-800 uppercase">
+              <span className="text-xs font-semibold tracking-tight text-slate-800 uppercase">
                 Customer Portal
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Live Online
               </span>
@@ -816,11 +817,11 @@ export default function CustomerDashboardPage() {
       </header>
 
       {/* ═══ Main Portal Container ═════════════════════════════════════ */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 space-y-3">
+      <main className="flex-1 w-full mx-auto workspace-page">
         {/* ═══ Welcome Strip with Borrower Identity ═════════════════ */}
         <div className="relative overflow-hidden bg-slate-900 text-white rounded-xl px-3.5 py-2 sm:py-2.5 shadow-xs border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
+            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 text-white flex items-center justify-center font-semibold text-xs shrink-0 overflow-hidden">
               {currentCustomer.photoUrl ? (
                 <img
                   src={currentCustomer.photoUrl}
@@ -832,10 +833,10 @@ export default function CustomerDashboardPage() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-black text-white tracking-tight">
+              <span className="text-sm font-semibold text-white tracking-tight">
                 {currentCustomer.fullName || currentCustomer.name}
               </span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <ShieldCheck size={11} className="text-emerald-400" />
                 Verified
               </span>
@@ -872,7 +873,7 @@ export default function CustomerDashboardPage() {
             <button
               type="button"
               onClick={() => setUploadSuccessMsg("")}
-              className="text-emerald-700 hover:text-emerald-900 cursor-pointer p-0.5"
+              className="text-emerald-700 hover:text-emerald-900 cursor-pointer p-0.5" aria-label="Close"
             >
               <X size={14} />
             </button>
@@ -904,7 +905,7 @@ export default function CustomerDashboardPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wide uppercase ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase ${
                           urgentDueInfo.due.isTodayPaid
                             ? "bg-emerald-600 text-white shadow-xs shadow-emerald-600/30"
                             : urgentDueInfo.due.status === "OVERDUE"
@@ -941,7 +942,7 @@ export default function CustomerDashboardPage() {
                       <span className="text-xs font-semibold text-slate-600 bg-white/90 border border-slate-200 px-2 py-0.5 rounded-lg">
                         {urgentDueInfo.loan.repaymentFrequency || "Daily"} &bull;{" "}
                         {urgentDueInfo.due.isTodayPaid && urgentDueInfo.due.cycle > 1
-                          ? `Cycle #${urgentDueInfo.due.cycle - 1} Paid &bull; Next: Cycle #${urgentDueInfo.due.cycle}`
+                          ? `Cycle #${urgentDueInfo.due.cycle - 1} Paid · Next: Cycle #${urgentDueInfo.due.cycle}`
                           : `Cycle #${urgentDueInfo.due.cycle} of ${urgentDueInfo.due.totalCycles}`}
                       </span>
                     </div>
@@ -956,17 +957,17 @@ export default function CustomerDashboardPage() {
                             : "Next Due Installment:"}
                         </span>
                         {urgentDueInfo.due.isTodayPaid ? (
-                          <span className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight flex items-center gap-1.5">
+                          <span className="text-2xl sm:text-3xl font-semibold font-mono text-emerald-700 tracking-tight flex items-center gap-1.5">
                             <Check size={26} className="text-emerald-600 stroke-[3]" />
                             PAID
                           </span>
                         ) : urgentDueInfo.due.hasPendingSlip ? (
-                          <span className="text-xl sm:text-2xl font-black font-mono text-amber-700 tracking-tight flex items-center gap-1.5">
+                          <span className="text-xl sm:text-2xl font-semibold font-mono text-amber-700 tracking-tight flex items-center gap-1.5">
                             <Clock size={20} className="text-amber-600" />
                             PENDING APPROVAL
                           </span>
                         ) : (
-                          <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 tracking-tight">
+                          <span className="text-2xl sm:text-3xl font-semibold font-mono text-slate-900 tracking-tight">
                             {MONEY(urgentDueInfo.due.installmentAmount)}
                           </span>
                         )}
@@ -978,7 +979,7 @@ export default function CustomerDashboardPage() {
                           {urgentDueInfo.due.isTodayPaid ? "Next Installment Due:" : "Due Date:"}{" "}
                           <b className="font-mono text-slate-900 text-sm sm:text-base">{urgentDueInfo.due.dueDate}</b>
                           <span className="text-slate-500 font-medium ml-1.5 hidden sm:inline">
-                            ({formatFriendlyDate(urgentDueInfo.due.dueDate)}){urgentDueInfo.due.isTodayPaid ? ` &bull; ${MONEY(urgentDueInfo.due.installmentAmount)} Due Tomorrow` : ""}
+                            ({formatFriendlyDate(urgentDueInfo.due.dueDate)}){urgentDueInfo.due.isTodayPaid ? ` · ${MONEY(urgentDueInfo.due.installmentAmount)} Due Tomorrow` : ""}
                           </span>
                         </span>
                       </div>
@@ -1059,7 +1060,7 @@ export default function CustomerDashboardPage() {
                     <CheckCircle2 size={18} />
                   </div>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-black text-emerald-950">
+                    <h3 className="text-xs sm:text-sm font-semibold text-emerald-950">
                       All Loan Facilities Fully Settled!
                     </h3>
                     <p className="text-[11px] text-emerald-700 font-medium">
@@ -1071,20 +1072,20 @@ export default function CustomerDashboardPage() {
             ) : null}
 
             {/* ═══ Portfolio Summary 4-KPI Grid ════════════════════════════ */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
               {/* Card 1: Total Facilities */}
               <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-2xs hover:border-slate-300 transition-all flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100/60 flex items-center justify-center shrink-0">
                   <Coins size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                     Total Facilities
                   </span>
-                  <p className="text-base sm:text-lg font-black font-mono text-slate-900 leading-tight">
+                  <p className="text-base sm:text-lg font-semibold font-mono text-slate-900 leading-tight">
                     {customerLoans.length} {customerLoans.length === 1 ? "Loan" : "Loans"}
                   </p>
-                  <p className="text-[10px] text-blue-600 font-semibold flex items-center gap-1 truncate">
+                  <p className="text-[11px] text-blue-600 font-semibold flex items-center gap-1 truncate">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     {portfolioSummary.activeCount} Active Contracts
                   </p>
@@ -1097,13 +1098,13 @@ export default function CustomerDashboardPage() {
                   <CreditCard size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                     Total Borrowed
                   </span>
-                  <p className="text-base sm:text-lg font-black font-mono text-slate-900 leading-tight truncate">
+                  <p className="text-base sm:text-lg font-semibold font-mono text-slate-900 leading-tight truncate">
                     {MONEY(portfolioSummary.totalBorrowing)}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-medium truncate">
+                  <p className="text-[11px] text-slate-500 font-medium truncate">
                     Payable: <b className="font-mono text-slate-700">{MONEY(portfolioSummary.totalPayableSum)}</b>
                   </p>
                 </div>
@@ -1115,13 +1116,13 @@ export default function CustomerDashboardPage() {
                   <CheckCircle2 size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                     Total Repaid
                   </span>
-                  <p className="text-base sm:text-lg font-black font-mono text-emerald-600 leading-tight truncate">
+                  <p className="text-base sm:text-lg font-semibold font-mono text-emerald-600 leading-tight truncate">
                     {MONEY(portfolioSummary.totalPaidSum)}
                   </p>
-                  <p className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1 truncate">
+                  <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 truncate">
                     <Check size={11} className="shrink-0" /> Recorded Repayments
                   </p>
                 </div>
@@ -1133,13 +1134,13 @@ export default function CustomerDashboardPage() {
                   <Wallet size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                     Total Outstanding
                   </span>
-                  <p className="text-base sm:text-lg font-black font-mono text-slate-900 leading-tight truncate">
+                  <p className="text-base sm:text-lg font-semibold font-mono text-slate-900 leading-tight truncate">
                     {MONEY(portfolioSummary.totalOutstandingSum)}
                   </p>
-                  <p className="text-[10px] font-bold truncate">
+                  <p className="text-[11px] font-bold truncate">
                     {portfolioSummary.totalOutstandingSum <= 0 ? (
                       <span className="text-emerald-600 flex items-center gap-1">
                         <CheckCircle2 size={11} /> Fully Settled
@@ -1157,10 +1158,10 @@ export default function CustomerDashboardPage() {
             {/* ═══ Section Header ═══════════════════════════════════════ */}
             <div className="flex items-center justify-between gap-2 pt-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">
+                <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   My Loan Facilities
                 </h2>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-red-50 text-red-700 border border-red-200/60 rounded-full">
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 bg-red-50 text-red-700 border border-red-200/60 rounded-full">
                   {customerLoans.length} {customerLoans.length === 1 ? "Facility" : "Facilities"}
                 </span>
               </div>
@@ -1198,28 +1199,28 @@ export default function CustomerDashboardPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Facility:</span>
-                        <span className="text-base sm:text-lg font-black font-mono text-slate-900">
+                        <span className="text-base sm:text-lg font-semibold font-mono text-slate-900">
                           {loan.loanNo || loan.id}
                         </span>
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${statusClass}`}>
+                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${statusClass}`}>
                           {loan.status || "Active"}
                         </span>
-                        <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                        <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
                           {loan.repaymentFrequency || "Daily"}
                         </span>
                         {!dueInfo.isSettled && (
                           dueInfo.isTodayPaid ? (
                             <>
-                              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1 shadow-2xs">
+                              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1 shadow-2xs">
                                 <CheckCircle2 size={11} className="text-emerald-600" /> Paid Today
                               </span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-200 flex items-center gap-1">
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-200 flex items-center gap-1">
                                 <Calendar size={11} className="text-slate-500" /> Next Due: {dueInfo.dueDate}
                               </span>
                             </>
                           ) : (
                             <span
-                              className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
                                 dueInfo.status === "OVERDUE"
                                   ? "bg-rose-100 text-rose-800 border-rose-300"
                                   : dueInfo.status === "DUE_TODAY"
@@ -1268,16 +1269,16 @@ export default function CustomerDashboardPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider block ${dueInfo.isTodayPaid ? "text-emerald-800" : "text-slate-400"}`}>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider block ${dueInfo.isTodayPaid ? "text-emerald-800" : "text-slate-400"}`}>
                             {dueInfo.isTodayPaid ? "Daily Installment" : "Installment Due"}
                           </span>
                           {dueInfo.isTodayPaid ? (
-                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 flex items-center gap-0.5">
+                            <span className="text-[11px] font-semibold px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 flex items-center gap-0.5">
                               <Check size={9} className="stroke-[3]" /> PAID TODAY
                             </span>
                           ) : !dueInfo.isSettled && (
                             <span
-                              className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded ${
+                              className={`text-[11px] font-bold px-1.5 py-0.2 rounded ${
                                 dueInfo.status === "OVERDUE"
                                   ? "bg-rose-200 text-rose-800"
                                   : dueInfo.status === "DUE_TODAY"
@@ -1291,10 +1292,10 @@ export default function CustomerDashboardPage() {
                             </span>
                           )}
                         </div>
-                        <p className={`text-base sm:text-lg font-black font-mono mt-0.5 ${dueInfo.isTodayPaid ? "text-emerald-700" : "text-slate-900"}`}>
+                        <p className={`text-base sm:text-lg font-semibold font-mono mt-0.5 ${dueInfo.isTodayPaid ? "text-emerald-700" : "text-slate-900"}`}>
                           {MONEY(dueInfo.installmentAmount || loan.installment || 0)}
                         </p>
-                        <div className="text-[10px] text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
+                        <div className="text-[11px] text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
                           <Calendar size={11} className={dueInfo.isTodayPaid ? "text-emerald-600 shrink-0" : "text-slate-400 shrink-0"} />
                           <span>
                             {dueInfo.isTodayPaid ? (
@@ -1307,37 +1308,37 @@ export default function CustomerDashboardPage() {
                       </div>
 
                       <div className="bg-slate-50/80 rounded-xl p-2.5 sm:p-3 border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                           Principal Disbursed
                         </span>
-                        <p className="text-base sm:text-lg font-black font-mono text-slate-900 mt-0.5">
+                        <p className="text-base sm:text-lg font-semibold font-mono text-slate-900 mt-0.5">
                           {MONEY(loan.principal || loan.amount || 0)}
                         </p>
-                        <span className="text-[10px] text-slate-500 font-medium">
+                        <span className="text-[11px] text-slate-500 font-medium">
                           Payable: {MONEY(stats.payable)}
                         </span>
                       </div>
 
                       <div className="bg-slate-50/80 rounded-xl p-2.5 sm:p-3 border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                           Total Repaid
                         </span>
-                        <p className="text-base sm:text-lg font-black font-mono text-emerald-600 mt-0.5">
+                        <p className="text-base sm:text-lg font-semibold font-mono text-emerald-600 mt-0.5">
                           {MONEY(stats.paid)}
                         </p>
-                        <span className="text-[10px] text-emerald-700 font-medium">
+                        <span className="text-[11px] text-emerald-700 font-medium">
                           {stats.paymentsCount} Payments Verified
                         </span>
                       </div>
 
                       <div className="bg-slate-50/80 rounded-xl p-2.5 sm:p-3 border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                           Remaining Balance
                         </span>
-                        <p className="text-base sm:text-lg font-black font-mono text-slate-900 mt-0.5">
+                        <p className="text-base sm:text-lg font-semibold font-mono text-slate-900 mt-0.5">
                           {MONEY(stats.outstanding)}
                         </p>
-                        <span className="text-[10px] text-rose-600 font-bold">
+                        <span className="text-[11px] text-rose-600 font-bold">
                           {stats.percent}% Settled
                         </span>
                       </div>
@@ -1351,7 +1352,7 @@ export default function CustomerDashboardPage() {
                           style={{ width: `${stats.percent}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                      <div className="flex justify-between text-[11px] text-slate-400 font-medium">
                         <span>Repayment Progress: {stats.percent}% Settled</span>
                         <span>{stats.outstanding <= 0 ? "Fully Paid Off" : `${MONEY(stats.outstanding)} Outstanding`}</span>
                       </div>
@@ -1388,27 +1389,27 @@ export default function CustomerDashboardPage() {
                         <div className="space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                                 Loan Facility
                               </span>
-                              <h3 className="text-base font-black text-slate-900 font-mono group-hover:text-red-600 transition">
+                              <h3 className="text-base font-semibold text-slate-900 font-mono group-hover:text-red-600 transition">
                                 {loan.loanNo || loan.id}
                               </h3>
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               <div className="flex items-center gap-1">
                                 <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusClass}`}
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${statusClass}`}
                                 >
                                   {loan.status || "Active"}
                                 </span>
-                                <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
                                   {loan.repaymentFrequency || "Daily"}
                                 </span>
                               </div>
                               {!dueInfo.isSettled && (
                                 <span
-                                  className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
                                     dueInfo.isTodayPaid
                                       ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                                       : dueInfo.status === "OVERDUE"
@@ -1454,7 +1455,7 @@ export default function CustomerDashboardPage() {
                               }`}
                             >
                               <div className="space-y-0.5">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${dueInfo.isTodayPaid ? "text-emerald-800" : "text-slate-500"}`}>
+                                <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 ${dueInfo.isTodayPaid ? "text-emerald-800" : "text-slate-500"}`}>
                                   <Calendar size={11} className={dueInfo.isTodayPaid ? "text-emerald-600" : "text-red-600"} />
                                   {dueInfo.isTodayPaid ? "Today's Installment" : "Next Due Date"}
                                 </span>
@@ -1466,7 +1467,7 @@ export default function CustomerDashboardPage() {
                                   ) : (
                                     <>
                                       {dueInfo.dueDate}
-                                      <span className="text-[10px] text-slate-500 font-normal ml-1">
+                                      <span className="text-[11px] text-slate-500 font-normal ml-1">
                                         (Cycle #{dueInfo.cycle})
                                       </span>
                                     </>
@@ -1474,7 +1475,7 @@ export default function CustomerDashboardPage() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                                   {dueInfo.isTodayPaid ? `Next: ${dueInfo.dueDate}` : "Installment"}
                                 </span>
                                 <span className="font-bold font-mono text-slate-900 text-xs">
@@ -1512,7 +1513,7 @@ export default function CustomerDashboardPage() {
                               <span className="text-[11px] font-bold text-slate-700">
                                 Remaining Balance:
                               </span>
-                              <span className="text-sm font-black font-mono text-slate-900">
+                              <span className="text-sm font-semibold font-mono text-slate-900">
                                 {MONEY(stats.outstanding)}
                               </span>
                             </div>
@@ -1525,7 +1526,7 @@ export default function CustomerDashboardPage() {
                                 style={{ width: `${stats.percent}%` }}
                               />
                             </div>
-                            <div className="flex justify-between text-[10px] text-slate-400 font-medium mt-1">
+                            <div className="flex justify-between text-[11px] text-slate-400 font-medium mt-1">
                               <span>{stats.percent}% Settled</span>
                               <span>{stats.paymentsCount} Payments Recorded</span>
                             </div>
@@ -1598,7 +1599,7 @@ export default function CustomerDashboardPage() {
                     No active loan facilities found
                   </h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    There are no registered loans under your borrower account. Please contact your loan officer or branch office.
+                    There are no registered loans under your borrower account. Please contact your staff contact or branch office.
                   </p>
                 </div>
               )}
@@ -1622,10 +1623,10 @@ export default function CustomerDashboardPage() {
                 <div className="h-4 w-px bg-slate-200 hidden sm:block" />
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-slate-400">Viewing Facility:</span>
-                  <span className="text-sm font-black font-mono text-slate-900">
+                  <span className="text-sm font-semibold font-mono text-slate-900">
                     {currentLoan?.loanNo || currentLoan?.id}
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                     {currentLoan?.status || "Active"}
                   </span>
                 </div>
@@ -1665,17 +1666,17 @@ export default function CustomerDashboardPage() {
             </div>
 
             {/* ═══ Zone 1: Financial Standing Pulse (4 Micro KPI Cards) ═════════ */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
           {/* Card 1: Outstanding Balance */}
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
               <CreditCard size={16} className="text-rose-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Outstanding Balance
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {MONEY(outstandingBalance)}
               </p>
               <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
@@ -1684,7 +1685,7 @@ export default function CustomerDashboardPage() {
                   style={{ width: `${percentSettled}%` }}
                 />
               </div>
-              <p className="text-[9px] text-slate-400 font-medium mt-0.5 flex justify-between">
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5 flex justify-between">
                 <span>{percentSettled}% Settled</span>
                 <span>Total: {MONEY(totalPayable)}</span>
               </p>
@@ -1718,12 +1719,12 @@ export default function CustomerDashboardPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   {currentLoanDue?.isTodayPaid ? "Today's Installment" : "Next Installment"}
                 </p>
                 {currentLoanDue && !currentLoanDue.isSettled && (
                   <span
-                    className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                    className={`text-[11px] font-bold px-1.5 py-0.2 rounded-full ${
                       currentLoanDue.isTodayPaid
                         ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                         : currentLoanDue.status === "OVERDUE"
@@ -1739,10 +1740,10 @@ export default function CustomerDashboardPage() {
                   </span>
                 )}
               </div>
-              <p className={`text-lg sm:text-xl font-black font-mono leading-tight ${currentLoanDue?.isTodayPaid ? "text-emerald-700" : "text-slate-900"}`}>
+              <p className={`text-lg sm:text-xl font-semibold font-mono leading-tight ${currentLoanDue?.isTodayPaid ? "text-emerald-700" : "text-slate-900"}`}>
                 {MONEY(currentLoanDue?.installmentAmount || nextInstallmentAmount)}
               </p>
-              <p className="text-[10px] font-semibold truncate flex items-center gap-1 mt-0.5 text-slate-700">
+              <p className="text-[11px] font-semibold truncate flex items-center gap-1 mt-0.5 text-slate-700">
                 <Clock size={10} className="text-slate-400" />
                 <span>
                   {currentLoanDue?.isTodayPaid ? "Next Due " : "Due "}
@@ -1763,13 +1764,13 @@ export default function CustomerDashboardPage() {
               <CheckCircle2 size={16} className="text-emerald-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Total Repaid to Date
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-emerald-600 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-emerald-600 leading-tight">
                 {MONEY(totalPaid)}
               </p>
-              <p className="text-[10px] text-emerald-700 font-medium truncate">
+              <p className="text-[11px] text-emerald-700 font-medium truncate">
                 {customerPayments.length} recorded payments
               </p>
             </div>
@@ -1781,14 +1782,14 @@ export default function CustomerDashboardPage() {
               <Clock size={16} className="text-blue-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Facility Standing
               </p>
               <p className="text-sm font-bold text-slate-900 leading-tight font-mono mt-0.5">
                 {currentLoan?.loanNo || "No Active Loan"}
               </p>
               <span
-                className={`inline-flex items-center px-2 py-0.2 rounded-full text-[10px] font-bold mt-1 ${
+                className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold mt-1 ${
                   (currentLoan?.status || "").toLowerCase() === "completed"
                     ? "bg-emerald-100 text-emerald-800"
                     : (currentLoan?.status || "").toLowerCase() === "overdue"
@@ -1810,7 +1811,7 @@ export default function CustomerDashboardPage() {
               {/* Header & Tab Bar */}
               <div className="p-3 sm:p-3.5 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  <h2 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                     Repayment Schedule &amp; Receipts
                   </h2>
                   <p className="text-[11px] text-slate-500 font-medium">
@@ -1862,17 +1863,17 @@ export default function CustomerDashboardPage() {
 
               {/* TAB 1: Installment Due Dates Table */}
               {activeTab === "schedule" && (
-                <div className="overflow-x-auto min-w-full">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+                <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+                  <table className="w-full text-left text-xs whitespace-nowrap lms-table">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                       <tr>
-                        <th className="py-2.5 px-4">Cycle</th>
-                        <th className="py-2.5 px-3">Due Date</th>
-                        <th className="py-2.5 px-3 text-right">Installment</th>
-                        <th className="py-2.5 px-3 text-right">Principal</th>
-                        <th className="py-2.5 px-3 text-right">Interest</th>
-                        <th className="py-2.5 px-3 text-right">Balance</th>
-                        <th className="py-2.5 px-4 text-center">Payment Status</th>
+                        <th className="py-2.5 px-4" scope="col">Cycle</th>
+                        <th className="py-2.5 px-3" scope="col">Due Date</th>
+                        <th className="py-2.5 px-3 text-right" scope="col">Installment</th>
+                        <th className="py-2.5 px-3 text-right" scope="col">Principal</th>
+                        <th className="py-2.5 px-3 text-right" scope="col">Interest</th>
+                        <th className="py-2.5 px-3 text-right" scope="col">Balance</th>
+                        <th className="py-2.5 px-4 text-center" scope="col">Payment Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -1898,27 +1899,27 @@ export default function CustomerDashboardPage() {
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             {row.status === "PAID" && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                                 <Check size={10} /> Paid
                               </span>
                             )}
                             {row.status === "DUE_TODAY" && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 animate-pulse">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 animate-pulse">
                                 <Clock size={10} /> Due Today
                               </span>
                             )}
                             {row.status === "DUE_TOMORROW" && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
                                 <Clock size={10} /> Due Tomorrow
                               </span>
                             )}
                             {row.status === "OVERDUE" && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800">
                                 <AlertCircle size={10} /> Overdue
                               </span>
                             )}
                             {row.status === "UPCOMING" && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
                                 Upcoming
                               </span>
                             )}
@@ -1931,7 +1932,7 @@ export default function CustomerDashboardPage() {
                           <td colSpan={7} className="py-10 text-center text-slate-400">
                             <Calendar size={32} className="mx-auto text-slate-300 mb-1.5" />
                             <p className="text-xs font-bold text-slate-700">No active installment schedule</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-400 mt-0.5">
                               When a loan is issued, the payment schedule will automatically appear here.
                             </p>
                           </td>
@@ -1944,16 +1945,16 @@ export default function CustomerDashboardPage() {
 
               {/* TAB 2: Payment Receipts Table */}
               {activeTab === "history" && (
-                <div className="overflow-x-auto min-w-full">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+                <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+                  <table className="w-full text-left text-xs whitespace-nowrap lms-table">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                       <tr>
-                        <th className="py-2.5 px-4">Receipt No</th>
-                        <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3">Method</th>
-                        <th className="py-2.5 px-3 text-right">Amount Paid</th>
-                        <th className="py-2.5 px-3">Collector</th>
-                        <th className="py-2.5 px-4 text-right">Official Receipt</th>
+                        <th className="py-2.5 px-4" scope="col">Receipt No</th>
+                        <th className="py-2.5 px-3" scope="col">Date</th>
+                        <th className="py-2.5 px-3" scope="col">Method</th>
+                        <th className="py-2.5 px-3 text-right" scope="col">Amount Paid</th>
+                        <th className="py-2.5 px-3" scope="col">Collector</th>
+                        <th className="py-2.5 px-4 text-right" scope="col">Official Receipt</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
@@ -1964,7 +1965,7 @@ export default function CustomerDashboardPage() {
                           </td>
                           <td className="py-2.5 px-3 text-slate-600 text-xs">{p.date}</td>
                           <td className="py-2.5 px-3">
-                            <span className="inline-flex items-center px-2 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">
+                            <span className="inline-flex items-center px-2 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[11px]">
                               {p.method || "Cash"}
                             </span>
                           </td>
@@ -1993,7 +1994,7 @@ export default function CustomerDashboardPage() {
                           <td colSpan={6} className="py-10 text-center text-slate-400">
                             <Receipt size={32} className="mx-auto text-slate-300 mb-1.5" />
                             <p className="text-xs font-bold text-slate-700">No payment receipts recorded yet</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-400 mt-0.5">
                               Payments recorded by field officers or branch cashiers will show here immediately.
                             </p>
                           </td>
@@ -2006,7 +2007,7 @@ export default function CustomerDashboardPage() {
 
               {/* TAB 3: Online Bank Slips Table */}
               {activeTab === "slips" && (
-                <div className="overflow-x-auto min-w-full">
+                <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
                   <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
                     <p className="text-xs text-slate-600 font-medium">
                       All submitted electronic transfer slips and online payments for this facility.
@@ -2021,15 +2022,15 @@ export default function CustomerDashboardPage() {
                       <span>Upload Slip</span>
                     </button>
                   </div>
-                  <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+                  <table className="w-full text-left text-xs whitespace-nowrap lms-table">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                       <tr>
-                        <th className="py-2.5 px-4">Slip ID</th>
-                        <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3">Bank &amp; Ref</th>
-                        <th className="py-2.5 px-3 text-right">Amount</th>
-                        <th className="py-2.5 px-3 text-center">Verification Status</th>
-                        <th className="py-2.5 px-4 text-right">Action / Receipt</th>
+                        <th className="py-2.5 px-4" scope="col">Slip ID</th>
+                        <th className="py-2.5 px-3" scope="col">Date</th>
+                        <th className="py-2.5 px-3" scope="col">Bank &amp; Ref</th>
+                        <th className="py-2.5 px-3 text-right" scope="col">Amount</th>
+                        <th className="py-2.5 px-3 text-center" scope="col">Verification Status</th>
+                        <th className="py-2.5 px-4 text-right" scope="col">Action / Receipt</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
@@ -2051,7 +2052,7 @@ export default function CustomerDashboardPage() {
                                 {op.bankName}
                               </span>
                               {op.referenceNumber && (
-                                <span className="text-[10px] font-mono text-slate-400 block">
+                                <span className="text-[11px] font-mono text-slate-400 block">
                                   Ref: {op.referenceNumber}
                                 </span>
                               )}
@@ -2061,18 +2062,18 @@ export default function CustomerDashboardPage() {
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               {isPending && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                   <Clock size={10} /> Pending Review
                                 </span>
                               )}
                               {isApproved && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                   <CheckCircle2 size={10} /> Approved &amp; Credited
                                 </span>
                               )}
                               {isDeclined && (
                                 <span
-                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200"
                                   title={op.reviewNotes || "Declined by accounts team"}
                                 >
                                   <XCircle size={10} /> Declined
@@ -2125,7 +2126,7 @@ export default function CustomerDashboardPage() {
                           <td colSpan={6} className="py-10 text-center text-slate-400">
                             <Upload size={32} className="mx-auto text-slate-300 mb-1.5" />
                             <p className="text-xs font-bold text-slate-700">No bank slips submitted yet</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-400 mt-0.5">
                               After making a bank transfer or cash deposit, upload your slip here for quick verification.
                             </p>
                             <button
@@ -2153,11 +2154,11 @@ export default function CustomerDashboardPage() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-1.5">
                   <Building size={15} className="text-red-600" />
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                     Bank Deposit Accounts
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-full">
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-full">
                   Direct Transfer
                 </span>
               </div>
@@ -2171,14 +2172,14 @@ export default function CustomerDashboardPage() {
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-0.5">
                   <p className="font-bold text-slate-900 text-xs">Commercial Bank of Ceylon</p>
                   <p className="text-[11px] text-slate-600 font-mono">Acc: <strong>1000 248 952</strong></p>
-                  <p className="text-[10px] text-slate-400">Branch: Maharagama Branch</p>
+                  <p className="text-[11px] text-slate-400">Branch: Maharagama Branch</p>
                 </div>
 
                 {/* Bank 2: Sampath Bank */}
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-0.5">
                   <p className="font-bold text-slate-900 text-xs">Sampath Bank PLC</p>
                   <p className="text-[11px] text-slate-600 font-mono">Acc: <strong>0145 1002 9841</strong></p>
-                  <p className="text-[10px] text-slate-400">Branch: City Office, Colombo</p>
+                  <p className="text-[11px] text-slate-400">Branch: City Office, Colombo</p>
                 </div>
 
                 {/* Quick Upload Button */}
@@ -2199,7 +2200,7 @@ export default function CustomerDashboardPage() {
             <div className="bg-white rounded-2xl border border-slate-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
               <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2">
                 <Phone size={15} className="text-slate-700" />
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                   Assistance &amp; Helpline
                 </h3>
               </div>
@@ -2223,8 +2224,8 @@ export default function CustomerDashboardPage() {
                 </div>
               </div>
 
-              <p className="text-[10px] text-slate-400 pt-1">
-                For settlement queries or installment adjustments, contact your loan officer directly.
+              <p className="text-[11px] text-slate-400 pt-1">
+                For settlement queries or installment adjustments, contact your staff contact directly.
               </p>
             </div>
           </div>
@@ -2235,14 +2236,14 @@ export default function CustomerDashboardPage() {
 
       {/* ── Single Payment Printable Receipt Modal ───────────────────────── */}
       {receiptToPrint && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 lms-overlay">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4 lms-dialog">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <BrandLogo size="sm" theme="light" />
               <button
                 type="button"
                 onClick={() => setReceiptToPrint(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -2250,13 +2251,13 @@ export default function CustomerDashboardPage() {
 
             {/* Receipt Body */}
             <div className="py-4 text-center border-b border-dashed border-slate-200">
-              <span className="inline-block px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full mb-1.5">
+              <span className="inline-block px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-full mb-1.5">
                 OFFICIAL PAYMENT RECEIPT
               </span>
               <p className="font-mono text-xs text-slate-500">
                 Receipt No: <strong className="text-slate-900">{receiptToPrint.receiptNo || receiptToPrint.id}</strong>
               </p>
-              <h2 className="text-2xl font-black text-slate-900 font-mono mt-2">
+              <h2 className="text-2xl font-semibold text-slate-900 font-mono mt-2">
                 {MONEY(receiptToPrint.amount)}
               </h2>
               <p className="text-xs text-emerald-600 font-medium mt-0.5">
@@ -2311,20 +2312,20 @@ export default function CustomerDashboardPage() {
 
       {/* ── Full Statement of Account Modal ──────────────────────────────── */}
       {isStatementOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 lms-overlay">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col space-y-4 lms-dialog">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <BrandLogo size="sm" theme="light" />
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 leading-tight">Borrower Statement of Account</h3>
-                  <p className="text-[10px] text-slate-500 font-mono">Issued: {todayStr}</p>
+                  <h3 className="text-sm font-semibold text-slate-900 leading-tight">Borrower Statement of Account</h3>
+                  <p className="text-[11px] text-slate-500 font-mono">Issued: {todayStr}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsStatementOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -2333,31 +2334,31 @@ export default function CustomerDashboardPage() {
             {/* Statement Summary */}
             <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">Principal</span>
-                <span className="text-sm font-black text-slate-900 font-mono">{MONEY(totalPrincipal)}</span>
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">Principal</span>
+                <span className="text-sm font-semibold text-slate-900 font-mono">{MONEY(totalPrincipal)}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-                <span className="text-[10px] text-emerald-700 font-bold uppercase block">Total Repaid</span>
-                <span className="text-sm font-black text-emerald-700 font-mono">{MONEY(totalPaid)}</span>
+                <span className="text-[11px] text-emerald-700 font-bold uppercase block">Total Repaid</span>
+                <span className="text-sm font-semibold text-emerald-700 font-mono">{MONEY(totalPaid)}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200">
-                <span className="text-[10px] text-rose-700 font-bold uppercase block">Remaining</span>
-                <span className="text-sm font-black text-rose-700 font-mono">{MONEY(outstandingBalance)}</span>
+                <span className="text-[11px] text-rose-700 font-bold uppercase block">Remaining</span>
+                <span className="text-sm font-semibold text-rose-700 font-mono">{MONEY(outstandingBalance)}</span>
               </div>
             </div>
 
             {/* Statement Transactions */}
             <div className="flex-1 overflow-y-auto">
-              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+              <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Transaction History
               </h4>
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase">
+              <table className="w-full text-left text-xs whitespace-nowrap lms-table">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase">
                   <tr>
-                    <th className="p-2">Date</th>
-                    <th className="p-2">Receipt #</th>
-                    <th className="p-2">Method</th>
-                    <th className="p-2 text-right">Amount (LKR)</th>
+                    <th className="p-2" scope="col">Date</th>
+                    <th className="p-2" scope="col">Receipt #</th>
+                    <th className="p-2" scope="col">Method</th>
+                    <th className="p-2 text-right" scope="col">Amount (LKR)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -2382,7 +2383,7 @@ export default function CustomerDashboardPage() {
 
             {/* Footer Actions */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[11px] text-slate-400">
                 Strictly confidential · PSI ONE Financial Operations
               </span>
               <button
@@ -2399,19 +2400,19 @@ export default function CustomerDashboardPage() {
 
       {/* ── Modal 2: Viewing Slip Modal ──────────────────────────────────── */}
       {viewingSlip && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4 my-8">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto lms-overlay">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4 my-8 lms-dialog">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <CreditCard size={16} className="text-red-600" />
-                <h3 className="text-sm font-black text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   Bank Deposit Slip · {viewingSlip.id}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setViewingSlip(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -2463,17 +2464,17 @@ export default function CustomerDashboardPage() {
                   return (
                     <div className="w-full bg-white rounded-xl p-4 text-left border border-slate-200 shadow-sm space-y-2.5">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                        <span className="text-[10px] font-black uppercase text-red-600">Electronic Bank Slip</span>
+                        <span className="text-[11px] font-semibold uppercase text-red-600">Electronic Bank Slip</span>
                         <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{viewingSlip.referenceNumber || viewingSlip.id}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] text-slate-400 block font-bold">Bank</span>
+                          <span className="text-[11px] text-slate-400 block font-bold">Bank</span>
                           <span className="font-bold text-slate-900 text-xs">{viewingSlip.bankName}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-slate-400 block font-bold">Deposited</span>
-                          <span className="font-mono font-black text-emerald-600 text-sm">{MONEY(viewingSlip.amount)}</span>
+                          <span className="text-[11px] text-slate-400 block font-bold">Deposited</span>
+                          <span className="font-mono font-semibold text-emerald-600 text-sm">{MONEY(viewingSlip.amount)}</span>
                         </div>
                       </div>
                     </div>
@@ -2505,7 +2506,7 @@ export default function CustomerDashboardPage() {
             <div className="bg-slate-50/70 rounded-xl p-3 border border-slate-100 space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-500">Amount:</span>
-                <span className="font-mono font-black text-slate-900 text-sm">
+                <span className="font-mono font-semibold text-slate-900 text-sm">
                   {MONEY(viewingSlip.amount)}
                 </span>
               </div>

@@ -76,14 +76,14 @@ export function Modal({
 }
 
 export function LoadingState({
-  label = "Loading workspace…",
+  label = "Loading workspace...",
 }: {
   label?: string;
 }) {
   return (
     <div className="page-container" role="status" aria-label={label}>
       <p className="text-sm text-slate-600 mb-6">{label}</p>
-      <div className="skeleton h-8 w-56 mb-6" />
+      <div aria-hidden="true" className="skeleton h-8 w-56 mb-6" />
       <div className="grid sm:grid-cols-3 gap-4">
         {[1, 2, 3].map((n) => (
           <div key={n} className="skeleton h-28" />

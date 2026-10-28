@@ -37,34 +37,35 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { getLoanTotalRepayment } from "@/lib/loan-financials";
-import type { Customer, CustomerStatus, StaffUser, StaffPermissions, Loan, Payment, CustomerDocument } from "@/types";
+import type {
+  Customer,
+  CustomerStatus,
+  StaffUser,
+  StaffPermissions,
+  Loan,
+  Payment,
+  CustomerDocument,
+} from "@/types";
 
 const ROLE_PRESET_PERMISSIONS: Record<StaffUser["role"], StaffPermissions> = {
-  Administrator: {
+  Admin: {
     approveLoans: true,
     recordRepayments: true,
     exportReports: true,
     manageSettings: true,
     manageCustomers: true,
   },
-  "Loan Officer": {
-    approveLoans: true,
-    recordRepayments: true,
-    exportReports: true,
-    manageSettings: false,
-    manageCustomers: true,
-  },
-  "Collection Agent": {
+  Staff: {
     approveLoans: false,
     recordRepayments: true,
     exportReports: false,
     manageSettings: false,
     manageCustomers: true,
   },
-  Auditor: {
+  Customer: {
     approveLoans: false,
     recordRepayments: false,
-    exportReports: true,
+    exportReports: false,
     manageSettings: false,
     manageCustomers: false,
   },
@@ -111,7 +112,8 @@ const BRANCH_OPTIONS = [
 function UserManagementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as "customers" | "staff") || "customers";
+  const initialTab =
+    (searchParams.get("tab") as "customers" | "staff") || "customers";
 
   const {
     customers,
@@ -136,11 +138,15 @@ function UserManagementContent() {
   const [toastMsg, setToastMsg] = useState("");
 
   // Customer Details Drawer
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
 
   // Customer Edit & Delete States
   const [isEditCustomerModalOpen, setIsEditCustomerModalOpen] = useState(false);
-  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(
+    null,
+  );
   const [customerForm, setCustomerForm] = useState<{
     id: string;
     fullName: string;
@@ -180,6 +186,7 @@ function UserManagementContent() {
   });
 
   const handleOpenEditCustomer = (c: Customer) => {
+    setCustomerPassword("");
     setCustomerForm({
       id: String(c.id),
       fullName: c.fullName || c.name || "",
@@ -202,42 +209,48 @@ function UserManagementContent() {
     setIsEditCustomerModalOpen(true);
   };
 
-  const handleSaveCustomer = (e: React.FormEvent) => {
+  const handleSaveCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerForm.fullName.trim() || !customerForm.nic.trim()) {
       alert("Please provide at least a full name and NIC number.");
       return;
     }
 
-    updateCustomer(customerForm.id, {
-      fullName: customerForm.fullName.trim(),
-      name: customerForm.fullName.trim(),
-      nic: customerForm.nic.trim(),
-      phone: customerForm.phone.trim(),
-      alternatePhone: customerForm.alternatePhone.trim() || undefined,
-      email: customerForm.email.trim() || undefined,
-      address: customerForm.address.trim(),
-      town: customerForm.town.trim(),
-      district: customerForm.district.trim(),
-      village: customerForm.village.trim() || undefined,
-      occupation: customerForm.occupation.trim() || undefined,
-      monthlyIncome: Number(customerForm.monthlyIncome) || 0,
-      status: customerForm.status,
-      guarantorName: customerForm.guarantorName.trim() || undefined,
-      guarantorNic: customerForm.guarantorNic.trim() || undefined,
-      guarantorPhone: customerForm.guarantorPhone.trim() || undefined,
-      guarantorRelationship: customerForm.guarantorRelationship.trim() || undefined,
-    });
+    if (
+      !(await updateCustomer(customerForm.id, {
+        password: customerPassword || undefined,
+        fullName: customerForm.fullName.trim(),
+        name: customerForm.fullName.trim(),
+        nic: customerForm.nic.trim(),
+        phone: customerForm.phone.trim(),
+        alternatePhone: customerForm.alternatePhone.trim() || undefined,
+        email: customerForm.email.trim() || undefined,
+        address: customerForm.address.trim(),
+        town: customerForm.town.trim(),
+        district: customerForm.district.trim(),
+        village: customerForm.village.trim() || undefined,
+        occupation: customerForm.occupation.trim() || undefined,
+        monthlyIncome: Number(customerForm.monthlyIncome) || 0,
+        status: customerForm.status,
+        guarantorName: customerForm.guarantorName.trim() || undefined,
+        guarantorNic: customerForm.guarantorNic.trim() || undefined,
+        guarantorPhone: customerForm.guarantorPhone.trim() || undefined,
+        guarantorRelationship:
+          customerForm.guarantorRelationship.trim() || undefined,
+      }))
+    )
+      return;
 
     setIsEditCustomerModalOpen(false);
     setToastMsg(`Customer "${customerForm.fullName}" updated successfully.`);
     setTimeout(() => setToastMsg(""), 4000);
   };
 
-  const handleConfirmDeleteCustomer = () => {
+  const handleConfirmDeleteCustomer = async () => {
     if (!deletingCustomer) return;
-    const name = deletingCustomer.fullName || deletingCustomer.name || "Customer";
-    deleteCustomer(deletingCustomer.id);
+    const name =
+      deletingCustomer.fullName || deletingCustomer.name || "Customer";
+    if (!(await deleteCustomer(deletingCustomer.id))) return;
     if (selectedCustomerId === deletingCustomer.id) {
       setSelectedCustomerId(null);
     }
@@ -248,6 +261,8 @@ function UserManagementContent() {
 
   // Staff Modal State
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffPassword, setStaffPassword] = useState("");
+  const [customerPassword, setCustomerPassword] = useState("");
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [isRbacOpen, setIsRbacOpen] = useState(false);
   const [staffForm, setStaffForm] = useState<{
@@ -262,10 +277,10 @@ function UserManagementContent() {
     id: "",
     name: "",
     email: "",
-    role: "Loan Officer",
+    role: "Staff",
     branch: "Colombo Central",
     status: "Active",
-    permissions: ROLE_PRESET_PERMISSIONS["Loan Officer"],
+    permissions: ROLE_PRESET_PERMISSIONS["Staff"],
   });
 
   // Switch tab with URL reflection
@@ -283,7 +298,16 @@ function UserManagementContent() {
     return customers.filter((c) => {
       const matchesSearch =
         !q ||
-        [c.id, c.name, c.fullName, c.phone, c.nic, c.town, c.village, c.district]
+        [
+          c.id,
+          c.name,
+          c.fullName,
+          c.phone,
+          c.nic,
+          c.town,
+          c.village,
+          c.district,
+        ]
           .join(" ")
           .toLowerCase()
           .includes(q);
@@ -293,51 +317,64 @@ function UserManagementContent() {
   }, [customers, searchQuery]);
 
   const activeCustomerCount = useMemo(
-    () => customers.filter((c) => (c.status || "").toUpperCase() === "ACTIVE").length,
-    [customers]
+    () =>
+      customers.filter((c) => (c.status || "").toUpperCase() === "ACTIVE")
+        .length,
+    [customers],
   );
   const inactiveCustomerCount = customers.length - activeCustomerCount;
 
   const totalFinanced = useMemo(
     () => loans.reduce((sum, l) => sum + (l.principal || l.amount || 0), 0),
-    [loans]
+    [loans],
   );
 
   // Selected Customer Deep Data for slide-over drawer
   const selectedCustomer = useMemo(
-    () => (selectedCustomerId ? customers.find((c) => c.id === selectedCustomerId) ?? null : null),
-    [customers, selectedCustomerId]
+    () =>
+      selectedCustomerId
+        ? (customers.find((c) => c.id === selectedCustomerId) ?? null)
+        : null,
+    [customers, selectedCustomerId],
   );
 
   const customerLoans = useMemo(
-    () => (selectedCustomer ? loans.filter((l) => l.customerId === selectedCustomer.id) : []),
-    [loans, selectedCustomer]
+    () =>
+      selectedCustomer
+        ? loans.filter((l) => l.customerId === selectedCustomer.id)
+        : [],
+    [loans, selectedCustomer],
   );
 
   const customerPayments = useMemo(() => {
     if (!selectedCustomer) return [];
     const loanIds = customerLoans.map((l) => l.id);
-    return payments.filter((p) => p.customerId === selectedCustomer.id || loanIds.includes(p.loanId));
+    return payments.filter(
+      (p) => p.customerId === selectedCustomer.id || loanIds.includes(p.loanId),
+    );
   }, [payments, selectedCustomer, customerLoans]);
 
   const customerDocs = useMemo(
-    () => (selectedCustomer ? documents.filter((d) => d.customerId === selectedCustomer.id) : []),
-    [documents, selectedCustomer]
+    () =>
+      selectedCustomer
+        ? documents.filter((d) => d.customerId === selectedCustomer.id)
+        : [],
+    [documents, selectedCustomer],
   );
 
   const customerTotalRepayable = useMemo(
     () => customerLoans.reduce((sum, l) => sum + getLoanTotalRepayment(l), 0),
-    [customerLoans]
+    [customerLoans],
   );
 
   const customerTotalPaid = useMemo(
     () => customerPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
-    [customerPayments]
+    [customerPayments],
   );
 
   const customerOutstanding = Math.max(
     0,
-    Math.round((customerTotalRepayable - customerTotalPaid) * 100) / 100
+    Math.round((customerTotalRepayable - customerTotalPaid) * 100) / 100,
   );
 
   // ── STAFF COMPUTATIONS ────────────────────────────────────────────────────
@@ -352,7 +389,8 @@ function UserManagementContent() {
         (u.id || "").toLowerCase().includes(q);
 
       const matchesRole =
-        staffRoleFilter === "ALL" || u.role.toUpperCase() === staffRoleFilter.toUpperCase();
+        staffRoleFilter === "ALL" ||
+        u.role.toUpperCase() === staffRoleFilter.toUpperCase();
 
       return matchesSearch && matchesRole;
     });
@@ -360,33 +398,33 @@ function UserManagementContent() {
 
   const staffRoleCounts = useMemo(() => {
     return {
-      admin: staffUsers.filter((u) => u.role === "Administrator").length,
-      loanOfficer: staffUsers.filter((u) => u.role === "Loan Officer").length,
-      fieldOrAudit: staffUsers.filter(
-        (u) => u.role === "Collection Agent" || u.role === "Auditor"
-      ).length,
+      admin: staffUsers.filter((u) => u.role === "Admin").length,
+      staff: staffUsers.filter((u) => u.role === "Staff").length,
+      customer: customers.length,
     };
-  }, [staffUsers]);
+  }, [staffUsers, customers]);
 
   // Open modal for new staff
   const handleOpenAddStaff = () => {
     const nextNum = staffUsers.length + 1;
     const newId = `STF-${nextNum < 10 ? `0${nextNum}` : nextNum}`;
+    setStaffPassword("");
     setEditingStaffId(null);
     setStaffForm({
       id: newId,
       name: "",
       email: "",
-      role: "Loan Officer",
+      role: "Staff",
       branch: "Colombo Central",
       status: "Active",
-      permissions: { ...ROLE_PRESET_PERMISSIONS["Loan Officer"] },
+      permissions: { ...ROLE_PRESET_PERMISSIONS["Staff"] },
     });
     setIsStaffModalOpen(true);
   };
 
   // Open modal for editing staff
   const handleOpenEditStaff = (user: StaffUser) => {
+    setStaffPassword("");
     setEditingStaffId(user.id);
     setStaffForm({
       id: user.id,
@@ -408,7 +446,7 @@ function UserManagementContent() {
     }));
   };
 
-  const handleSaveStaff = (e: React.FormEvent) => {
+  const handleSaveStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staffForm.name.trim() || !staffForm.email.trim()) {
       alert("Please provide both name and email address.");
@@ -416,19 +454,24 @@ function UserManagementContent() {
     }
 
     if (editingStaffId) {
-      updateStaffUser(editingStaffId, {
-        name: staffForm.name,
-        email: staffForm.email,
-        role: staffForm.role,
-        branch: staffForm.branch,
-        status: staffForm.status,
-        permissions: staffForm.permissions,
-      });
+      if (
+        !(await updateStaffUser(editingStaffId, {
+          password: staffPassword || undefined,
+          name: staffForm.name,
+          email: staffForm.email,
+          role: staffForm.role,
+          branch: staffForm.branch,
+          status: staffForm.status,
+          permissions: staffForm.permissions,
+        }))
+      )
+        return;
       setToastMsg(`Staff member ${staffForm.name} updated successfully.`);
     } else {
       const todayStr = new Date().toISOString().slice(0, 10);
       const newStaff: StaffUser = {
         id: staffForm.id,
+        password: staffPassword || undefined,
         name: staffForm.name,
         email: staffForm.email,
         role: staffForm.role,
@@ -437,7 +480,7 @@ function UserManagementContent() {
         joinedDate: todayStr,
         permissions: staffForm.permissions,
       };
-      addStaffUser(newStaff);
+      if (!(await addStaffUser(newStaff))) return;
       setToastMsg(`New staff member ${staffForm.name} registered.`);
     }
 
@@ -445,19 +488,22 @@ function UserManagementContent() {
     setTimeout(() => setToastMsg(""), 4500);
   };
 
-  const handleToggleStaffStatus = (user: StaffUser) => {
+  const handleToggleStaffStatus = async (user: StaffUser) => {
     const newStatus = user.status === "Active" ? "Inactive" : "Active";
-    updateStaffUser(user.id, { status: newStatus });
+    if (!(await updateStaffUser(user.id, { status: newStatus }))) return;
     setToastMsg(`Staff member ${user.name} is now ${newStatus}.`);
     setTimeout(() => setToastMsg(""), 3500);
   };
 
   return (
-    <main className="min-h-screen bg-slate-50/80 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-3.5">
+    <section className="min-h-screen bg-slate-50/80 font-sans">
+      <div className="mx-auto workspace-page">
         {/* Toast Feedback */}
         {toastMsg && (
-          <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs animate-in fade-in">
+          <div
+            className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs animate-in fade-in"
+            role="status"
+          >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
               <span>{toastMsg}</span>
@@ -465,6 +511,7 @@ function UserManagementContent() {
             <button
               onClick={() => setToastMsg("")}
               className="text-emerald-700 hover:text-emerald-900 p-0.5 cursor-pointer"
+              aria-label="Close"
             >
               <X size={13} />
             </button>
@@ -476,10 +523,10 @@ function UserManagementContent() {
           {/* Left: Section Header & Switcher */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
             <div className="border-r-0 sm:border-r border-slate-200 sm:pr-4">
-              <span className="text-[10px] font-black uppercase tracking-widest text-red-600 block leading-tight">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-red-600 block leading-tight">
                 ACCESS &amp; IDENTITY HUB
               </span>
-              <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight mt-0.5">
+              <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight leading-tight mt-0.5">
                 User Management
               </h1>
             </div>
@@ -491,14 +538,21 @@ function UserManagementContent() {
                 onClick={() => handleTabChange("customers")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   activeTab === "customers"
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-extrabold"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <Users size={14} className={activeTab === "customers" ? "text-red-600" : "text-slate-400"} />
+                <Users
+                  size={14}
+                  className={
+                    activeTab === "customers"
+                      ? "text-red-600"
+                      : "text-slate-400"
+                  }
+                />
                 <span>Customer</span>
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                  className={`text-[11px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
                     activeTab === "customers"
                       ? "bg-red-50 text-red-700 border border-red-200/80"
                       : "bg-slate-200 text-slate-700"
@@ -513,14 +567,19 @@ function UserManagementContent() {
                 onClick={() => handleTabChange("staff")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   activeTab === "staff"
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-extrabold"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <ShieldCheck size={14} className={activeTab === "staff" ? "text-red-600" : "text-slate-400"} />
+                <ShieldCheck
+                  size={14}
+                  className={
+                    activeTab === "staff" ? "text-red-600" : "text-slate-400"
+                  }
+                />
                 <span>Staff &amp; Roles</span>
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                  className={`text-[11px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
                     activeTab === "staff"
                       ? "bg-red-50 text-red-700 border border-red-200/80"
                       : "bg-slate-200 text-slate-700"
@@ -537,7 +596,9 @@ function UserManagementContent() {
             {activeTab === "customers" ? (
               <button
                 type="button"
-                onClick={() => router.push(`/customers/new?fresh=${Date.now()}`)}
+                onClick={() =>
+                  router.push(`/customers/new?fresh=${Date.now()}`)
+                }
                 className="inline-flex items-center gap-1.5 px-3.5 h-9 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs shadow-red-600/20 transition cursor-pointer"
               >
                 <UserPlus size={14} />
@@ -558,19 +619,21 @@ function UserManagementContent() {
 
         {/* ═══ COMPACT HIGH-DENSITY METRICS STRIP ═════════════════════════════ */}
         {activeTab === "customers" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
             <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
                 <Users size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   Total Customers
                 </p>
-                <p className="text-lg font-black text-slate-900 leading-tight font-mono">
+                <p className="text-lg font-semibold text-slate-900 leading-tight font-mono">
                   {customers.length}
                 </p>
-                <p className="text-[10px] text-slate-500 font-medium truncate">Client directory registry</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  Client directory registry
+                </p>
               </div>
             </div>
 
@@ -579,13 +642,15 @@ function UserManagementContent() {
                 <UserCheck size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   Active Customers
                 </p>
-                <p className="text-lg font-black text-emerald-600 leading-tight font-mono">
+                <p className="text-lg font-semibold text-emerald-600 leading-tight font-mono">
                   {activeCustomerCount}
                 </p>
-                <p className="text-[10px] text-emerald-700 font-semibold truncate">Performing accounts</p>
+                <p className="text-[11px] text-emerald-700 font-semibold truncate">
+                  Performing accounts
+                </p>
               </div>
             </div>
 
@@ -594,13 +659,15 @@ function UserManagementContent() {
                 <UserX size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   Inactive / Settled
                 </p>
-                <p className="text-lg font-black text-slate-700 leading-tight font-mono">
+                <p className="text-lg font-semibold text-slate-700 leading-tight font-mono">
                   {inactiveCustomerCount}
                 </p>
-                <p className="text-[10px] text-slate-500 font-medium truncate">No active dues</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  No active dues
+                </p>
               </div>
             </div>
 
@@ -609,30 +676,34 @@ function UserManagementContent() {
                 <CreditCard size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   Gross Portfolio
                 </p>
-                <p className="text-lg font-black text-slate-900 leading-tight font-mono truncate">
+                <p className="text-lg font-semibold text-slate-900 leading-tight font-mono truncate">
                   {MONEY(totalFinanced)}
                 </p>
-                <p className="text-[10px] text-blue-700 font-medium truncate">{loans.length} issued facilities</p>
+                <p className="text-[11px] text-blue-700 font-medium truncate">
+                  {loans.length} issued facilities
+                </p>
               </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
             <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
                 <ShieldCheck size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   Total Staff
                 </p>
-                <p className="text-lg font-black text-slate-900 leading-tight font-mono">
+                <p className="text-lg font-semibold text-slate-900 leading-tight font-mono">
                   {staffUsers.length}
                 </p>
-                <p className="text-[10px] text-slate-500 font-medium truncate">Internal operators</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  Internal operators
+                </p>
               </div>
             </div>
 
@@ -641,13 +712,15 @@ function UserManagementContent() {
                 <Shield size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Administrators
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Admins
                 </p>
-                <p className="text-lg font-black text-purple-700 leading-tight font-mono">
+                <p className="text-lg font-semibold text-purple-700 leading-tight font-mono">
                   {staffRoleCounts.admin}
                 </p>
-                <p className="text-[10px] text-purple-700 font-semibold truncate">Tier 1 · Full access</p>
+                <p className="text-[11px] text-purple-700 font-semibold truncate">
+                  Tier 1 · Full access
+                </p>
               </div>
             </div>
 
@@ -656,13 +729,15 @@ function UserManagementContent() {
                 <FileText size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Loan Officers
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Staff
                 </p>
-                <p className="text-lg font-black text-emerald-700 leading-tight font-mono">
-                  {staffRoleCounts.loanOfficer}
+                <p className="text-lg font-semibold text-emerald-700 leading-tight font-mono">
+                  {staffRoleCounts.staff}
                 </p>
-                <p className="text-[10px] text-emerald-700 font-semibold truncate">Tier 2 · Credit &amp; Onboarding</p>
+                <p className="text-[11px] text-emerald-700 font-semibold truncate">
+                  Tier 2 · Credit &amp; Onboarding
+                </p>
               </div>
             </div>
 
@@ -671,13 +746,15 @@ function UserManagementContent() {
                 <Lock size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Field &amp; Audit
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Customers
                 </p>
-                <p className="text-lg font-black text-amber-700 leading-tight font-mono">
-                  {staffRoleCounts.fieldOrAudit}
+                <p className="text-lg font-semibold text-amber-700 leading-tight font-mono">
+                  {staffRoleCounts.customer}
                 </p>
-                <p className="text-[10px] text-amber-700 font-semibold truncate">Collections &amp; Verification</p>
+                <p className="text-[11px] text-amber-700 font-semibold truncate">
+                  Customer portal access
+                </p>
               </div>
             </div>
           </div>
@@ -694,6 +771,7 @@ function UserManagementContent() {
             <input
               type="text"
               value={searchQuery}
+              aria-label="Search customers or staff"
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={
                 activeTab === "customers"
@@ -707,6 +785,7 @@ function UserManagementContent() {
                 type="button"
                 onClick={() => setSearchQuery("")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                aria-label="Clear search"
               >
                 <X size={12} />
               </button>
@@ -722,10 +801,8 @@ function UserManagementContent() {
                 className="h-8 px-3 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-semibold focus:outline-none focus:ring-1 focus:ring-red-500 cursor-pointer"
               >
                 <option value="ALL">All Roles ({staffUsers.length})</option>
-                <option value="ADMINISTRATOR">Administrator ({staffRoleCounts.admin})</option>
-                <option value="LOAN OFFICER">Loan Officer ({staffRoleCounts.loanOfficer})</option>
-                <option value="COLLECTION AGENT">Collection Agent</option>
-                <option value="AUDITOR">Auditor</option>
+                <option value="ADMIN">Admin ({staffRoleCounts.admin})</option>
+                <option value="STAFF">Staff ({staffRoleCounts.staff})</option>
               </select>
 
               <button
@@ -735,7 +812,11 @@ function UserManagementContent() {
               >
                 <HelpCircle size={13} className="text-slate-500" />
                 <span>RBAC Guide</span>
-                {isRbacOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {isRbacOpen ? (
+                  <ChevronUp size={12} />
+                ) : (
+                  <ChevronDown size={12} />
+                )}
               </button>
             </div>
           )}
@@ -747,41 +828,52 @@ function UserManagementContent() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-red-600" />
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                   Role-Based Access Control Architecture
                 </h3>
               </div>
-              <span className="text-[10px] font-bold text-slate-500">Security Policies Active</span>
+              <span className="text-[11px] font-bold text-slate-500">
+                Security Policies Active
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-200/70 text-xs space-y-1">
-                <span className="text-[10px] font-black uppercase text-purple-800 bg-purple-100 px-2 py-0.5 rounded">
-                  Tier 1 · Administrator
+                <span className="text-[11px] font-semibold uppercase text-purple-800 bg-purple-100 px-2 py-0.5 rounded">
+                  Tier 1 · Admin
                 </span>
-                <p className="font-bold text-slate-900 text-xs mt-1">Full System Authority</p>
+                <p className="font-bold text-slate-900 text-xs mt-1">
+                  Full System Authority
+                </p>
                 <p className="text-[11px] text-slate-600">
-                  Loan approval, interest configuration, fee rules, audit trail, user permission overrides.
+                  Loan approval, interest configuration, fee rules, audit trail,
+                  user permission overrides.
                 </p>
               </div>
 
               <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200/70 text-xs space-y-1">
-                <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                  Tier 2 · Loan Officer
+                <span className="text-[11px] font-semibold uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+                  Tier 2 · Staff
                 </span>
-                <p className="font-bold text-slate-900 text-xs mt-1">Credit &amp; Collections</p>
+                <p className="font-bold text-slate-900 text-xs mt-1">
+                  Credit &amp; Collections
+                </p>
                 <p className="text-[11px] text-slate-600">
-                  Borrower registration, loan appraisal, document uploads, repayment collections &amp; receipts.
+                  Borrower registration, loan appraisal, document uploads,
+                  repayment collections &amp; receipts.
                 </p>
               </div>
 
               <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/70 text-xs space-y-1">
-                <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
-                  Tier 3 · Field &amp; Auditor
+                <span className="text-[11px] font-semibold uppercase text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                  Customer
                 </span>
-                <p className="font-bold text-slate-900 text-xs mt-1">Operations &amp; Verification</p>
+                <p className="font-bold text-slate-900 text-xs mt-1">
+                  Personal account access
+                </p>
                 <p className="text-[11px] text-slate-600">
-                  Field collections, receipt issuance, audit trail inspection, compliance reporting.
+                  Field collections, receipt issuance, audit trail inspection,
+                  compliance reporting.
                 </p>
               </div>
             </div>
@@ -791,17 +883,36 @@ function UserManagementContent() {
         {/* ═══ VIEW 1: CUSTOMERS (BORROWERS) DIRECTORY TABLE ══════════════════ */}
         {activeTab === "customers" && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto min-w-full">
-              <table className="w-full text-left text-xs whitespace-nowrap min-w-[860px]">
-                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+            <div
+              className="overflow-x-auto min-w-full table-scroll"
+              role="region"
+              aria-label="Scrollable records table"
+              tabIndex={0}
+            >
+              <table className="w-full text-left text-xs whitespace-nowrap min-w-[860px] lms-table">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                   <tr>
-                    <th className="py-3 px-5">Customer Profile</th>
-                    <th className="py-3 px-4">Customer ID</th>
-                    <th className="py-3 px-4">Contact Phone</th>
-                    <th className="py-3 px-4">NIC Number</th>
-                    <th className="py-3 px-4">Address</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                    <th className="py-3 px-5 text-right">Actions</th>
+                    <th className="py-3 px-5" scope="col">
+                      Customer Profile
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Customer ID
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Contact Phone
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      NIC Number
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Address
+                    </th>
+                    <th className="py-3 px-4 text-center" scope="col">
+                      Status
+                    </th>
+                    <th className="py-3 px-5 text-right" scope="col">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -813,10 +924,14 @@ function UserManagementContent() {
                       .slice(0, 2)
                       .join("")
                       .toUpperCase();
-                    const isActive = (c.status || "").toUpperCase() === "ACTIVE";
+                    const isActive =
+                      (c.status || "").toUpperCase() === "ACTIVE";
 
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={c.id}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
                         {/* Avatar & Name */}
                         <td className="py-2.5 px-5">
                           <div className="flex items-center gap-2.5">
@@ -827,7 +942,7 @@ function UserManagementContent() {
                                 className="w-8 h-8 rounded-xl object-cover border border-slate-200 shrink-0"
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                              <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-bold text-[11px] flex items-center justify-center shrink-0">
                                 {initials}
                               </div>
                             )}
@@ -836,7 +951,7 @@ function UserManagementContent() {
                                 {displayName}
                               </p>
                               {c.occupation ? (
-                                <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                <p className="text-[11px] text-slate-500 truncate mt-0.5">
                                   {c.occupation}
                                 </p>
                               ) : null}
@@ -858,7 +973,10 @@ function UserManagementContent() {
                               href={`tel:${c.phone}`}
                               className="text-slate-800 hover:text-red-600 transition inline-flex items-center gap-1"
                             >
-                              <Phone size={11} className="text-slate-400 shrink-0" />
+                              <Phone
+                                size={11}
+                                className="text-slate-400 shrink-0"
+                              />
                               <span>{c.phone}</span>
                             </a>
                           ) : (
@@ -879,7 +997,7 @@ function UserManagementContent() {
                         {/* Status */}
                         <td className="py-2.5 px-4 text-center">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                               isActive
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : "bg-slate-100 text-slate-600 border-slate-200"
@@ -910,13 +1028,14 @@ function UserManagementContent() {
                               onClick={() => handleOpenEditCustomer(c)}
                               className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                               title="Edit Customer Details"
+                              aria-label="Edit Customer Details"
                             >
                               <Edit size={13} />
                             </button>
                             <Link
                               href={`/loans/new?customerId=${c.id}`}
                               className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
-                              title="Issue New Loan"
+                              title="New Loan"
                             >
                               <PlusCircle size={13} />
                             </Link>
@@ -925,6 +1044,7 @@ function UserManagementContent() {
                               onClick={() => setDeletingCustomer(c)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                               title="Delete Customer"
+                              aria-label="Delete Customer"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -939,8 +1059,13 @@ function UserManagementContent() {
               {filteredCustomers.length === 0 && (
                 <div className="p-10 text-center text-slate-500 text-xs space-y-2">
                   <Users size={28} className="mx-auto text-slate-300" />
-                  <p className="font-bold text-slate-700 text-sm">No customer records found</p>
-                  <p>Try modifying your search criteria or register a new customer.</p>
+                  <p className="font-bold text-slate-700 text-sm">
+                    No customer records found
+                  </p>
+                  <p>
+                    Try modifying your search criteria or register a new
+                    customer.
+                  </p>
                 </div>
               )}
             </div>
@@ -950,15 +1075,30 @@ function UserManagementContent() {
         {/* ═══ VIEW 2: STAFF & ROLES DIRECTORY TABLE ═════════════════════════ */}
         {activeTab === "staff" && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto min-w-full">
-              <table className="w-full text-left text-xs whitespace-nowrap min-w-[860px]">
-                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+            <div
+              className="overflow-x-auto min-w-full table-scroll"
+              role="region"
+              aria-label="Scrollable records table"
+              tabIndex={0}
+            >
+              <table className="w-full text-left text-xs whitespace-nowrap min-w-[860px] lms-table">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                   <tr>
-                    <th className="py-3 px-5">Staff Member</th>
-                    <th className="py-3 px-4">Role &amp; Status</th>
-                    <th className="py-3 px-4">Branch Office</th>
-                    <th className="py-3 px-4">System Authority Flags</th>
-                    <th className="py-3 px-5 text-right">Actions</th>
+                    <th className="py-3 px-5" scope="col">
+                      Staff Member
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Role &amp; Status
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Branch Office
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      System Authority Flags
+                    </th>
+                    <th className="py-3 px-5 text-right" scope="col">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -971,30 +1111,33 @@ function UserManagementContent() {
                       .toUpperCase();
 
                     const roleBadgeColor =
-                      u.role === "Administrator"
+                      u.role === "Admin"
                         ? "bg-purple-50 text-purple-800 border-purple-200"
-                        : u.role === "Loan Officer"
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                        : u.role === "Collection Agent"
-                        ? "bg-amber-50 text-amber-900 border-amber-200"
-                        : "bg-red-50 text-red-800 border-red-200";
+                        : u.role === "Staff"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-red-50 text-red-800 border-red-200";
 
                     return (
-                      <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={u.id}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
                         {/* Staff Profile */}
                         <td className="py-2.5 px-5">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
                               {initials}
                             </div>
                             <div className="min-w-0">
                               <p className="font-bold text-slate-900 text-xs leading-tight truncate">
                                 {u.name}
                               </p>
-                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 font-medium">
+                              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 font-medium">
                                 <span>{u.email}</span>
                                 <span>•</span>
-                                <span className="font-mono font-semibold text-slate-700">{u.id}</span>
+                                <span className="font-mono font-semibold text-slate-700">
+                                  {u.id}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -1003,17 +1146,23 @@ function UserManagementContent() {
                         {/* Role & Status */}
                         <td className="py-2.5 px-4">
                           <div className="flex flex-col gap-0.5 items-start">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadgeColor}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${roleBadgeColor}`}
+                            >
                               {u.role}
                             </span>
                             <span
-                              className={`text-[9px] font-bold flex items-center gap-1 ${
-                                u.status === "Active" ? "text-emerald-700" : "text-slate-500"
+                              className={`text-[11px] font-bold flex items-center gap-1 ${
+                                u.status === "Active"
+                                  ? "text-emerald-700"
+                                  : "text-slate-500"
                               }`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${
-                                  u.status === "Active" ? "bg-emerald-600" : "bg-slate-400"
+                                  u.status === "Active"
+                                    ? "bg-emerald-600"
+                                    : "bg-slate-400"
                                 }`}
                               />
                               {u.status}
@@ -1024,37 +1173,42 @@ function UserManagementContent() {
                         {/* Branch Office */}
                         <td className="py-2.5 px-4 text-slate-700">
                           <div className="flex items-center gap-1.5 font-semibold text-xs">
-                            <Building size={12} className="text-slate-400 shrink-0" />
+                            <Building
+                              size={12}
+                              className="text-slate-400 shrink-0"
+                            />
                             <span>{u.branch}</span>
                           </div>
-                          <span className="text-[10px] text-slate-400">Joined {u.joinedDate}</span>
+                          <span className="text-[11px] text-slate-400">
+                            Joined {u.joinedDate}
+                          </span>
                         </td>
 
                         {/* Permissions Chips */}
                         <td className="py-2.5 px-4">
                           <div className="flex flex-wrap gap-1 max-w-xs">
                             {u.permissions.approveLoans && (
-                              <span className="px-1.5 py-0.2 bg-red-50 text-red-800 rounded text-[9px] font-bold border border-red-200">
+                              <span className="px-1.5 py-0.2 bg-red-50 text-red-800 rounded text-[11px] font-bold border border-red-200">
                                 Approve Loans
                               </span>
                             )}
                             {u.permissions.recordRepayments && (
-                              <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 rounded text-[9px] font-bold border border-emerald-200">
+                              <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 rounded text-[11px] font-bold border border-emerald-200">
                                 Repayments
                               </span>
                             )}
                             {u.permissions.exportReports && (
-                              <span className="px-1.5 py-0.2 bg-purple-50 text-purple-800 rounded text-[9px] font-bold border border-purple-200">
+                              <span className="px-1.5 py-0.2 bg-purple-50 text-purple-800 rounded text-[11px] font-bold border border-purple-200">
                                 Exports
                               </span>
                             )}
                             {u.permissions.manageCustomers && (
-                              <span className="px-1.5 py-0.2 bg-slate-100 text-slate-800 rounded text-[9px] font-bold border border-slate-200">
+                              <span className="px-1.5 py-0.2 bg-slate-100 text-slate-800 rounded text-[11px] font-bold border border-slate-200">
                                 Customers
                               </span>
                             )}
                             {u.permissions.manageSettings && (
-                              <span className="px-1.5 py-0.2 bg-rose-50 text-rose-800 rounded text-[9px] font-bold border border-rose-200">
+                              <span className="px-1.5 py-0.2 bg-rose-50 text-rose-800 rounded text-[11px] font-bold border border-rose-200">
                                 Settings
                               </span>
                             )}
@@ -1080,8 +1234,14 @@ function UserManagementContent() {
                                   : "text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
                               }`}
                             >
-                              {u.status === "Active" ? <UserX size={11} /> : <Check size={11} />}
-                              <span>{u.status === "Active" ? "Disable" : "Enable"}</span>
+                              {u.status === "Active" ? (
+                                <UserX size={11} />
+                              ) : (
+                                <Check size={11} />
+                              )}
+                              <span>
+                                {u.status === "Active" ? "Disable" : "Enable"}
+                              </span>
                             </button>
                           </div>
                         </td>
@@ -1094,7 +1254,9 @@ function UserManagementContent() {
               {filteredStaff.length === 0 && (
                 <div className="p-10 text-center text-slate-500 text-xs space-y-2">
                   <ShieldCheck size={28} className="mx-auto text-slate-300" />
-                  <p className="font-bold text-slate-700 text-sm">No staff personnel found</p>
+                  <p className="font-bold text-slate-700 text-sm">
+                    No staff personnel found
+                  </p>
                   <p>Try modifying your search or role filter.</p>
                 </div>
               )}
@@ -1104,8 +1266,8 @@ function UserManagementContent() {
 
         {/* ═══ CUSTOMER QUICK PROFILE DRAWER / MODAL ═════════════════════════ */}
         {selectedCustomer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-3 sm:p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-3 sm:p-4 lms-overlay">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-150 lms-dialog">
               <div className="flex items-start justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-3">
                   {selectedCustomer.photoUrl ? (
@@ -1115,18 +1277,33 @@ function UserManagementContent() {
                       className="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0"
                     />
                   ) : (
-                    <div className="w-11 h-11 rounded-xl bg-red-100 text-red-700 font-black text-sm flex items-center justify-center shrink-0">
-                      {(selectedCustomer.fullName || selectedCustomer.name || "C").slice(0, 2).toUpperCase()}
+                    <div className="w-11 h-11 rounded-xl bg-red-100 text-red-700 font-semibold text-sm flex items-center justify-center shrink-0">
+                      {(
+                        selectedCustomer.fullName ||
+                        selectedCustomer.name ||
+                        "C"
+                      )
+                        .slice(0, 2)
+                        .toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <h2 className="text-base font-black text-slate-900 leading-tight">
+                    <h2 className="text-base font-semibold text-slate-900 leading-tight">
                       {selectedCustomer.fullName || selectedCustomer.name}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Borrower ID: <span className="font-mono font-bold text-slate-700">{selectedCustomer.id}</span>
+                      Borrower ID:{" "}
+                      <span className="font-mono font-bold text-slate-700">
+                        {selectedCustomer.id}
+                      </span>
                       {selectedCustomer.nic && (
-                        <span> · NIC: <span className="font-mono font-bold text-slate-700">{selectedCustomer.nic}</span></span>
+                        <span>
+                          {" "}
+                          · NIC:{" "}
+                          <span className="font-mono font-bold text-slate-700">
+                            {selectedCustomer.nic}
+                          </span>
+                        </span>
                       )}
                     </p>
                   </div>
@@ -1136,6 +1313,7 @@ function UserManagementContent() {
                   type="button"
                   onClick={() => setSelectedCustomerId(null)}
                   className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition cursor-pointer"
+                  aria-label="Close"
                 >
                   <X size={15} />
                 </button>
@@ -1144,20 +1322,26 @@ function UserManagementContent() {
               {/* Financial Snapshot */}
               <div className="grid grid-cols-3 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
                 <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Borrowed</span>
-                  <span className="text-sm font-black font-mono text-slate-900 mt-0.5 block">
+                  <span className="text-[11px] font-bold uppercase text-slate-500 block">
+                    Total Borrowed
+                  </span>
+                  <span className="text-sm font-semibold font-mono text-slate-900 mt-0.5 block">
                     {MONEY(customerTotalRepayable)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Repaid</span>
-                  <span className="text-sm font-black font-mono text-emerald-600 mt-0.5 block">
+                  <span className="text-[11px] font-bold uppercase text-slate-500 block">
+                    Total Repaid
+                  </span>
+                  <span className="text-sm font-semibold font-mono text-emerald-600 mt-0.5 block">
                     {MONEY(customerTotalPaid)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Outstanding</span>
-                  <span className="text-sm font-black font-mono text-rose-600 mt-0.5 block">
+                  <span className="text-[11px] font-bold uppercase text-slate-500 block">
+                    Outstanding
+                  </span>
+                  <span className="text-sm font-semibold font-mono text-rose-600 mt-0.5 block">
                     {MONEY(customerOutstanding)}
                   </span>
                 </div>
@@ -1166,7 +1350,7 @@ function UserManagementContent() {
               {/* Active Facilities Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-800">
                     Loan Facilities ({customerLoans.length})
                   </h3>
                   <Link
@@ -1188,18 +1372,19 @@ function UserManagementContent() {
                           <p className="font-bold text-slate-900 leading-tight">
                             {l.loanNo || l.id}
                           </p>
-                          <p className="text-[10px] text-slate-500 font-mono">
-                            Disbursed: {MONEY(l.principal || l.amount || 0)} · {l.repaymentFrequency || "Monthly"}
+                          <p className="text-[11px] text-slate-500 font-mono">
+                            Disbursed: {MONEY(l.principal || l.amount || 0)} ·{" "}
+                            {l.repaymentFrequency || "Monthly"}
                           </p>
                         </div>
                         <div className="text-right">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                               (l.status || "").toLowerCase() === "active"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : (l.status || "").toLowerCase() === "completed"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-amber-100 text-amber-800"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-amber-100 text-amber-800"
                             }`}
                           >
                             {l.status}
@@ -1218,7 +1403,7 @@ function UserManagementContent() {
               {/* KYC Documents Preview */}
               {customerDocs.length > 0 && (
                 <div className="space-y-1.5 pt-1">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-800">
                     KYC &amp; Verification Documents ({customerDocs.length})
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
@@ -1228,7 +1413,9 @@ function UserManagementContent() {
                         className="p-2 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center gap-2 text-xs"
                       >
                         <FileText size={14} className="text-red-600 shrink-0" />
-                        <span className="truncate font-semibold text-slate-800">{d.title || d.fileName}</span>
+                        <span className="truncate font-semibold text-slate-800">
+                          {d.title || d.fileName}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1283,15 +1470,15 @@ function UserManagementContent() {
 
         {/* ═══ CUSTOMER EDIT MODAL ════════════════════════════════════════════ */}
         {isEditCustomerModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto">
-            <div className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 my-8 animate-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto lms-overlay">
+            <div className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 my-8 animate-in zoom-in-95 duration-150 lms-dialog">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
                     <Edit size={16} />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-900">
+                    <h3 className="text-base font-semibold text-slate-900">
                       Edit Customer Profile
                     </h3>
                     <p className="text-xs text-slate-500 font-medium font-mono">
@@ -1303,86 +1490,168 @@ function UserManagementContent() {
                   type="button"
                   onClick={() => setIsEditCustomerModalOpen(false)}
                   className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                  aria-label="Close"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               <form onSubmit={handleSaveCustomer} className="space-y-3.5">
+                <label className="block text-xs font-bold text-slate-700">
+                  New portal password (leave blank to keep current)
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={customerPassword}
+                    onChange={(e) => setCustomerPassword(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl"
+                  />
+                </label>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-700">Full Name *</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-1"
+                    >
+                      Full Name *
+                    </label>
                     <input
                       type="text"
                       required
                       value={customerForm.fullName}
-                      onChange={(e) => setCustomerForm({ ...customerForm, fullName: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          fullName: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
                       placeholder="e.g. Sunil Perera"
+                      id="field-app-dashboard-users-page-1"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">NIC Number *</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-2"
+                    >
+                      NIC Number *
+                    </label>
                     <input
                       type="text"
                       required
                       value={customerForm.nic}
-                      onChange={(e) => setCustomerForm({ ...customerForm, nic: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          nic: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
                       placeholder="e.g. 198512345678"
+                      id="field-app-dashboard-users-page-2"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Primary Contact Phone *</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-3"
+                    >
+                      Primary Contact Phone *
+                    </label>
                     <input
                       type="text"
                       required
                       value={customerForm.phone}
-                      onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          phone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
                       placeholder="e.g. 0771234567"
+                      id="field-app-dashboard-users-page-3"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Alternate Phone</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-4"
+                    >
+                      Alternate Phone
+                    </label>
                     <input
                       type="text"
                       value={customerForm.alternatePhone}
-                      onChange={(e) => setCustomerForm({ ...customerForm, alternatePhone: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          alternatePhone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
                       placeholder="e.g. 0719876543"
+                      id="field-app-dashboard-users-page-4"
                     />
                   </div>
 
                   <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-700">Residential Address</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-5"
+                    >
+                      Residential Address
+                    </label>
                     <input
                       type="text"
                       value={customerForm.address}
-                      onChange={(e) => setCustomerForm({ ...customerForm, address: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          address: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
                       placeholder="Street address"
+                      id="field-app-dashboard-users-page-5"
                     />
                   </div>
 
-                  
-
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Occupation / Business</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-6"
+                    >
+                      Occupation / Business
+                    </label>
                     <input
                       type="text"
                       value={customerForm.occupation}
-                      onChange={(e) => setCustomerForm({ ...customerForm, occupation: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          occupation: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
                       placeholder="e.g. Retail Trader"
+                      id="field-app-dashboard-users-page-6"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Customer Status</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-7"
+                    >
+                      Customer Status
+                    </label>
                     <select
                       value={customerForm.status}
                       onChange={(e) =>
@@ -1392,8 +1661,11 @@ function UserManagementContent() {
                         })
                       }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-bold"
+                      id="field-app-dashboard-users-page-7"
                     >
-                      <option value="Active">Active (Eligible for Loans)</option>
+                      <option value="Active">
+                        Active (Eligible for Loans)
+                      </option>
                       <option value="Inactive">Inactive</option>
                       <option value="SUSPENDED">Suspended / Blacklisted</option>
                     </select>
@@ -1401,24 +1673,46 @@ function UserManagementContent() {
 
                   {/* Guarantor Info */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Guarantor Name</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-8"
+                    >
+                      Guarantor Name
+                    </label>
                     <input
                       type="text"
                       value={customerForm.guarantorName}
-                      onChange={(e) => setCustomerForm({ ...customerForm, guarantorName: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          guarantorName: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
                       placeholder="Guarantor name"
+                      id="field-app-dashboard-users-page-8"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Guarantor Contact</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-9"
+                    >
+                      Guarantor Contact
+                    </label>
                     <input
                       type="text"
                       value={customerForm.guarantorPhone}
-                      onChange={(e) => setCustomerForm({ ...customerForm, guarantorPhone: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          guarantorPhone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
                       placeholder="07xxxxxxxx"
+                      id="field-app-dashboard-users-page-9"
                     />
                   </div>
                 </div>
@@ -1455,30 +1749,44 @@ function UserManagementContent() {
 
         {/* ═══ CUSTOMER DELETE CONFIRMATION MODAL ═════════════════════════════ */}
         {deletingCustomer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 lms-overlay">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150 lms-dialog">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                   <Trash2 size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                  <h3 className="text-base font-semibold text-slate-900 leading-tight">
                     Delete Customer Profile?
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Are you sure you want to remove <strong>{deletingCustomer.fullName || deletingCustomer.name}</strong> ({deletingCustomer.id}) from the system?
+                    Are you sure you want to remove{" "}
+                    <strong>
+                      {deletingCustomer.fullName || deletingCustomer.name}
+                    </strong>{" "}
+                    ({deletingCustomer.id}) from the system?
                   </p>
                 </div>
               </div>
 
-              {loans.filter((l) => l.customerId === deletingCustomer.id).length > 0 && (
+              {loans.filter((l) => l.customerId === deletingCustomer.id)
+                .length > 0 && (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
                   <div className="flex items-center gap-1.5 font-bold">
-                    <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                    <AlertTriangle
+                      size={14}
+                      className="text-amber-600 shrink-0"
+                    />
                     <span>Active Records Detected</span>
                   </div>
                   <p className="text-[11px] text-amber-800">
-                    This customer currently has {loans.filter((l) => l.customerId === deletingCustomer.id).length} recorded loan facility/facilities. Deleting will remove them from the active customer directory.
+                    This customer currently has{" "}
+                    {
+                      loans.filter((l) => l.customerId === deletingCustomer.id)
+                        .length
+                    }{" "}
+                    recorded loan facility/facilities. Deleting will remove them
+                    from the active customer directory.
                   </p>
                 </div>
               )}
@@ -1496,28 +1804,32 @@ function UserManagementContent() {
                   onClick={handleConfirmDeleteCustomer}
                   className="px-5 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs shadow-rose-600/20 transition cursor-pointer"
                 >
-                  Confirm Delete
+                  Delete customer
                 </button>
               </div>
             </div>
           </div>
         )}
         {isStaffModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 lms-overlay">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150 lms-dialog">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
-                    {editingStaffId ? "Edit Staff User Authority" : "Register New Staff Personnel"}
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {editingStaffId
+                      ? "Edit Staff User Authority"
+                      : "Register New Staff Personnel"}
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    Configure staff identity, operational role, and access rights.
+                    Configure staff identity, operational role, and access
+                    rights.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsStaffModalOpen(false)}
                   className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                  aria-label="Close"
                 >
                   <X size={16} />
                 </button>
@@ -1526,16 +1838,27 @@ function UserManagementContent() {
               <form onSubmit={handleSaveStaff} className="space-y-3.5">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Staff ID</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-10"
+                    >
+                      Staff ID
+                    </label>
                     <input
                       type="text"
                       value={staffForm.id}
                       disabled
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-mono font-semibold"
+                      id="field-app-dashboard-users-page-10"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Account Status</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-11"
+                    >
+                      Account Status
+                    </label>
                     <select
                       value={staffForm.status}
                       onChange={(e) =>
@@ -1545,6 +1868,7 @@ function UserManagementContent() {
                         })
                       }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
+                      id="field-app-dashboard-users-page-11"
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
@@ -1553,48 +1877,92 @@ function UserManagementContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Full Legal Name</label>
+                  <label
+                    className="text-xs font-bold text-slate-700"
+                    htmlFor="field-app-dashboard-users-page-12"
+                  >
+                    Full Legal Name
+                  </label>
                   <input
                     type="text"
                     value={staffForm.name}
-                    onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setStaffForm({ ...staffForm, name: e.target.value })
+                    }
                     className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     required
+                    id="field-app-dashboard-users-page-12"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Corporate Email</label>
+                  <label
+                    className="text-xs font-bold text-slate-700"
+                    htmlFor="field-app-dashboard-users-page-13"
+                  >
+                    Corporate Email
+                  </label>
                   <input
                     type="email"
                     value={staffForm.email}
-                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setStaffForm({ ...staffForm, email: e.target.value })
+                    }
                     className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
                     required
+                    id="field-app-dashboard-users-page-13"
                   />
                 </div>
 
+                <label className="block text-xs font-bold text-slate-700">
+                  {editingStaffId
+                    ? "New password (leave blank to keep current)"
+                    : "Password"}
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required={!editingStaffId}
+                    minLength={6}
+                    value={staffPassword}
+                    onChange={(e) => setStaffPassword(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl"
+                  />
+                </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Assigned Role</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-14"
+                    >
+                      Assigned Role
+                    </label>
                     <select
                       value={staffForm.role}
-                      onChange={(e) => handleRoleChange(e.target.value as StaffUser["role"])}
+                      onChange={(e) =>
+                        handleRoleChange(e.target.value as StaffUser["role"])
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
+                      id="field-app-dashboard-users-page-14"
                     >
-                      <option value="Administrator">Administrator</option>
-                      <option value="Loan Officer">Loan Officer</option>
-                      <option value="Collection Agent">Collection Agent</option>
-                      <option value="Auditor">Auditor</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Staff">Staff</option>
                     </select>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Branch Office</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-15"
+                    >
+                      Branch Office
+                    </label>
                     <select
                       value={staffForm.branch}
-                      onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
+                      onChange={(e) =>
+                        setStaffForm({ ...staffForm, branch: e.target.value })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
+                      id="field-app-dashboard-users-page-15"
                     >
                       {BRANCH_OPTIONS.map((b) => (
                         <option key={b} value={b}>
@@ -1607,18 +1975,41 @@ function UserManagementContent() {
 
                 {/* Granular Permissions */}
                 <div className="space-y-1.5 pt-1 border-t border-slate-100">
-                  <span className="text-xs font-black text-slate-800 block">
+                  <span className="text-xs font-semibold text-slate-800 block">
                     Granular Authorization Permissions
                   </span>
                   <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
                     {[
-                      { key: "approveLoans" as const, title: "Approve & Disburse Loans", desc: "Authorize pending credit lines" },
-                      { key: "recordRepayments" as const, title: "Record Collections", desc: "Accept payments & generate receipts" },
-                      { key: "exportReports" as const, title: "Export Financial Reports", desc: "Download CSV journals & audits" },
-                      { key: "manageCustomers" as const, title: "Manage Borrowers", desc: "Register & edit customer details" },
-                      { key: "manageSettings" as const, title: "System Configurations", desc: "Modify policy interest rates" },
+                      {
+                        key: "approveLoans" as const,
+                        title: "Approve & Disburse Loans",
+                        desc: "Authorize pending credit lines",
+                      },
+                      {
+                        key: "recordRepayments" as const,
+                        title: "Record Collections",
+                        desc: "Accept payments & generate receipts",
+                      },
+                      {
+                        key: "exportReports" as const,
+                        title: "Export Financial Reports",
+                        desc: "Download CSV journals & audits",
+                      },
+                      {
+                        key: "manageCustomers" as const,
+                        title: "Manage Borrowers",
+                        desc: "Register & edit customer details",
+                      },
+                      {
+                        key: "manageSettings" as const,
+                        title: "System Configurations",
+                        desc: "Modify policy interest rates",
+                      },
                     ].map((item) => (
-                      <label key={item.key} className="flex items-center gap-2 cursor-pointer">
+                      <label
+                        key={item.key}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                         <input
                           type="checkbox"
                           checked={staffForm.permissions[item.key]}
@@ -1634,8 +2025,12 @@ function UserManagementContent() {
                           className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                         />
                         <div className="leading-tight">
-                          <span className="font-bold text-slate-900 block">{item.title}</span>
-                          <span className="text-[10px] text-slate-500">{item.desc}</span>
+                          <span className="font-bold text-slate-900 block">
+                            {item.title}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {item.desc}
+                          </span>
                         </div>
                       </label>
                     ))}
@@ -1662,7 +2057,7 @@ function UserManagementContent() {
           </div>
         )}
       </div>
-    </main>
+    </section>
   );
 }
 
@@ -1670,7 +2065,7 @@ export default function UserManagementPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 max-w-7xl mx-auto text-xs text-slate-400">
+        <div className="mx-auto text-xs text-slate-400 workspace-page">
           Loading User Management Hub...
         </div>
       }
@@ -1679,4 +2074,3 @@ export default function UserManagementPage() {
     </Suspense>
   );
 }
-

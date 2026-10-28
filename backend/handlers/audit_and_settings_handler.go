@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"loan-management-backend/models"
 	"loan-management-backend/repository"
 )
 
@@ -49,7 +48,12 @@ func (h *AuditAndSettingsHandler) GetSettings(w http.ResponseWriter, r *http.Req
 }
 
 func (h *AuditAndSettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
-	var s models.SystemSettings
+	existing, err := h.settingsRepo.Get()
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	s := *existing
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		sendJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
 		return
@@ -62,4 +66,3 @@ func (h *AuditAndSettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.
 
 	sendJSON(w, http.StatusOK, s)
 }
-

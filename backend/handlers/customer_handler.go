@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strings"
 	"time"
@@ -59,8 +61,11 @@ func (h *CustomerHandler) LookupCustomer(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if customer == nil {
-		// Try by ID
-		customer, _ = h.custRepo.GetByID(query)
+		// Lookup by ID, phone, email or username.
+		id, _, lookupErr := h.custRepo.Credentials(query)
+		if lookupErr == nil {
+			customer, _ = h.custRepo.GetByID(id)
+		}
 	}
 
 	if customer == nil {
@@ -94,6 +99,18 @@ func (h *CustomerHandler) CreateCustomer(w http.ResponseWriter, r *http.Request)
 		c.RegisteredAt = time.Now().Format("2006-01-02")
 	}
 
+	if c.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(c.Password), bcrypt.DefaultCost)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		c.PasswordHash = string(hash)
+	}
+	c.Password = ""
+	if len(c.RegisteredAt) > 10 {
+		c.RegisteredAt = c.RegisteredAt[:10]
+	}
 	if err := h.custRepo.Create(&c); err != nil {
 		sendJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create customer: " + err.Error()})
 		return
@@ -120,13 +137,39 @@ func (h *CustomerHandler) CreateCustomer(w http.ResponseWriter, r *http.Request)
 
 func (h *CustomerHandler) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var c models.Customer
+	existing, err := h.custRepo.GetByID(id)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if existing == nil {
+		sendJSON(w, 404, map[string]string{"error": "Customer not found"})
+		return
+	}
+	c := *existing
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
 		sendJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
 		return
 	}
 
 	c.ID = id
+	if c.Name == "" || c.NIC == "" {
+		fail(w, errors.New("name and NIC are required"))
+		return
+	}
+	if c.Password != "" {
+		if len(c.Password) < 6 {
+			fail(w, errors.New("password must contain at least 6 characters"))
+			return
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(c.Password), bcrypt.DefaultCost)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		c.PasswordHash = string(hash)
+	}
+	c.Password = ""
 	if err := h.custRepo.Update(&c); err != nil {
 		sendJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update customer: " + err.Error()})
 		return
@@ -143,4 +186,3 @@ func (h *CustomerHandler) DeleteCustomer(w http.ResponseWriter, r *http.Request)
 	}
 	sendJSON(w, http.StatusOK, map[string]string{"message": "Customer deleted successfully"})
 }
-

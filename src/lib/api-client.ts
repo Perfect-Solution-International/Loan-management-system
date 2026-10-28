@@ -1,207 +1,76 @@
-import type { Customer, Loan, Payment, StaffUser, SystemSettings, OnlinePayment } from "@/types";
+import type { AuditLog, LoanNote, Customer, CustomerDocument, Loan, Payment, StaffUser, SystemSettings, OnlinePayment } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-
-function getAuthHeader(): HeadersInit {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("staff_token");
-    if (token) {
-      return {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-    }
-  }
-  return { "Content-Type": "application/json" };
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "/api/backend").replace(/\/$/, "");
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
 }
-
-export const api = {
-  // Auth
-  async login(email: string, password: string) {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async getMe(): Promise<StaffUser> {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeader(),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  // Customers
-  async getCustomers(): Promise<Customer[]> {
-    const res = await fetch(`${API_BASE_URL}/customers`, {
-      headers: getAuthHeader(),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async lookupCustomer(query: string): Promise<Customer> {
-    const res = await fetch(`${API_BASE_URL}/customers/lookup?query=${encodeURIComponent(query)}`);
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async createCustomer(customer: Partial<Customer>): Promise<Customer> {
-    const res = await fetch(`${API_BASE_URL}/customers`, {
-      method: "POST",
-      headers: getAuthHeader(),
-      body: JSON.stringify(customer),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer> {
-    const res = await fetch(`${API_BASE_URL}/customers/${id}`, {
-      method: "PUT",
-      headers: getAuthHeader(),
-      body: JSON.stringify(customer),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async deleteCustomer(id: string): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/customers/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeader(),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  // Loans
-  async getLoans(customerId?: string): Promise<Loan[]> {
-    const url = customerId
-      ? `${API_BASE_URL}/loans?customerId=${encodeURIComponent(customerId)}`
-      : `${API_BASE_URL}/loans`;
-    const res = await fetch(url, { headers: getAuthHeader() });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async createLoan(loan: Partial<Loan>): Promise<Loan> {
-    const res = await fetch(`${API_BASE_URL}/loans`, {
-      method: "POST",
-      headers: getAuthHeader(),
-      body: JSON.stringify(loan),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async updateLoanStatus(loanId: string, status: string) {
-    const res = await fetch(`${API_BASE_URL}/loans/${loanId}/status`, {
-      method: "PATCH",
-      headers: getAuthHeader(),
-      body: JSON.stringify({ status }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  // Payments
-  async getPayments(loanId?: string, customerId?: string): Promise<Payment[]> {
-    let url = `${API_BASE_URL}/payments`;
-    if (loanId) url += `?loanId=${encodeURIComponent(loanId)}`;
-    else if (customerId) url += `?customerId=${encodeURIComponent(customerId)}`;
-
-    const res = await fetch(url, { headers: getAuthHeader() });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async recordPayment(payment: Partial<Payment>): Promise<Payment> {
-    const res = await fetch(`${API_BASE_URL}/payments`, {
-      method: "POST",
-      headers: getAuthHeader(),
-      body: JSON.stringify(payment),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async updatePayment(id: string, payment: Partial<Payment>): Promise<Payment> {
-    const res = await fetch(`${API_BASE_URL}/payments/${id}`, {
-      method: "PUT",
-      headers: getAuthHeader(),
-      body: JSON.stringify(payment),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async deletePayment(id: string): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/payments/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeader(),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  // Settings
-  async getSettings(): Promise<SystemSettings> {
-    const res = await fetch(`${API_BASE_URL}/settings`, { headers: getAuthHeader() });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  // Online Payments
-  async getOnlinePayments(loanId?: string, customerId?: string): Promise<OnlinePayment[]> {
-    let url = `/api/online-payments`;
-    const params = new URLSearchParams();
-    if (loanId) params.append("loanId", loanId);
-    if (customerId) params.append("customerId", customerId);
-    if (params.toString()) url += `?${params.toString()}`;
-
-    try {
-      const res = await fetch(url, { headers: getAuthHeader() });
-      if (res.ok) return await res.json();
-    } catch {
-      // fallback
-    }
-
-    return [];
-  },
-
-  async createOnlinePayment(payment: Partial<OnlinePayment>): Promise<OnlinePayment> {
-    const res = await fetch(`/api/online-payments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payment),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async approveOnlinePayment(id: string, notes?: string, reviewer?: string, receiptNo?: string) {
-    const res = await fetch(`/api/online-payments/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "APPROVE", notes, reviewer, receiptNo }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-
-  async rejectOnlinePayment(id: string, notes?: string, reviewer?: string) {
-    const res = await fetch(`/api/online-payments/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "REJECT", notes, reviewer }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
+export function getToken() { return typeof window === "undefined" ? null : sessionStorage.getItem("psi_token"); }
+export function clearSession() {
+  sessionStorage.removeItem("psi_token"); sessionStorage.removeItem("psi_session_kind"); sessionStorage.removeItem("customerSessionId");
+  for (const key of ["staff_token", "psi_active_staff_id", "psi_user_role", "psi_logged_staff_name"]) localStorage.removeItem(key);
+  window.dispatchEvent(new Event("psi-session"));
+}
+export function saveSession(token: string, kind: "staff" | "customer") {
+  clearSession(); sessionStorage.setItem("psi_token", token); sessionStorage.setItem("psi_session_kind", kind);
+  window.dispatchEvent(new Event("psi-session"));
+}
+async function request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+  const token = getToken();
+  let response: Response;
+  try {
+    response = await fetch(API_BASE_URL + path, { method, cache: "no-store", headers: {
+      "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}),
+    }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30000) });
+  } catch { throw new ApiError("Cannot reach the backend. Check that the API server is running.", 0); }
+  const text = await response.text();
+  let data: unknown;
+  try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+  if (!response.ok) {
+    if (response.status === 401 && token && !path.endsWith("/login")) clearSession();
+    const message = data && typeof data === "object" && "error" in data ? String(data.error) : "Request failed (" + response.status + ")";
+    throw new ApiError(message, response.status);
+  }
+  return data as T;
+}
+const id = encodeURIComponent;
+const query = (values: Record<string, string | undefined>) => {
+  const params = new URLSearchParams(); for (const [key, value] of Object.entries(values)) if (value) params.set(key, value);
+  return params.size ? "?" + params : "";
 };
-
+export interface PortalSnapshot { customer: Customer; loans: Loan[]; payments: Payment[]; onlinePayments: OnlinePayment[]; settings: SystemSettings }
+export const api = {
+  login: (email: string, password: string) => request<{token: string; user: StaffUser}>("/auth/login", "POST", {email, password}),
+  customerLogin: (identifier: string, password: string) => request<{token: string; customer: Customer}>("/portal/login", "POST", {identifier, password}),
+  register: (body: {name: string; username: string; email: string; password: string}) => request<Customer>("/portal/register", "POST", body),
+  getMe: () => request<StaffUser>("/auth/me"),
+  getPortal: () => request<PortalSnapshot>("/portal/me"),
+  getCustomers: () => request<Customer[]>("/customers"),
+  getCustomer: (customerId: string) => request<Customer>("/customers/" + id(customerId)),
+  lookupCustomer: (value: string) => request<Customer>("/customers/lookup" + query({query: value})),
+  createCustomer: (body: Partial<Customer>) => request<Customer>("/customers", "POST", body),
+  updateCustomer: (customerId: string, body: Partial<Customer>) => request<Customer>("/customers/" + id(customerId), "PUT", body),
+  deleteCustomer: (customerId: string) => request("/customers/" + id(customerId), "DELETE"),
+  addDocument: (doc: CustomerDocument) => request<CustomerDocument>("/customers/" + id(doc.customerId) + "/documents", "POST", doc),
+  deleteDocument: (customerId: string, documentId: string) => request("/customers/" + id(customerId) + "/documents/" + id(documentId), "DELETE"),
+  getLoanNotes: () => request<Record<string, LoanNote>>("/loan-notes"),
+  saveLoanNote: (loanId: string, promiseDate: string, note: string) => request<LoanNote>("/loans/" + id(loanId) + "/note", "PUT", {promiseDate, note}),
+  deleteLoan: (loanId: string) => request("/loans/" + id(loanId), "DELETE"),
+  getLoans: (customerId?: string) => request<Loan[]>("/loans" + query({customerId})),
+  getLoan: (loanId: string) => request<Loan>("/loans/" + id(loanId)),
+  createLoan: (body: Partial<Loan>) => request<Loan>("/loans", "POST", body),
+  updateLoanStatus: (loanId: string, status: string, notes?: string) => request<Loan>("/loans/" + id(loanId) + "/status", "PATCH", {status, notes}),
+  getPayments: (loanId?: string, customerId?: string) => request<Payment[]>("/payments" + query({loanId, customerId})),
+  recordPayment: (body: Partial<Payment>) => request<Payment>("/payments", "POST", body),
+  updatePayment: (paymentId: string, body: Partial<Payment>) => request<Payment>("/payments/" + id(paymentId), "PUT", body),
+  deletePayment: (paymentId: string) => request("/payments/" + id(paymentId), "DELETE"),
+  getSettings: () => request<SystemSettings>("/settings"),
+  updateSettings: (body: Partial<SystemSettings>) => request<SystemSettings>("/settings", "PUT", body),
+  getUsers: () => request<StaffUser[]>("/users"),
+  createUser: (body: StaffUser) => request<StaffUser>("/users", "POST", body),
+  updateUser: (userId: string, body: Partial<StaffUser>) => request<StaffUser>("/users/" + id(userId), "PUT", body),
+  getAuditLogs: () => request<AuditLog[]>("/audit-logs?limit=1000"),
+  getOnlinePayments: (loanId?: string, customerId?: string) => request<OnlinePayment[]>("/online-payments" + query({loanId, customerId})),
+  createOnlinePayment: (body: Partial<OnlinePayment>) => request<OnlinePayment>((sessionStorage.getItem("psi_session_kind") === "customer" ? "/portal" : "") + "/online-payments", "POST", body),
+  approveOnlinePayment: (paymentId: string, notes?: string) => request("/online-payments/" + id(paymentId) + "/approve", "PATCH", {notes}),
+  rejectOnlinePayment: (paymentId: string, notes?: string) => request("/online-payments/" + id(paymentId) + "/reject", "PATCH", {notes}),
+};

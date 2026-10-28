@@ -44,16 +44,9 @@ export default function CollectionsPage() {
     getNextReceiptNo,
   } = useData();
 
-  // RBAC: Check if current logged-in user is an Administrator
-  const [isAdmin, setIsAdmin] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // In the Administrator Dashboard portal, ensure Administrator authority is active
-    localStorage.setItem("psi_user_role", "Administrator");
-    localStorage.setItem("psi_active_staff_id", "STF-01");
-    setIsAdmin(true);
-  }, []);
+  // RBAC: Check if current logged-in user is an Admin
+  const { currentUser } = useData();
+  const isAdmin = currentUser?.role === "Admin";
 
   // Selected collection date (defaults dynamically to today)
   const [selectedDate, setSelectedDate] = useState<string>("2026-10-19");
@@ -96,7 +89,7 @@ export default function CollectionsPage() {
     setEditNotes(p.notes || "");
   };
 
-  const handleConfirmEditPayment = (e: React.FormEvent) => {
+  const handleConfirmEditPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPayment) return;
     const numAmount = Number(editAmount);
@@ -105,12 +98,12 @@ export default function CollectionsPage() {
       return;
     }
 
-    updatePayment(editingPayment.id, {
+    if (!(await updatePayment(editingPayment.id, {
       amount: numAmount,
       date: editDate,
       method: editMethod,
       notes: editNotes.trim() || undefined,
-    });
+    }))) return;
 
     setNotification(
       `Payment record ${editingPayment.receiptNo || editingPayment.id} updated successfully.`
@@ -119,10 +112,10 @@ export default function CollectionsPage() {
     setTimeout(() => setNotification(""), 4500);
   };
 
-  const handleConfirmDeletePayment = () => {
+  const handleConfirmDeletePayment = async () => {
     if (!deletingPaymentItem?.todaysPayment) return;
     const p = deletingPaymentItem.todaysPayment;
-    deletePayment(p.id);
+    if (!(await deletePayment(p.id))) return;
     setNotification(`Payment record ${p.receiptNo || p.id} reversed and deleted.`);
     setDeletingPaymentItem(null);
     setTimeout(() => setNotification(""), 4500);
@@ -203,7 +196,7 @@ export default function CollectionsPage() {
     setPaymentNotes("");
   };
 
-  const handleConfirmCollection = (e: React.FormEvent) => {
+  const handleConfirmCollection = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!collectingItem) return;
 
@@ -227,7 +220,7 @@ export default function CollectionsPage() {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setNotification(
       `Receipt ${receiptNo} generated: Collected ${MONEY(numAmount)} from ${
         collectingItem.customer?.name || collectingItem.loan.customerName
@@ -245,18 +238,22 @@ export default function CollectionsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-6 space-y-3">
+    <section className="min-h-screen bg-slate-50">
+      <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Today’s collections</h2>
+        <p>Review scheduled collections, record payments, and issue receipts.</p>
+      </div>
         {/* ── Notification Banner ── */}
         {notification && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-fade-in">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-fade-in" role="status">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
               <span>{notification}</span>
             </div>
             <button
               onClick={() => setNotification("")}
-              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer"
+              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer" aria-label="Close"
             >
               <X size={14} />
             </button>
@@ -276,13 +273,13 @@ export default function CollectionsPage() {
               placeholder="Search borrower, loan, NIC, phone, town…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition"
+              className="pl-8 pr-8 py-1.5 h-9 text-xs bg-white border border-slate-200 rounded-xl w-full text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs transition" aria-label="Search borrower, loan, NIC, phone, town…"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5" aria-label="Clear search"
               >
                 <X size={12} />
               </button>
@@ -295,7 +292,7 @@ export default function CollectionsPage() {
               <button
                 onClick={() => handleStepDay(-1)}
                 title="Previous Day"
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 transition cursor-pointer"
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 transition cursor-pointer" aria-label="Previous Day"
               >
                 <ChevronLeft size={15} />
               </button>
@@ -308,7 +305,7 @@ export default function CollectionsPage() {
               <button
                 onClick={() => handleStepDay(1)}
                 title="Next Day"
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 transition cursor-pointer"
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 transition cursor-pointer" aria-label="Next Day"
               >
                 <ChevronRight size={15} />
               </button>
@@ -336,20 +333,20 @@ export default function CollectionsPage() {
         </div>
 
         {/* ═══ Key Performance Indicators (Customer Theme Micro KPIs) ═══════ */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {/* Total Target */}
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
               <Calendar size={16} className="text-slate-700" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Target Today
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {MONEY(summary.targetAmount)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
+              <p className="text-[11px] text-slate-500 font-medium truncate">
                 {summary.totalCount} scheduled dues
               </p>
             </div>
@@ -361,13 +358,13 @@ export default function CollectionsPage() {
               <CheckCircle2 size={16} className="text-emerald-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Collected So Far
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-emerald-600 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-emerald-600 leading-tight">
                 {MONEY(summary.collectedAmount)}
               </p>
-              <p className="text-[10px] text-emerald-700 font-semibold truncate">
+              <p className="text-[11px] text-emerald-700 font-semibold truncate">
                 {summary.collectedCount} of {summary.totalCount} collected
               </p>
             </div>
@@ -379,13 +376,13 @@ export default function CollectionsPage() {
               <Clock size={16} className="text-amber-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                 Pending Recovery
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-amber-700 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-amber-700 leading-tight">
                 {MONEY(summary.pendingAmount)}
               </p>
-              <p className="text-[10px] text-amber-700 font-semibold truncate">
+              <p className="text-[11px] text-amber-700 font-semibold truncate">
                 {summary.pendingCount} pending accounts
               </p>
             </div>
@@ -397,10 +394,10 @@ export default function CollectionsPage() {
               <CreditCard size={16} className="text-red-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider truncate">
+              <p className="text-[11px] font-bold text-red-600 uppercase tracking-wider truncate">
                 Recovery Rate
               </p>
-              <p className="text-lg sm:text-xl font-black font-mono text-slate-900 leading-tight">
+              <p className="text-lg sm:text-xl font-semibold font-mono text-slate-900 leading-tight">
                 {summary.collectionRate}%
               </p>
               <div className="w-24 bg-slate-100 rounded-full h-1.5 mt-1 overflow-hidden">
@@ -452,18 +449,18 @@ export default function CollectionsPage() {
 
         {/* ═══ Today's Collection List Table (Customer Theme) ════════════════ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto min-w-full">
-            <table className="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+          <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left text-xs whitespace-nowrap min-w-[880px] lms-table">
+              <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                 <tr>
-                  <th className="py-3 px-5">Borrower</th>
-                  <th className="py-3 px-4">Facility No</th>
-                  <th className="py-3 px-4">Cycle</th>
-                  <th className="py-3 px-4 text-right">Installment</th>
-                  <th className="py-3 px-4 text-right">Arrears</th>
-                  <th className="py-3 px-4 text-right">Total Due</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-5 text-center">Field Action</th>
+                  <th className="py-3 px-5" scope="col">Borrower</th>
+                  <th className="py-3 px-4" scope="col">Facility No</th>
+                  <th className="py-3 px-4" scope="col">Cycle</th>
+                  <th className="py-3 px-4 text-right" scope="col">Installment</th>
+                  <th className="py-3 px-4 text-right" scope="col">Arrears</th>
+                  <th className="py-3 px-4 text-right" scope="col">Total Due</th>
+                  <th className="py-3 px-4 text-center" scope="col">Status</th>
+                  <th className="py-3 px-5 text-center" scope="col">Field Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -494,7 +491,7 @@ export default function CollectionsPage() {
                               className="w-8 h-8 rounded-xl object-cover border border-slate-200 shrink-0"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 font-bold text-[11px] flex items-center justify-center shrink-0">
                               {initials}
                             </div>
                           )}
@@ -502,7 +499,7 @@ export default function CollectionsPage() {
                             <div className="font-bold text-slate-900 text-xs">
                               {bName}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
                               <span>NIC: {item.customer?.nic || "—"}</span>
                               {item.routeArea && (
                                 <>
@@ -539,7 +536,7 @@ export default function CollectionsPage() {
                             {item.loan.loanNo || item.loan.id}
                           </Link>
                         </div>
-                        <div className="text-[10px] text-slate-500">
+                        <div className="text-[11px] text-slate-500">
                           {item.repaymentFrequency}
                         </div>
                       </td>
@@ -549,7 +546,7 @@ export default function CollectionsPage() {
                         <div className="font-semibold text-slate-800 text-xs">
                           #{item.cycleNumber}/{item.totalCycles}
                         </div>
-                        <div className="text-[10px] text-slate-500">
+                        <div className="text-[11px] text-slate-500">
                           {item.dueDate}
                         </div>
                       </td>
@@ -575,27 +572,27 @@ export default function CollectionsPage() {
                       </td>
 
                       {/* Total Due Today */}
-                      <td className="py-3 px-4 text-right font-black font-mono text-slate-900 text-xs">
+                      <td className="py-3 px-4 text-right font-semibold font-mono text-slate-900 text-xs">
                         {MONEY(item.totalDueToday)}
                       </td>
 
                       {/* Standing / Status Badge */}
                       <td className="py-3 px-4 text-center">
                         {item.isCollectedToday ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                             Collected
                           </span>
                         ) : item.status === "OVERDUE" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800">
                             Arrears
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
                             Due Today
                           </span>
                         )}
                         {item.todaysPayment?.receiptNo && (
-                          <div className="text-[9px] font-mono font-semibold text-emerald-700 mt-0.5">
+                          <div className="text-[11px] font-mono font-semibold text-emerald-700 mt-0.5">
                             {item.todaysPayment.receiptNo}
                           </div>
                         )}
@@ -678,20 +675,20 @@ export default function CollectionsPage() {
 
       {/* ── Quick Collection Modal ── */}
       {collectingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs lms-overlay">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150 lms-dialog">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div>
-                <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">
+                <p className="text-[11px] font-bold text-red-600 uppercase tracking-widest">
                   Field Payment Entry
                 </p>
-                <h3 className="text-sm font-black text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   Record Today&apos;s Collection
                 </h3>
               </div>
               <button
                 onClick={closeCollectModal}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -725,7 +722,7 @@ export default function CollectionsPage() {
                   <span className="font-mono font-bold">{MONEY(collectingItem.arrearsAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between pt-1 border-t border-slate-200 font-black text-xs text-slate-900">
+              <div className="flex justify-between pt-1 border-t border-slate-200 font-semibold text-xs text-slate-900">
                 <span>Total Due:</span>
                 <span className="text-red-600 font-mono">
                   {MONEY(collectingItem.totalDueToday)}
@@ -735,7 +732,7 @@ export default function CollectionsPage() {
 
             <form onSubmit={handleConfirmCollection} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-1">
                   Collected Amount (LKR) *
                 </label>
                 <input
@@ -745,13 +742,13 @@ export default function CollectionsPage() {
                   step="any"
                   value={collectAmount}
                   onChange={(e) => setCollectAmount(e.target.value)}
-                  className="w-full px-3 py-1.5 h-9 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900"
+                  className="w-full px-3 py-1.5 h-9 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900" id="field-app-dashboard-collections-page-1"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-2">
                     Payment Method *
                   </label>
                   <select
@@ -761,7 +758,7 @@ export default function CollectionsPage() {
                         e.target.value as "Cash" | "Bank Transfer" | "Cheque"
                       )
                     }
-                    className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 text-xs font-semibold"
+                    className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 text-xs font-semibold" id="field-app-dashboard-collections-page-2"
                   >
                     <option value="Cash">Cash (Field)</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -769,20 +766,20 @@ export default function CollectionsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-3">
                     Collected By
                   </label>
                   <input
                     type="text"
                     value={collectorName}
                     onChange={(e) => setCollectorName(e.target.value)}
-                    className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 text-xs"
+                    className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 text-xs" id="field-app-dashboard-collections-page-3"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-4">
                   Remarks / Notes
                 </label>
                 <input
@@ -790,7 +787,7 @@ export default function CollectionsPage() {
                   placeholder="e.g. Received at shop, full installment settled"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 text-xs"
+                  className="w-full px-3 py-1.5 h-9 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 text-xs" id="field-app-dashboard-collections-page-4"
                 />
               </div>
 
@@ -824,18 +821,18 @@ export default function CollectionsPage() {
 
       {/* ═══ ADMIN EXCLUSIVE: EDIT PAYMENT RECORD MODAL ═════════════════════ */}
       {isAdmin && editingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150 lms-overlay">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 lms-dialog">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
                   <Edit size={15} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  <h3 className="text-sm font-semibold text-slate-900 leading-tight">
                     Edit Collection Payment
                   </h3>
-                  <p className="text-[10px] text-slate-500 font-mono">
+                  <p className="text-[11px] text-slate-500 font-mono">
                     Receipt: {editingPayment.receiptNo || editingPayment.id}
                   </p>
                 </div>
@@ -843,7 +840,7 @@ export default function CollectionsPage() {
               <button
                 type="button"
                 onClick={() => setEditingPayment(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer" aria-label="Close"
               >
                 <X size={14} />
               </button>
@@ -851,7 +848,7 @@ export default function CollectionsPage() {
 
             <form onSubmit={handleConfirmEditPayment} className="space-y-3">
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-5">
                   Collected Amount (LKR) *
                 </label>
                 <input
@@ -861,13 +858,13 @@ export default function CollectionsPage() {
                   required
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
-                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 font-mono font-bold text-sm"
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 font-mono font-bold text-sm" id="field-app-dashboard-collections-page-5"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-6">
                     Payment Date
                   </label>
                   <input
@@ -875,12 +872,12 @@ export default function CollectionsPage() {
                     required
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
-                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold" id="field-app-dashboard-collections-page-6"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-7">
                     Method
                   </label>
                   <select
@@ -888,7 +885,7 @@ export default function CollectionsPage() {
                     onChange={(e) =>
                       setEditMethod(e.target.value as "Cash" | "Bank Transfer" | "Cheque")
                     }
-                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold"
+                    className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs font-semibold" id="field-app-dashboard-collections-page-7"
                   >
                     <option value="Cash">Cash</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -898,7 +895,7 @@ export default function CollectionsPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="field-app-dashboard-collections-page-8">
                   Admin Modification Notes
                 </label>
                 <input
@@ -906,7 +903,7 @@ export default function CollectionsPage() {
                   placeholder="e.g. Corrected installment breakdown"
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs"
+                  className="w-full px-3 py-1.5 h-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white text-slate-900 text-xs" id="field-app-dashboard-collections-page-8"
                 />
               </div>
 
@@ -932,14 +929,14 @@ export default function CollectionsPage() {
 
       {/* ═══ ADMIN EXCLUSIVE: DELETE PAYMENT CONFIRMATION MODAL ══════════════ */}
       {isAdmin && deletingPaymentItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 animate-in fade-in duration-150 lms-overlay">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 lms-dialog">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <Trash2 size={20} />
               </div>
               <div>
-                <h3 className="text-base font-black text-slate-900 leading-tight">
+                <h3 className="text-base font-semibold text-slate-900 leading-tight">
                   Delete Collection Record?
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
@@ -957,7 +954,7 @@ export default function CollectionsPage() {
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
                 <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-                <span>Financial Ledger Reversal</span>
+                <span>Effect on the loan balance</span>
               </div>
               <p className="text-[11px] text-amber-800">
                 Deleting this record will reverse the collected amount, remove this payment from the loan ledger, and return this installment back to pending.
@@ -977,12 +974,12 @@ export default function CollectionsPage() {
                 onClick={handleConfirmDeletePayment}
                 className="px-4 h-8 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
               >
-                Confirm Delete
+                Delete repayment
               </button>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </section>
   );
 }

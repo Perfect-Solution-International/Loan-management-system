@@ -111,14 +111,14 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fullName.trim() || !form.nic.trim() || !form.phone.trim()) {
       alert("Full Name, NIC, and Contact Phone are required.");
       return;
     }
 
-    updateCustomer(customer.id, {
+    if (!(await updateCustomer(customer.id, {
       name: form.fullName.trim(),
       fullName: form.fullName.trim(),
       nic: form.nic.trim().toUpperCase(),
@@ -135,7 +135,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       photoUrl: form.photoUrl || undefined,
       nicFrontUrl: form.nicFrontUrl || undefined,
       nicBackUrl: form.nicBackUrl || undefined,
-    });
+    }))) return;
 
     setNotificationMsg("Customer profile updated successfully!");
     setTimeout(() => {
@@ -144,7 +144,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto workspace-page form-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -167,7 +167,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       </div>
 
       {notificationMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-xs">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-xs" role="status">
           <CheckCircle2 size={18} className="text-emerald-600" />
           <span>{notificationMsg}</span>
         </div>
@@ -313,7 +313,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 <label className="border-2 border-dashed border-slate-300 hover:border-red-400 bg-white hover:bg-red-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
                   <Upload size={22} className="text-red-500" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Front</span>
-                  <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
+                  <span className="text-[11px] text-slate-400">PNG, JPG, WebP</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -359,7 +359,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
                 <label className="border-2 border-dashed border-slate-300 hover:border-red-400 bg-white hover:bg-red-50/20 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition">
                   <Upload size={22} className="text-red-500" />
                   <span className="text-xs font-bold text-slate-700">Upload NIC Back</span>
-                  <span className="text-[10px] text-slate-400">PNG, JPG, WebP</span>
+                  <span className="text-[11px] text-slate-400">PNG, JPG, WebP</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -382,14 +382,14 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
           </div>
 
           <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Residential Address</label>
+              <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-customers-customerId-edit-page-1">Residential Address</label>
               <input
                 type="text"
                 name="address"
                 value={form.address}
                 onChange={handleChange}
                 placeholder="Full residential address"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-2xs font-semibold" id="field-app-dashboard-customers-customerId-edit-page-1"
               />
             </div>
           </div>
@@ -403,7 +403,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
             <h2 className="text-sm font-bold text-slate-900">Residential Address</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
               <label className="text-xs font-semibold text-slate-700" htmlFor="ui-field-4">Residential Address</label>
               <input
@@ -554,7 +554,7 @@ export default function EditCustomerPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto text-xs text-slate-600">
+        <div className="mx-auto text-xs text-slate-600 workspace-page form-page">
           Loading customer editor...
         </div>
       }

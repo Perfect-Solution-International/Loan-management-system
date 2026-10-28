@@ -43,7 +43,7 @@ interface AuditEntry {
 }
 
 export default function AuditLogsPage() {
-  const { customers, loans, payments, staffUsers, settings } = useData();
+  const { auditLogs, staffUsers } = useData();
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,90 +58,12 @@ export default function AuditLogsPage() {
   }, []);
 
   // ── Build Live Audit Trail from System Entities ─────────────────────────
-  const auditEntries: AuditEntry[] = useMemo(() => {
-    const entries: AuditEntry[] = [];
-
-    // 1. Payment & Collection Audits
-    for (const p of payments) {
-      const cust = customers.find((c) => c.id === p.customerId);
-      const ln = loans.find((l) => l.id === p.loanId);
-      const collector = p.collectedBy || "Field Officer";
-
-      entries.push({
-        id: `aud-pay-${p.id}`,
-        timestamp: `${p.date} 14:30`,
-        date: p.date,
-        category: "PAYMENT",
-        action: "Repayment Collection",
-        actor: collector,
-        actorRole: collector.toLowerCase().includes("admin") ? "Administrator" : "Field Officer",
-        details: `Collected ${MONEY(Number(p.amount) || 0)} via ${p.method || "Cash"} (Receipt: ${p.receiptNo || p.id})`,
-        targetId: ln?.loanNo || p.loanId,
-        targetName: cust?.fullName || cust?.name || ln?.customerName || "Customer",
-        amount: Number(p.amount) || 0,
-        status: "SUCCESS",
-      });
-    }
-
-    // 2. Loan Lifecycle Audits
-    for (const l of loans) {
-      const cust = customers.find((c) => c.id === l.customerId);
-      const custName = cust?.fullName || cust?.name || l.customerName || "Customer";
-
-      entries.push({
-        id: `aud-ln-${l.id}`,
-        timestamp: `${l.issueDate || todayStr} 10:15`,
-        date: l.issueDate || todayStr,
-        category: "LOAN",
-        action: `Loan Facility ${l.status || "Active"}`,
-        actor: l.approvedBy || "Credit Committee",
-        actorRole: "Credit Approver",
-        details: `Facility ${l.loanNo || l.id} for ${MONEY(l.principal || l.amount || 0)} approved (${l.repaymentFrequency} @ ${l.duration} cycles)`,
-        targetId: l.loanNo || l.id,
-        targetName: custName,
-        amount: l.principal || l.amount || 0,
-        status: l.status === "Pending" ? "PENDING" : "SUCCESS",
-      });
-    }
-
-    // 3. Customer Registration Audits
-    for (const c of customers) {
-      const regDate = c.registeredAt || "2026-10-10";
-      entries.push({
-        id: `aud-cust-${c.id}`,
-        timestamp: `${regDate} 09:00`,
-        date: regDate,
-        category: "CUSTOMER",
-        action: "Borrower Onboarding",
-        actor: "Branch Officer",
-        actorRole: "Registration Desk",
-        details: `Registered borrower profile (NIC: ${c.nic || "N/A"}, Phone: ${c.phone || "N/A"})`,
-        targetId: c.id,
-        targetName: c.fullName || c.name,
-        status: "SUCCESS",
-      });
-    }
-
-    // 4. Staff & System Configuration Audits
-    for (const s of staffUsers) {
-      entries.push({
-        id: `aud-stf-${s.id}`,
-        timestamp: `${s.joinedDate || "2026-01-15"} 08:30`,
-        date: s.joinedDate || "2026-01-15",
-        category: "STAFF",
-        action: "Staff Access Provisioned",
-        actor: "System Administrator",
-        actorRole: "Security Admin",
-        details: `Provisioned account with ${s.role} authority for ${s.branch}`,
-        targetId: s.id,
-        targetName: s.name,
-        status: "SUCCESS",
-      });
-    }
-
-    // Sort descending by date/timestamp
-    return entries.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [payments, loans, customers, staffUsers, todayStr]);
+  const auditEntries: AuditEntry[] = useMemo(() => auditLogs.map(log => ({
+    id: log.id, timestamp: log.timestamp, date: log.timestamp.slice(0, 10),
+    category: (/payment|repayment/i.test(log.module) ? "PAYMENT" : /loan/i.test(log.module) ? "LOAN" : /customer/i.test(log.module) ? "CUSTOMER" : /auth|staff/i.test(log.module) ? "STAFF" : "SYSTEM") as AuditEntry["category"],
+    action: log.action.replaceAll("_", " "), actor: log.userName, actorRole: log.userRole, details: log.details,
+    status: log.severity === "INFO" ? "SUCCESS" : "WARNING",
+  })), [auditLogs]);
 
   // ── Filtered Audit Entries ──────────────────────────────────────────────
   const filteredEntries = useMemo(() => {
@@ -207,7 +129,11 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3 max-w-7xl mx-auto">
+    <div className="mx-auto workspace-page">
+      <div className="workspace-heading">
+        <h2>Activity and audit trail</h2>
+        <p>Review recorded activity across customers, loans, payments, and staff.</p>
+      </div>
       {/* ── Top Action Controls ── */}
       <div className="flex items-center justify-end gap-2">
         <button
@@ -227,33 +153,33 @@ export default function AuditLogsPage() {
       </div>
 
       {/* ── KPI Metric Summary ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3">
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Audit Events</p>
-          <h3 className="text-xl font-black text-slate-900 mt-0.5 leading-tight">{auditEntries.length}</h3>
-          <p className="text-[10px] text-slate-400 mt-0.5">Logged across all operations</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Audit Events</p>
+          <h3 className="text-xl font-semibold text-slate-900 mt-0.5 leading-tight">{auditEntries.length}</h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Logged across all operations</p>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Financial Collections</p>
-          <h3 className="text-xl font-black text-emerald-700 mt-0.5 leading-tight">
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Financial Collections</p>
+          <h3 className="text-xl font-semibold text-emerald-700 mt-0.5 leading-tight">
             {auditEntries.filter((e) => e.category === "PAYMENT").length}
           </h3>
-          <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Payment receipts recorded</p>
+          <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Payment receipts recorded</p>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Loan Facility Audits</p>
-          <h3 className="text-xl font-black text-blue-700 mt-0.5 leading-tight">
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Loan Facility Audits</p>
+          <h3 className="text-xl font-semibold text-blue-700 mt-0.5 leading-tight">
             {auditEntries.filter((e) => e.category === "LOAN").length}
           </h3>
-          <p className="text-[10px] text-blue-600 font-medium mt-0.5">Issued & approved facilities</p>
+          <p className="text-[11px] text-blue-600 font-medium mt-0.5">Issued & approved facilities</p>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Supervised Staff</p>
-          <h3 className="text-xl font-black text-purple-700 mt-0.5 leading-tight">{staffUsers.length}</h3>
-          <p className="text-[10px] text-purple-600 font-medium mt-0.5">Active operational personnel</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Supervised Staff</p>
+          <h3 className="text-xl font-semibold text-purple-700 mt-0.5 leading-tight">{staffUsers.length}</h3>
+          <p className="text-[11px] text-purple-600 font-medium mt-0.5">Active operational personnel</p>
         </div>
       </div>
 
@@ -268,17 +194,17 @@ export default function AuditLogsPage() {
               placeholder="Search by action, actor, target ID, details..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500"
+              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500" aria-label="Search by action, actor, target ID, details..."
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900">
+              <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900" aria-label="Clear search">
                 <X size={14} />
               </button>
             )}
           </div>
 
           {/* Date Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto text-xs table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
             {(["ALL", "TODAY", "WEEK", "MONTH"] as const).map((period) => (
               <button
                 key={period}
@@ -296,7 +222,7 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-slate-100 text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-slate-100 text-xs table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
           <span className="text-[11px] font-bold uppercase text-slate-400 mr-1 flex items-center gap-1">
             <Filter size={12} /> Category:
           </span>
@@ -327,23 +253,23 @@ export default function AuditLogsPage() {
         {filteredEntries.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <ShieldCheck size={36} className="text-slate-300 mx-auto" />
-            <h3 className="text-sm font-black text-slate-900">No Audit Records Found</h3>
+            <h3 className="text-sm font-semibold text-slate-900">No Audit Records Found</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               {searchTerm ? "No activity entries match your query." : "There are no audit events logged in this category."}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-extrabold uppercase tracking-wider text-[10px]">
+          <div className="overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <table className="w-full text-left text-xs lms-table">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                 <tr>
-                  <th className="py-3 px-4">Timestamp & Date</th>
-                  <th className="py-3 px-4">Event Category</th>
-                  <th className="py-3 px-4">Action</th>
-                  <th className="py-3 px-4">Operator / Staff</th>
-                  <th className="py-3 px-4">Target Entity</th>
-                  <th className="py-3 px-4">Audit Details</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
+                  <th className="py-3 px-4" scope="col">Timestamp & Date</th>
+                  <th className="py-3 px-4" scope="col">Event Category</th>
+                  <th className="py-3 px-4" scope="col">Action</th>
+                  <th className="py-3 px-4" scope="col">Operator / Staff</th>
+                  <th className="py-3 px-4" scope="col">Target Entity</th>
+                  <th className="py-3 px-4" scope="col">Audit Details</th>
+                  <th className="py-3 px-4 text-right" scope="col">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -353,13 +279,13 @@ export default function AuditLogsPage() {
                       {/* Timestamp */}
                       <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px]">
                         <span className="font-bold text-slate-900 block">{entry.date}</span>
-                        <span className="text-slate-400 text-[10px]">{entry.timestamp.slice(11) || "12:00"}</span>
+                        <span className="text-slate-400 text-[11px]">{entry.timestamp.slice(11) || "12:00"}</span>
                       </td>
 
                       {/* Category Badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-md font-mono font-bold text-[10px] uppercase border ${
+                          className={`inline-block px-2.5 py-0.5 rounded-md font-mono font-bold text-[11px] uppercase border ${
                             entry.category === "PAYMENT"
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : entry.category === "LOAN"
@@ -381,7 +307,7 @@ export default function AuditLogsPage() {
                       {/* Operator / Actor */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className="font-bold text-slate-900 block">{entry.actor}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">{entry.actorRole}</span>
+                        <span className="text-[11px] text-slate-500 font-mono">{entry.actorRole}</span>
                       </td>
 
                       {/* Target Entity */}
@@ -389,7 +315,7 @@ export default function AuditLogsPage() {
                         {entry.targetName ? (
                           <>
                             <span className="font-bold text-slate-900 block">{entry.targetName}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">{entry.targetId}</span>
+                            <span className="text-[11px] text-slate-500 font-mono">{entry.targetId}</span>
                           </>
                         ) : (
                           <span className="text-slate-400 font-mono">{entry.targetId || "—"}</span>

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 // Field Staff Portal - Today's Collections & Rapid Repayment Desk
 "use client";
+import { clearSession } from "@/lib/api-client";
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
@@ -68,6 +69,9 @@ interface PtpRecord {
 
 export default function FieldStaffPortal() {
   const {
+    loanNotes: ptpNotes,
+    saveLoanNote,
+    currentUser,
     customers,
     loans,
     payments,
@@ -82,83 +86,13 @@ export default function FieldStaffPortal() {
   } = useData();
 
   // ── 1. Active Officer Session & Isolation ─────────────────────────────────
-  const fieldStaffList = useMemo(() => {
-    const fieldOnly = staffUsers.filter(
-      (s) =>
-        s.role === "Loan Officer" ||
-        s.role === "Collection Agent" ||
-        (s.role as string) === "Staff" ||
-        (s.role as string) === "Field Officer"
-    );
-    if (fieldOnly.length > 0) return fieldOnly;
-    return staffUsers.map((s) =>
-      s.role === "Administrator"
-        ? { ...s, name: "Staff Officer", role: "Loan Officer" as const }
-        : s
-    );
-  }, [staffUsers]);
-
-  const [activeOfficerId, setActiveOfficerId] = useState<string>("");
-  const [loggedStaffName, setLoggedStaffName] = useState<string>("");
-  const [showOfficerModal, setShowOfficerModal] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedName = localStorage.getItem("psi_logged_staff_name");
-      if (storedName) {
-        setLoggedStaffName(storedName);
-      }
-
-      const saved = localStorage.getItem("psi_active_staff_id");
-      // If saved is STF-01 (Admin) but field staff exist, prefer field staff in the field portal
-      const fieldStaff = fieldStaffList.find((s) => s.id !== "STF-01");
-      if (saved && saved !== "STF-01" && fieldStaffList.some((s) => s.id === saved)) {
-        setActiveOfficerId(saved);
-      } else if (fieldStaff) {
-        setActiveOfficerId(fieldStaff.id);
-        localStorage.setItem("psi_active_staff_id", fieldStaff.id);
-      } else if (fieldStaffList.length > 0) {
-        setActiveOfficerId(fieldStaffList[0].id);
-        localStorage.setItem("psi_active_staff_id", fieldStaffList[0].id);
-      }
-    }
-  }, [fieldStaffList]);
-
-  const currentOfficer: StaffUser | undefined = useMemo(() => {
-    return fieldStaffList.find((s) => s.id === activeOfficerId) || fieldStaffList[0];
-  }, [fieldStaffList, activeOfficerId]);
-
-  const staffDisplayName = useMemo(() => {
-    if (loggedStaffName && loggedStaffName !== "System Administrator") {
-      return loggedStaffName;
-    }
-    if (currentOfficer && currentOfficer.name !== "System Administrator") {
-      return currentOfficer.name;
-    }
-    return "Staff Officer";
-  }, [loggedStaffName, currentOfficer]);
-
-  const handleSelectOfficer = (officerId: string) => {
-    setActiveOfficerId(officerId);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("psi_active_staff_id", officerId);
-      const officer = fieldStaffList.find((s) => s.id === officerId);
-      if (officer) {
-        localStorage.setItem("psi_logged_staff_name", officer.name);
-        setLoggedStaffName(officer.name);
-      }
-    }
-    setShowOfficerModal(false);
-  };
-
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("psi_active_staff_id");
-      localStorage.removeItem("staff_token");
-      sessionStorage.clear();
-      window.location.href = "/login";
-    }
-  };
+  const fieldStaffList = currentUser ? [currentUser] : [];
+  const currentOfficer = currentUser || undefined;
+  const activeOfficerId = currentUser?.id || "";
+  const staffDisplayName = currentUser?.name || "Staff Officer";
+  const [showOfficerModal, setShowOfficerModal] = useState(false);
+  const handleSelectOfficer = (_officerId?: string) => setShowOfficerModal(false);
+  const handleLogout = () => { clearSession(); window.location.href = "/login"; };
 
   // ── 2. Today's Date & System Clock ────────────────────────────────────────
   const [todayStr, setTodayStr] = useState<string>("2026-10-15");
@@ -267,7 +201,7 @@ export default function FieldStaffPortal() {
     });
   }, [payments, allPaymentsSearch, allPaymentsTypeFilter, customers]);
 
-  const handleCreateCustomer = (e: React.FormEvent) => {
+  const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustFullName.trim() || !newCustNic.trim() || !newCustPhone.trim()) {
       showToast("Please fill in required fields: Full Name, NIC, and Phone");
@@ -298,7 +232,7 @@ export default function FieldStaffPortal() {
       initialOutstandingBalance: 0,
     };
 
-    addCustomer(newCustomer);
+    if (!(await addCustomer(newCustomer))) return;
     setShowNewCustomerModal(false);
 
     // Reset Form
@@ -327,33 +261,6 @@ export default function FieldStaffPortal() {
   };
 
   // ── 5. PTP Notes State ────────────────────────────────────────────────────
-  const [ptpNotes, setPtpNotes] = useState<Record<string, PtpRecord>>({});
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("psi_field_ptp_notes");
-      if (stored) {
-        setPtpNotes(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error("Failed to load PTP notes", e);
-    }
-  }, []);
-
-  const savePtpNote = (loanId: string, promiseDate: string, note: string) => {
-    const updated = {
-      ...ptpNotes,
-      [loanId]: {
-        promiseDate,
-        note,
-        updatedAt: new Date().toISOString(),
-      },
-    };
-    setPtpNotes(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("psi_field_ptp_notes", JSON.stringify(updated));
-    }
-  };
-
   // ── 6. Officer Scoped Payments & Cash In Hand ─────────────────────────────
   const myTodayPayments = useMemo(() => {
     if (!currentOfficer) return [];
@@ -636,7 +543,7 @@ export default function FieldStaffPortal() {
     }
   };
 
-  const handleRecordPayment = (e: React.FormEvent) => {
+  const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!collectItem) return;
 
@@ -662,11 +569,11 @@ export default function FieldStaffPortal() {
         : `[Field App - ${currentOfficer?.name || "Officer"}] Route collection`,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setCollectItem(null);
     setViewItem(null);
     showToast(
-      `Collected ${MONEY(amountNum)} from ${collectItem.customer?.fullName || collectItem.customer?.name || collectItem.loan.customerName || "Customer"}. Receipt: ${receiptNum}`
+      `Collected ${MONEY(amountNum)} from ${collectItem.customer?.fullName || collectItem.customer?.name || collectItem.loan.customerName || "Customer"}. Receipt: ${newPayment.receiptNo}`
     );
     setSelectedReceipt(newPayment);
   };
@@ -683,10 +590,10 @@ export default function FieldStaffPortal() {
     setPtpNoteText(existing?.note || "");
   };
 
-  const handleSavePtp = (e: React.FormEvent) => {
+  const handleSavePtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ptpItem) return;
-    savePtpNote(ptpItem.loan.id, ptpDate, ptpNoteText);
+    if (!(await saveLoanNote(ptpItem.loan.id, ptpDate, ptpNoteText))) return;
     setPtpItem(null);
     showToast(`Promise to Pay saved for ${ptpItem.customer?.fullName || ptpItem.customer?.name || ptpItem.loan.customerName || "Customer"}`);
   };
@@ -723,7 +630,7 @@ export default function FieldStaffPortal() {
             <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
               {/* Core Operations */}
               <div className="space-y-1">
-                <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                   CORE OPERATIONS
                 </p>
                 <nav className="space-y-1">
@@ -750,7 +657,7 @@ export default function FieldStaffPortal() {
                     </div>
                     {routeItems.length > 0 && (
                       <span
-                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                           activeTab === "route"
                             ? "bg-white/25 text-white"
                             : "bg-slate-700 text-white border border-slate-600"
@@ -788,7 +695,7 @@ export default function FieldStaffPortal() {
 
               {/* Finance & Approvals */}
               <div className="space-y-1">
-                <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                   FINANCE & APPROVALS
                 </p>
                 <nav className="space-y-1">
@@ -811,11 +718,11 @@ export default function FieldStaffPortal() {
                           activeTab === "receipts" ? "text-white" : "text-slate-400 group-hover:text-white"
                         }`}
                       />
-                      <span className="truncate">Repayments Ledger</span>
+                      <span className="truncate">Repayment Ledger</span>
                     </div>
                     {myTodayPayments.length > 0 && (
                       <span
-                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                           activeTab === "receipts"
                             ? "bg-white/25 text-white"
                             : "bg-red-600 text-white border border-red-500"
@@ -849,10 +756,10 @@ export default function FieldStaffPortal() {
                     </div>
                     {pendingOnlineCount > 0 && (
                       <span
-                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                           activeTab === "online_slips"
                             ? "bg-white/25 text-white"
-                            : "bg-amber-400 text-slate-950 font-black border border-amber-300"
+                            : "bg-amber-400 text-slate-950 font-semibold border border-amber-300"
                         }`}
                       >
                         {pendingOnlineCount}
@@ -864,7 +771,7 @@ export default function FieldStaffPortal() {
 
               {/* Directory & Records */}
               <div className="space-y-1">
-                <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+                <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                   DIRECTORY & RECORDS
                 </p>
                 <nav className="space-y-1">
@@ -891,7 +798,7 @@ export default function FieldStaffPortal() {
                     </div>
                     {customers.length > 0 && (
                       <span
-                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                           activeTab === "customers"
                             ? "bg-white/25 text-white"
                             : "bg-slate-700 text-white border border-slate-600"
@@ -925,7 +832,7 @@ export default function FieldStaffPortal() {
                     </div>
                     {loans.length > 0 && (
                       <span
-                        className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                        className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                           activeTab === "loans"
                             ? "bg-white/25 text-white"
                             : "bg-slate-700 text-white border border-slate-600"
@@ -943,14 +850,14 @@ export default function FieldStaffPortal() {
             <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2 shrink-0">
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 ring-1 ring-white/10">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-semibold text-xs shadow-xs shrink-0 ring-1 ring-white/10">
                     {staffDisplayName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-white truncate leading-tight">
                       {staffDisplayName}
                     </p>
-                    <p className="text-[10px] text-slate-400 font-medium truncate flex items-center gap-1.5">
+                    <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
                       <span className="text-rose-400 font-bold uppercase tracking-wider">Staff</span>
                       <span>•</span>
                       <span>{currentOfficer?.branch || "Colombo Central"}</span>
@@ -964,7 +871,7 @@ export default function FieldStaffPortal() {
                     setSidebarOpen(false);
                   }}
                   className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0 cursor-pointer"
-                  title="Switch Officer Profile"
+                  title="Switch Officer Profile" aria-label="Switch Officer Profile"
                 >
                   <SlidersHorizontal size={14} />
                 </button>
@@ -1005,7 +912,7 @@ export default function FieldStaffPortal() {
           <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
             {/* Core Operations */}
             <div className="space-y-1">
-              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+              <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                 CORE OPERATIONS
               </p>
               <nav className="space-y-1">
@@ -1029,7 +936,7 @@ export default function FieldStaffPortal() {
                   </div>
                   {routeItems.length > 0 && (
                     <span
-                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                      className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                         activeTab === "route"
                           ? "bg-white/25 text-white"
                           : "bg-slate-700 text-white border border-slate-600"
@@ -1064,7 +971,7 @@ export default function FieldStaffPortal() {
 
             {/* Finance & Approvals */}
             <div className="space-y-1">
-              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+              <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                 FINANCE & APPROVALS
               </p>
               <nav className="space-y-1">
@@ -1084,11 +991,11 @@ export default function FieldStaffPortal() {
                         activeTab === "receipts" ? "text-white" : "text-slate-400 group-hover:text-white"
                       }`}
                     />
-                    <span className="truncate">Repayments Ledger</span>
+                    <span className="truncate">Repayment Ledger</span>
                   </div>
                   {myTodayPayments.length > 0 && (
                     <span
-                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                      className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                         activeTab === "receipts"
                           ? "bg-white/25 text-white"
                           : "bg-red-600 text-white border border-red-500"
@@ -1119,10 +1026,10 @@ export default function FieldStaffPortal() {
                   </div>
                   {pendingOnlineCount > 0 && (
                     <span
-                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                      className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                         activeTab === "online_slips"
                           ? "bg-white/25 text-white"
-                          : "bg-amber-400 text-slate-950 font-black border border-amber-300"
+                          : "bg-amber-400 text-slate-950 font-semibold border border-amber-300"
                       }`}
                     >
                       {pendingOnlineCount}
@@ -1134,7 +1041,7 @@ export default function FieldStaffPortal() {
 
             {/* Directory & Records */}
             <div className="space-y-1">
-              <p className="px-3 text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
+              <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 select-none">
                 DIRECTORY & RECORDS
               </p>
               <nav className="space-y-1">
@@ -1158,7 +1065,7 @@ export default function FieldStaffPortal() {
                   </div>
                   {customers.length > 0 && (
                     <span
-                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                      className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                         activeTab === "customers"
                           ? "bg-white/25 text-white"
                           : "bg-slate-700 text-white border border-slate-600"
@@ -1189,7 +1096,7 @@ export default function FieldStaffPortal() {
                   </div>
                   {loans.length > 0 && (
                     <span
-                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                      className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
                         activeTab === "loans"
                           ? "bg-white/25 text-white"
                           : "bg-slate-700 text-white border border-slate-600"
@@ -1208,14 +1115,14 @@ export default function FieldStaffPortal() {
         <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2 shrink-0">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 ring-1 ring-white/10">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-semibold text-xs shadow-xs shrink-0 ring-1 ring-white/10">
                 {staffDisplayName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-white truncate leading-tight">
                   {staffDisplayName}
                 </p>
-                <p className="text-[10px] text-slate-400 font-medium truncate flex items-center gap-1.5">
+                <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
                   <span className="text-rose-400 font-bold uppercase tracking-wider">Staff</span>
                   <span>•</span>
                   <span>{currentOfficer?.branch || "Colombo Central"}</span>
@@ -1226,7 +1133,7 @@ export default function FieldStaffPortal() {
               type="button"
               onClick={() => setShowOfficerModal(true)}
               className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0 cursor-pointer"
-              title="Switch Officer Profile"
+              title="Switch Officer Profile" aria-label="Switch Officer Profile"
             >
               <SlidersHorizontal size={14} />
             </button>
@@ -1257,7 +1164,7 @@ export default function FieldStaffPortal() {
       <div className="lg:pl-64 flex flex-col flex-1 min-w-0">
         {/* Top Navbar */}
         <header className="sticky top-0 z-20 bg-white border-b border-slate-200/90 shadow-2xs">
-          <div className="px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-3">
+          <div className="px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -1270,12 +1177,12 @@ export default function FieldStaffPortal() {
               </button>
 
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-red-600 font-mono">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-600 font-mono">
                   <span>FIELD PORTAL</span>
                   <span className="text-slate-300">•</span>
                   <span className="text-slate-500 font-bold">{todayStr}</span>
                 </div>
-                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight leading-tight">
                   {activeTab === "route" && "Today's Collections"}
                   {activeTab === "quickpay" && "Rapid Cash Collection Desk"}
                   {activeTab === "receipts" && "Repayments Ledger & Receipts"}
@@ -1298,7 +1205,7 @@ export default function FieldStaffPortal() {
                 title="Create a new loan facility"
               >
                 <PlusCircle size={13} />
-                <span>+ Issue Loan</span>
+                <span>New loan</span>
               </button>
 
               <button
@@ -1308,7 +1215,7 @@ export default function FieldStaffPortal() {
                 title="Register a new customer"
               >
                 <UserPlus size={13} />
-                <span>+ Customer</span>
+                <span>Add customer</span>
               </button>
             </div>
           </div>
@@ -1317,23 +1224,23 @@ export default function FieldStaffPortal() {
       {/* ── Officer Switcher Bottom Sheet / Modal ──────────────────────────── */}
       {showOfficerModal && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setShowOfficerModal(false)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom-6 duration-200 lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-black text-slate-900">Select Field Officer</h3>
+                <h3 className="text-base font-semibold text-slate-900">Select Field Officer</h3>
                 <p className="text-xs text-slate-500">
                   Switch officer profile to view their isolated route & cash in hand
                 </p>
               </div>
               <button
                 onClick={() => setShowOfficerModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -1354,7 +1261,7 @@ export default function FieldStaffPortal() {
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-semibold text-sm ${
                           isSelected
                             ? "bg-red-600 text-white"
                             : "bg-slate-200 text-slate-700"
@@ -1366,7 +1273,7 @@ export default function FieldStaffPortal() {
                         <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                           {staff.name}
                           {isSelected && (
-                            <span className="text-[10px] font-mono bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded-md">
+                            <span className="text-[11px] font-mono bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded-md">
                               Active
                             </span>
                           )}
@@ -1410,13 +1317,13 @@ export default function FieldStaffPortal() {
       )}
 
       {/* ── Main Responsive Content Container (Mobile, Tablet, Desktop) ────── */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 space-y-2.5">
+      <main className="mx-auto w-full workspace-page">
         {/* Toast Alert */}
         {toastMessage && (
-          <div className="fixed top-16 left-4 right-4 z-50 max-w-lg mx-auto bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-emerald-500 animate-in slide-in-from-top duration-200">
+          <div className="fixed top-16 left-4 right-4 z-50 max-w-lg mx-auto bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-emerald-500 animate-in slide-in-from-top duration-200" role="status">
             <CheckCircle2 size={18} className="shrink-0 text-white" />
             <p className="text-xs font-bold leading-snug flex-1">{toastMessage}</p>
-            <button onClick={() => setToastMessage("")} className="cursor-pointer">
+            <button onClick={() => setToastMessage("")} className="cursor-pointer" aria-label="Close">
               <X size={15} />
             </button>
           </div>
@@ -1428,12 +1335,12 @@ export default function FieldStaffPortal() {
         {activeTab === "route" && (
           <div className="space-y-2.5">
             {/* ── Officer Shift & Cash Summary Grid (Shown ONLY on Today's Collections) ── */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
+            <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-2.5">
               {/* Card 1: Physical Cash In Hand */}
               <div className="bg-white border border-emerald-200/90 rounded-xl p-2.5 shadow-2xs hover:border-emerald-300 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-emerald-800">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-emerald-800">
                       <Wallet size={12} className="text-emerald-600" />
                       Physical Cash In Hand
                     </span>
@@ -1441,13 +1348,13 @@ export default function FieldStaffPortal() {
                   </div>
 
                   <div className="mt-1">
-                    <h2 className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight leading-tight">
+                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900 font-mono tracking-tight leading-tight">
                       {MONEY(myCashInHand)}
                     </h2>
                   </div>
                 </div>
 
-                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
                   <span className="text-slate-500 font-medium">
                     {myCashPaymentsCount} cash {myCashPaymentsCount === 1 ? "receipt" : "receipts"}
                   </span>
@@ -1461,7 +1368,7 @@ export default function FieldStaffPortal() {
               <div className="bg-white border border-blue-200/90 rounded-xl p-2.5 shadow-2xs hover:border-blue-300 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-blue-800">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-blue-800">
                       <CreditCard size={12} className="text-blue-600" />
                       Online / Bank Transfer
                     </span>
@@ -1469,13 +1376,13 @@ export default function FieldStaffPortal() {
                   </div>
 
                   <div className="mt-1">
-                    <h2 className="text-lg sm:text-xl font-black text-blue-900 font-mono tracking-tight leading-tight">
+                    <h2 className="text-lg sm:text-xl font-semibold text-blue-900 font-mono tracking-tight leading-tight">
                       {MONEY(myBankTransfersToday)}
                     </h2>
                   </div>
                 </div>
 
-                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
                   <span className="text-slate-500 font-medium">
                     {myBankPaymentsCount} online {myBankPaymentsCount === 1 ? "receipt" : "receipts"}
                   </span>
@@ -1489,11 +1396,11 @@ export default function FieldStaffPortal() {
               <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-slate-700">
                       <CheckCircle2 size={12} className="text-emerald-600" />
                       Total Collected Today
                     </span>
-                    <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                    <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
                       {totalTargetToday > 0
                         ? `${Math.round((totalMyCollectedToday / totalTargetToday) * 100)}%`
                         : "0%"}
@@ -1501,13 +1408,13 @@ export default function FieldStaffPortal() {
                   </div>
 
                   <div className="mt-1">
-                    <h2 className="text-lg sm:text-xl font-black text-emerald-700 font-mono tracking-tight leading-tight">
+                    <h2 className="text-lg sm:text-xl font-semibold text-emerald-700 font-mono tracking-tight leading-tight">
                       {MONEY(totalMyCollectedToday)}
                     </h2>
                   </div>
                 </div>
 
-                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                   <span>{myTodayPayments.length} Total Receipts</span>
                   <span className="font-bold text-slate-700">
                     Cash + Online
@@ -1519,23 +1426,23 @@ export default function FieldStaffPortal() {
               <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
                       <Calendar size={12} className="text-slate-600" />
                       Route Target Today
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">
+                    <span className="text-[11px] font-mono text-slate-400">
                       {todayStr}
                     </span>
                   </div>
 
                   <div className="mt-1">
-                    <h2 className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight leading-tight">
+                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900 font-mono tracking-tight leading-tight">
                       {MONEY(totalTargetToday)}
                     </h2>
                   </div>
                 </div>
 
-                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                   <span>Branch</span>
                   <span className="font-bold text-slate-800 font-mono truncate max-w-[120px]">
                     {currentOfficer?.branch || "Colombo Central"}
@@ -1547,21 +1454,21 @@ export default function FieldStaffPortal() {
               <div className="bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-slate-600">
                       <Clock size={12} className="text-slate-600" />
                       Borrower Visits
                     </span>
-                    <span className="text-[10px] font-mono font-bold text-slate-500">
+                    <span className="text-[11px] font-mono font-bold text-slate-500">
                       {routeItems.length} Total
                     </span>
                   </div>
 
                   <div className="mt-1 flex items-baseline justify-between">
-                    <h2 className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight leading-tight">
+                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900 font-mono tracking-tight leading-tight">
                       {routeCompletedCount}{" "}
                       <span className="text-xs text-slate-400 font-normal">/ {routeItems.length}</span>
                     </h2>
-                    <span className="text-[10px] font-bold text-amber-700">
+                    <span className="text-[11px] font-bold text-amber-700">
                       {routeItems.length - routeCompletedCount} pending
                     </span>
                   </div>
@@ -1580,7 +1487,7 @@ export default function FieldStaffPortal() {
                   </div>
                 </div>
 
-                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                   <span>Completed</span>
                   <span className="font-bold text-emerald-700">
                     {routeItems.length > 0 ? Math.round((routeCompletedCount / routeItems.length) * 100) : 0}% Done
@@ -1601,12 +1508,12 @@ export default function FieldStaffPortal() {
                   placeholder="Search customer name, NIC, phone, town..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 shadow-2xs transition"
+                  className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 shadow-2xs transition" aria-label="Search customer name, NIC, phone, town..."
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900" aria-label="Clear search"
                   >
                     <X size={15} />
                   </button>
@@ -1614,7 +1521,7 @@ export default function FieldStaffPortal() {
               </div>
 
               {/* Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none text-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none text-xs table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
                 <button
                   onClick={() => setFilterTab("all")}
                   className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer shadow-2xs ${
@@ -1629,7 +1536,7 @@ export default function FieldStaffPortal() {
                   onClick={() => setFilterTab("pending")}
                   className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                     filterTab === "pending"
-                      ? "bg-amber-500 text-slate-950 font-black"
+                      ? "bg-amber-500 text-slate-950 font-semibold"
                       : "bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200"
                   }`}
                 >
@@ -1639,7 +1546,7 @@ export default function FieldStaffPortal() {
                   onClick={() => setFilterTab("collected")}
                   className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                     filterTab === "collected"
-                      ? "bg-emerald-600 text-white font-black"
+                      ? "bg-emerald-600 text-white font-semibold"
                       : "bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200"
                   }`}
                 >
@@ -1649,7 +1556,7 @@ export default function FieldStaffPortal() {
                   onClick={() => setFilterTab("overdue")}
                   className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                     filterTab === "overdue"
-                      ? "bg-red-600 text-white font-black"
+                      ? "bg-red-600 text-white font-semibold"
                       : "bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200"
                   }`}
                 >
@@ -1665,7 +1572,7 @@ export default function FieldStaffPortal() {
                   <CheckCircle2 size={28} className="text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">No Records Found</h3>
+                  <h3 className="text-base font-semibold text-slate-900">No matching records</h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                     {searchQuery
                       ? "No records matched your search terms."
@@ -1723,7 +1630,7 @@ export default function FieldStaffPortal() {
                         <div className="flex items-center gap-3 min-w-0">
                           {/* Status Avatar */}
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center font-semibold text-xs shrink-0 ${
                               item.isCollectedToday
                                 ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                                 : item.hasArrears
@@ -1743,17 +1650,17 @@ export default function FieldStaffPortal() {
                           {/* Name & Route Location */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                              <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
                                 {customerName}
                               </p>
                               {item.hasArrears && (
-                                <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded-sm bg-red-100 text-red-700 font-mono shrink-0">
+                                <span className="text-[11px] font-semibold uppercase px-1.5 py-0.2 rounded-sm bg-red-100 text-red-700 font-mono shrink-0">
                                   Arrears
                                 </span>
                               )}
                               {item.isCollectedToday && (
                                 <span
-                                  className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded-sm font-mono shrink-0 flex items-center gap-1 ${
+                                  className={`text-[11px] font-semibold uppercase px-1.5 py-0.2 rounded-sm font-mono shrink-0 flex items-center gap-1 ${
                                     (item.todaysPayment?.method || "Cash").toLowerCase() === "cash"
                                       ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                       : "bg-blue-100 text-blue-800 border border-blue-200"
@@ -1777,7 +1684,7 @@ export default function FieldStaffPortal() {
                                 {customer?.village || customer?.town || customer?.address || "Route Area"}
                               </span>
                               <span className="text-slate-300">•</span>
-                              <span className="font-mono text-[10px] text-slate-600 font-bold shrink-0">
+                              <span className="font-mono text-[11px] text-slate-600 font-bold shrink-0">
                                 {loan.loanNo || loan.id}
                               </span>
                             </p>
@@ -1787,10 +1694,10 @@ export default function FieldStaffPortal() {
                         {/* Right: Total Due & Quick Pay Pill */}
                         <div className="text-right shrink-0 flex items-center gap-2.5">
                           <div>
-                            <span className="text-xs sm:text-sm font-black text-slate-900 font-mono block">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-900 font-mono block">
                               {MONEY(item.totalDueToday)}
                             </span>
-                            <span className="text-[10px] text-slate-500 font-semibold block capitalize">
+                            <span className="text-[11px] text-slate-500 font-semibold block capitalize">
                               Cycle #{item.cycleNumber}/{item.totalCycles}
                             </span>
                           </div>
@@ -1854,12 +1761,12 @@ export default function FieldStaffPortal() {
                           <div className="flex items-start justify-between border-b border-slate-100 pb-4">
                             <div>
                               <div className="flex items-center gap-2">
-                                <h3 className="text-xl font-black text-slate-900">
+                                <h3 className="text-xl font-semibold text-slate-900">
                                   {customerName}
                                 </h3>
                                 {item.isCollectedToday && (
                                   <span
-                                    className={`text-xs font-black uppercase font-mono px-2.5 py-0.5 rounded-lg border flex items-center gap-1.5 ${
+                                    className={`text-xs font-semibold uppercase font-mono px-2.5 py-0.5 rounded-lg border flex items-center gap-1.5 ${
                                       (item.todaysPayment?.method || "Cash").toLowerCase() === "cash"
                                         ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                                         : "bg-blue-100 text-blue-800 border-blue-200"
@@ -1870,7 +1777,7 @@ export default function FieldStaffPortal() {
                                   </span>
                                 )}
                                 {item.hasArrears && (
-                                  <span className="text-xs font-black uppercase font-mono px-2.5 py-0.5 rounded-lg bg-red-100 text-red-700 border border-red-200">
+                                  <span className="text-xs font-semibold uppercase font-mono px-2.5 py-0.5 rounded-lg bg-red-100 text-red-700 border border-red-200">
                                     Arrears
                                   </span>
                                 )}
@@ -1889,14 +1796,14 @@ export default function FieldStaffPortal() {
                           {/* Prominent Total Due Box */}
                           <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-2 border-emerald-500/80 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
                             <div>
-                              <span className="text-xs font-black uppercase tracking-wider text-emerald-800 block">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800 block">
                                 Total To Collect Now
                               </span>
                               <span className="text-xs text-slate-600 font-medium">
                                 Frequency: {loan.repaymentFrequency || "Daily"} • Due Today
                               </span>
                             </div>
-                            <span className="text-3xl font-black text-emerald-700 font-mono tracking-tight">
+                            <span className="text-3xl font-semibold text-emerald-700 font-mono tracking-tight">
                               {MONEY(item.totalDueToday)}
                             </span>
                           </div>
@@ -1912,7 +1819,7 @@ export default function FieldStaffPortal() {
                             <div className="flex justify-between items-center text-slate-600">
                               <span>Past Due Arrears</span>
                               {item.arrearsAmount > 0 ? (
-                                <span className="font-black text-red-600 font-mono text-sm">
+                                <span className="font-semibold text-red-600 font-mono text-sm">
                                   + {MONEY(item.arrearsAmount)}
                                 </span>
                               ) : (
@@ -2042,7 +1949,7 @@ export default function FieldStaffPortal() {
                             {/* Collect Cash Button */}
                             <button
                               onClick={() => openCollectModal(item)}
-                              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition shadow-md cursor-pointer flex items-center justify-center gap-2"
+                              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold text-sm transition shadow-md cursor-pointer flex items-center justify-center gap-2"
                             >
                               <Wallet size={17} />
                               Collect Cash Now ({MONEY(item.totalDueToday)})
@@ -2083,7 +1990,7 @@ export default function FieldStaffPortal() {
                 <Coins size={20} />
               </div>
               <div>
-                <h2 className="text-base font-black text-slate-900">
+                <h2 className="text-base font-semibold text-slate-900">
                   Quick Cash Entry
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -2108,7 +2015,7 @@ export default function FieldStaffPortal() {
                     className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 border border-slate-200 hover:border-emerald-300 text-left transition cursor-pointer shadow-2xs"
                   >
                     <div className="min-w-0 pr-2">
-                      <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
                         {customerName}
                       </p>
                       <p className="text-[11px] text-slate-500 font-mono mt-0.5">
@@ -2116,10 +2023,10 @@ export default function FieldStaffPortal() {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-sm font-black text-emerald-700 block font-mono">
+                      <span className="text-sm font-semibold text-emerald-700 block font-mono">
                         {MONEY(item.totalDueToday)}
                       </span>
-                      <span className="text-[10px] text-emerald-700 font-bold uppercase">
+                      <span className="text-[11px] text-emerald-700 font-bold uppercase">
                         Tap to Collect
                       </span>
                     </div>
@@ -2136,7 +2043,7 @@ export default function FieldStaffPortal() {
             {/* Header & View Mode Switcher */}
             <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-black text-slate-900 leading-tight">
+                <h2 className="text-lg font-semibold text-slate-900 leading-tight">
                   {receiptsViewMode === "my_today" ? "My Route Receipts Today" : "All System Repayments Ledger"}
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -2178,7 +2085,7 @@ export default function FieldStaffPortal() {
               myTodayPayments.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-2 shadow-2xs">
                   <Receipt size={36} className="text-slate-400 mx-auto" />
-                  <h3 className="text-base font-black text-slate-900">No Receipts Issued Today Yet</h3>
+                  <h3 className="text-base font-semibold text-slate-900">No receipts issued today</h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
                     When you collect installments on your route, official receipts will be stored here with instant reprint and WhatsApp share.
                   </p>
@@ -2188,37 +2095,37 @@ export default function FieldStaffPortal() {
                   {/* Route Collection Breakdown Today */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div className="bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                         Total Collected
                       </p>
-                      <p className="text-xl font-black text-emerald-700 font-mono mt-0.5">
+                      <p className="text-xl font-semibold text-emerald-700 font-mono mt-0.5">
                         {MONEY(totalMyCollectedToday)}
                       </p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">
                         {myTodayPayments.length} Total Receipts
                       </p>
                     </div>
 
                     <div className="bg-white border border-emerald-200/90 rounded-2xl p-3 shadow-2xs">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
                         💵 Physical Cash
                       </p>
-                      <p className="text-xl font-black text-slate-900 font-mono mt-0.5">
+                      <p className="text-xl font-semibold text-slate-900 font-mono mt-0.5">
                         {MONEY(myCashInHand)}
                       </p>
-                      <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                      <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
                         {myCashPaymentsCount} Cash {myCashPaymentsCount === 1 ? "Receipt" : "Receipts"}
                       </p>
                     </div>
 
                     <div className="bg-white border border-blue-200/90 rounded-2xl p-3 shadow-2xs">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-800 flex items-center gap-1">
                         🌐 Online / Bank
                       </p>
-                      <p className="text-xl font-black text-blue-900 font-mono mt-0.5">
+                      <p className="text-xl font-semibold text-blue-900 font-mono mt-0.5">
                         {MONEY(myBankTransfersToday)}
                       </p>
-                      <p className="text-[10px] text-blue-700 font-medium mt-0.5">
+                      <p className="text-[11px] text-blue-700 font-medium mt-0.5">
                         {myBankPaymentsCount} Online {myBankPaymentsCount === 1 ? "Receipt" : "Receipts"}
                       </p>
                     </div>
@@ -2237,11 +2144,11 @@ export default function FieldStaffPortal() {
                         >
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                              <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
                                 {custName}
                               </p>
                               <span
-                                className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold ${
+                                className={`text-[11px] font-mono px-2 py-0.5 rounded-md font-bold ${
                                   (p.method || "Cash").toLowerCase() === "cash"
                                     ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                     : "bg-blue-100 text-blue-800 border border-blue-200"
@@ -2257,10 +2164,10 @@ export default function FieldStaffPortal() {
 
                         <div className="text-right shrink-0 flex items-center gap-2.5">
                           <div>
-                            <p className="text-sm sm:text-base font-black text-emerald-700 font-mono">
+                            <p className="text-sm sm:text-base font-semibold text-emerald-700 font-mono">
                               {MONEY(Number(p.amount) || 0)}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-mono">
+                            <p className="text-[11px] text-slate-400 font-mono">
                               {p.date}
                             </p>
                           </div>
@@ -2268,7 +2175,7 @@ export default function FieldStaffPortal() {
                           <button
                             onClick={() => setSelectedReceipt(p)}
                             className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition cursor-pointer border border-slate-200"
-                            title="View Official Receipt"
+                            title="View Official Receipt" aria-label="View Official Receipt"
                           >
                             <Receipt size={16} />
                           </button>
@@ -2291,11 +2198,11 @@ export default function FieldStaffPortal() {
                       placeholder="Search receipt #, customer, loan, notes..."
                       value={allPaymentsSearch}
                       onChange={(e) => setAllPaymentsSearch(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Search receipt #, customer, loan, notes..."
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
                     {(["ALL", "Capital", "Interest", "Other"] as const).map((t) => (
                       <button
                         key={t}
@@ -2315,18 +2222,18 @@ export default function FieldStaffPortal() {
 
                 {/* All Repayments Table */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                  <div className="overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+                    <table className="w-full text-left text-xs lms-table">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                          <th className="py-3 px-4">Receipt / Payment ID</th>
-                          <th className="py-3 px-4">Date</th>
-                          <th className="py-3 px-4">Borrower & Loan</th>
-                          <th className="py-3 px-4">Type</th>
-                          <th className="py-3 px-4">Method</th>
-                          <th className="py-3 px-4">Collected By</th>
-                          <th className="py-3 px-4 text-right">Amount</th>
-                          <th className="py-3 px-4 text-right">Action</th>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase text-slate-500 tracking-wider">
+                          <th className="py-3 px-4" scope="col">Receipt / Payment ID</th>
+                          <th className="py-3 px-4" scope="col">Date</th>
+                          <th className="py-3 px-4" scope="col">Borrower & Loan</th>
+                          <th className="py-3 px-4" scope="col">Type</th>
+                          <th className="py-3 px-4" scope="col">Method</th>
+                          <th className="py-3 px-4" scope="col">Collected By</th>
+                          <th className="py-3 px-4 text-right" scope="col">Amount</th>
+                          <th className="py-3 px-4 text-right" scope="col">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -2346,12 +2253,12 @@ export default function FieldStaffPortal() {
                                 <span className="font-bold text-slate-900 block truncate max-w-[160px]">
                                   {cust?.fullName || cust?.name || "Customer"}
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-mono">
+                                <span className="text-[11px] text-slate-500 font-mono">
                                   Loan: {ln?.loanNo || p.loanId}
                                 </span>
                               </td>
                               <td className="py-3 px-4">
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                   {p.type || "Capital"}
                                 </span>
                               </td>
@@ -2361,7 +2268,7 @@ export default function FieldStaffPortal() {
                               <td className="py-3 px-4 text-slate-600">
                                 {p.collectedBy || "Officer"}
                               </td>
-                              <td className="py-3 px-4 text-right font-mono font-black text-slate-950 text-xs">
+                              <td className="py-3 px-4 text-right font-mono font-semibold text-slate-950 text-xs">
                                 {MONEY(p.amount)}
                               </td>
                               <td className="py-3 px-4 text-right">
@@ -2407,7 +2314,7 @@ export default function FieldStaffPortal() {
                     <Clock size={16} />
                   </div>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-slate-950 font-mono mt-1">
+                <p className="text-xl sm:text-2xl font-semibold text-slate-950 font-mono mt-1">
                   {MONEY(
                     onlinePayments
                       .filter((o) => o.status === "PENDING")
@@ -2431,7 +2338,7 @@ export default function FieldStaffPortal() {
                     <CheckCircle2 size={16} />
                   </div>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-slate-950 font-mono mt-1">
+                <p className="text-xl sm:text-2xl font-semibold text-slate-950 font-mono mt-1">
                   {MONEY(
                     onlinePayments
                       .filter((o) => o.status === "COMPLETED")
@@ -2455,7 +2362,7 @@ export default function FieldStaffPortal() {
                     <CreditCard size={16} />
                   </div>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-slate-950 font-mono mt-1">
+                <p className="text-xl sm:text-2xl font-semibold text-slate-950 font-mono mt-1">
                   {MONEY(
                     onlinePayments.reduce((s, o) => s + (Number(o.amount) || 0), 0)
                   )}
@@ -2471,7 +2378,7 @@ export default function FieldStaffPortal() {
 
             {/* Filter Tabs & Search Controls */}
             <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-              <div className="flex items-center gap-1.5 border-b border-slate-100 pb-3 overflow-x-auto">
+              <div className="flex items-center gap-1.5 border-b border-slate-100 pb-3 overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
                 {(["ALL", "PENDING", "COMPLETED", "REJECTED"] as const).map((st) => (
                   <button
                     key={st}
@@ -2501,25 +2408,25 @@ export default function FieldStaffPortal() {
                   placeholder="Search by customer name, NIC, phone, loan ID, or bank reference..."
                   value={onlineSlipsSearch}
                   onChange={(e) => setOnlineSlipsSearch(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Search by customer name, NIC, phone, loan ID, or bank reference..."
                 />
               </div>
             </div>
 
             {/* Online Slips Table */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+                <table className="w-full text-left text-xs lms-table">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      <th className="py-3 px-4">Slip ID & Date</th>
-                      <th className="py-3 px-4">Borrower Details</th>
-                      <th className="py-3 px-4">Loan Reference</th>
-                      <th className="py-3 px-4">Bank & Transaction Ref</th>
-                      <th className="py-3 px-4 text-right">Amount Paid</th>
-                      <th className="py-3 px-4 text-center">Slip Proof</th>
-                      <th className="py-3 px-4 text-center">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="py-3 px-4" scope="col">Slip ID & Date</th>
+                      <th className="py-3 px-4" scope="col">Borrower Details</th>
+                      <th className="py-3 px-4" scope="col">Loan Reference</th>
+                      <th className="py-3 px-4" scope="col">Bank & Transaction Ref</th>
+                      <th className="py-3 px-4 text-right" scope="col">Amount Paid</th>
+                      <th className="py-3 px-4 text-center" scope="col">Slip Proof</th>
+                      <th className="py-3 px-4 text-center" scope="col">Status</th>
+                      <th className="py-3 px-4 text-right" scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -2530,14 +2437,14 @@ export default function FieldStaffPortal() {
                         <tr key={item.id} className="hover:bg-slate-50/70 transition">
                           <td className="py-3 px-4">
                             <span className="font-mono font-bold text-slate-900 block">{item.id}</span>
-                            <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                            <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <Calendar size={11} /> {item.paymentDate}
                             </span>
                           </td>
 
                           <td className="py-3 px-4">
                             <p className="font-bold text-slate-900">{item.customerName}</p>
-                            <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                            <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                               {item.customerNic && <span>NIC: {item.customerNic}</span>}
                               {item.customerPhone && <span>• {item.customerPhone}</span>}
                             </div>
@@ -2548,7 +2455,7 @@ export default function FieldStaffPortal() {
                               {item.loanNo || item.loanId}
                             </span>
                             {targetLoan && (
-                              <span className="text-[10px] text-slate-500">
+                              <span className="text-[11px] text-slate-500">
                                 Facility: {MONEY(targetLoan.principal || targetLoan.amount || 0)}
                               </span>
                             )}
@@ -2558,12 +2465,12 @@ export default function FieldStaffPortal() {
                             <span className="font-bold text-slate-800 block truncate max-w-[150px]">
                               {item.bankName}
                             </span>
-                            <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 border border-slate-200">
+                            <span className="font-mono text-[11px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 border border-slate-200">
                               Ref: {item.referenceNumber || "N/A"}
                             </span>
                           </td>
 
-                          <td className="py-3 px-4 text-right font-mono font-black text-slate-950 text-xs">
+                          <td className="py-3 px-4 text-right font-mono font-semibold text-slate-950 text-xs">
                             {MONEY(item.amount)}
                           </td>
 
@@ -2580,7 +2487,7 @@ export default function FieldStaffPortal() {
 
                           <td className="py-3 px-4 text-center">
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                                 item.status === "COMPLETED"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : item.status === "REJECTED"
@@ -2597,8 +2504,8 @@ export default function FieldStaffPortal() {
                               <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    approveOnlinePayment(item.id, "Verified by Staff Officer", currentOfficer?.name);
+                                  onClick={async () => {
+                                    if (!(await approveOnlinePayment(item.id, "Verified by Staff Officer", currentOfficer?.name))) return;
                                     showToast(`Slip ${item.id} approved and credited to loan!`);
                                   }}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
@@ -2608,9 +2515,9 @@ export default function FieldStaffPortal() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     const reason = prompt("Enter reason for declining slip:") || "Declined by officer";
-                                    rejectOnlinePayment(item.id, reason, currentOfficer?.name);
+                                    if (!(await rejectOnlinePayment(item.id, reason, currentOfficer?.name))) return;
                                     showToast(`Slip ${item.id} declined.`);
                                   }}
                                   className="inline-flex items-center gap-1 px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-lg text-xs font-bold transition cursor-pointer"
@@ -2628,7 +2535,7 @@ export default function FieldStaffPortal() {
                             )}
 
                             {item.status === "REJECTED" && (
-                              <span className="text-[10px] text-slate-500 italic truncate max-w-[120px] block ml-auto" title={item.reviewNotes}>
+                              <span className="text-[11px] text-slate-500 italic truncate max-w-[120px] block ml-auto" title={item.reviewNotes}>
                                 {item.reviewNotes || "Declined"}
                               </span>
                             )}
@@ -2656,44 +2563,44 @@ export default function FieldStaffPortal() {
             {/* Top Stat Metrics */}
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Users size={14} className="text-red-600" />
                   Total Customers
                 </span>
-                <h3 className="text-2xl font-black text-slate-900 font-mono mt-1">
+                <h3 className="text-2xl font-semibold text-slate-900 font-mono mt-1">
                   {customers.length}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium mt-0.5">Registered in system</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <UserCheck size={14} className="text-emerald-600" />
                   Active Borrowers
                 </span>
-                <h3 className="text-2xl font-black text-emerald-700 font-mono mt-1">
+                <h3 className="text-2xl font-semibold text-emerald-700 font-mono mt-1">
                   {customers.filter((c) => (customerFinancialsMap.get(c.id)?.activeLoans || 0) > 0).length}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium mt-0.5">With running loans</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Wallet size={14} className="text-blue-600" />
                   Active Loan Facilities
                 </span>
-                <h3 className="text-2xl font-black text-blue-700 font-mono mt-1">
+                <h3 className="text-2xl font-semibold text-blue-700 font-mono mt-1">
                   {loans.filter((l) => l.status === "Active" || l.status === "Overdue").length}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium mt-0.5">Out in field</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Coins size={14} className="text-amber-600" />
                   Total Balance Due
                 </span>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1 truncate">
+                <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-mono mt-1 truncate">
                   {MONEY(
                     Array.from(customerFinancialsMap.values()).reduce(
                       (sum, item) => sum + item.totalOutstanding,
@@ -2719,12 +2626,12 @@ export default function FieldStaffPortal() {
                     value={staffCustSearch}
                     onChange={(e) => setStaffCustSearch(e.target.value)}
                     placeholder="Search by customer name, NIC, phone number, town, district..."
-                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" aria-label="Search by customer name, NIC, phone number, town, district..."
                   />
                   {staffCustSearch && (
                     <button
                       onClick={() => setStaffCustSearch("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Clear search"
                     >
                       <X size={14} />
                     </button>
@@ -2732,7 +2639,7 @@ export default function FieldStaffPortal() {
                 </div>
 
                 {/* Filter Pills & Add Button */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
                   <div className="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold shrink-0">
                     <button
                       onClick={() => setStaffCustFilter("ALL")}
@@ -2778,19 +2685,19 @@ export default function FieldStaffPortal() {
               </div>
 
               {/* Table / List Container */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider select-none">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+                <table className="w-full text-left text-xs lms-table">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider select-none">
                     <tr>
-                      <th className="py-3 px-3.5">Customer</th>
-                      <th className="py-3 px-3.5">NIC & Contact</th>
-                      <th className="py-3 px-3.5 hidden md:table-cell">Town & Area</th>
-                      <th className="py-3 px-3.5 text-center">Loans</th>
-                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Repayable</th>
-                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Paid</th>
-                      <th className="py-3 px-3.5 text-right">Balance Due</th>
-                      <th className="py-3 px-3.5 text-center">Status</th>
-                      <th className="py-3 px-3.5 text-right">Actions</th>
+                      <th className="py-3 px-3.5" scope="col">Customer</th>
+                      <th className="py-3 px-3.5" scope="col">NIC & Contact</th>
+                      <th className="py-3 px-3.5 hidden md:table-cell" scope="col">Town & Area</th>
+                      <th className="py-3 px-3.5 text-center" scope="col">Loans</th>
+                      <th className="py-3 px-3.5 text-right hidden sm:table-cell" scope="col">Repayable</th>
+                      <th className="py-3 px-3.5 text-right hidden sm:table-cell" scope="col">Paid</th>
+                      <th className="py-3 px-3.5 text-right" scope="col">Balance Due</th>
+                      <th className="py-3 px-3.5 text-center" scope="col">Status</th>
+                      <th className="py-3 px-3.5 text-right" scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -2813,14 +2720,14 @@ export default function FieldStaffPortal() {
                         >
                           <td className="py-3 px-3.5">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-2xs">
                                 {initial}
                               </div>
                               <div className="min-w-0">
                                 <p className="font-bold text-slate-900 truncate group-hover:text-red-600 transition-colors">
                                   {displayName}
                                 </p>
-                                <span className="text-[10px] font-mono text-slate-400 font-semibold block">
+                                <span className="text-[11px] font-mono text-slate-400 font-semibold block">
                                   {cust.id}
                                 </span>
                               </div>
@@ -2842,7 +2749,7 @@ export default function FieldStaffPortal() {
                                   {cust.phone}
                                 </a>
                               ) : (
-                                <span className="text-[10px] text-slate-400 italic">No Phone</span>
+                                <span className="text-[11px] text-slate-400 italic">No Phone</span>
                               )}
                             </div>
                           </td>
@@ -2852,7 +2759,7 @@ export default function FieldStaffPortal() {
                               <span className="font-medium block truncate max-w-[140px]">
                                 {cust.town || cust.village || cust.address || "—"}
                               </span>
-                              <span className="text-[10px] text-slate-400 block">
+                              <span className="text-[11px] text-slate-400 block">
                                 {cust.district || "Sri Lanka"}
                               </span>
                             </div>
@@ -2860,7 +2767,7 @@ export default function FieldStaffPortal() {
 
                           <td className="py-3 px-3.5 text-center">
                             <span
-                              className={`inline-block font-mono font-black text-[11px] px-2 py-0.5 rounded-md ${
+                              className={`inline-block font-mono font-semibold text-[11px] px-2 py-0.5 rounded-md ${
                                 financials.activeLoans > 0
                                   ? "bg-emerald-100 text-emerald-800"
                                   : "bg-slate-100 text-slate-600"
@@ -2878,7 +2785,7 @@ export default function FieldStaffPortal() {
                             {MONEY(financials.totalPaid)}
                           </td>
 
-                          <td className="py-3 px-3.5 text-right font-mono font-black text-slate-900">
+                          <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">
                             {financials.totalOutstanding > 0 ? (
                               <span className="text-red-600">
                                 {MONEY(financials.totalOutstanding)}
@@ -2890,7 +2797,7 @@ export default function FieldStaffPortal() {
 
                           <td className="py-3 px-3.5 text-center">
                             <span
-                              className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
                                 (cust.status || "ACTIVE").toUpperCase() === "ACTIVE"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : "bg-slate-100 text-slate-600"
@@ -2951,44 +2858,44 @@ export default function FieldStaffPortal() {
             {/* Top Stat Metrics */}
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Wallet size={14} className="text-red-600" />
                   Total Loans
                 </span>
-                <h3 className="text-2xl font-black text-slate-900 font-mono mt-1">
+                <h3 className="text-2xl font-semibold text-slate-900 font-mono mt-1">
                   {loans.length}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium mt-0.5">All time facilities</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-emerald-600" />
                   Active Facilities
                 </span>
-                <h3 className="text-2xl font-black text-emerald-700 font-mono mt-1">
+                <h3 className="text-2xl font-semibold text-emerald-700 font-mono mt-1">
                   {loans.filter((l) => l.status === "Active").length}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium mt-0.5">Currently running</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <AlertTriangle size={14} className="text-rose-600" />
                   Overdue Loans
                 </span>
-                <h3 className="text-2xl font-black text-rose-600 font-mono mt-1">
+                <h3 className="text-2xl font-semibold text-rose-600 font-mono mt-1">
                   {loans.filter((l) => l.status === "Overdue").length}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium mt-0.5">Requires follow-up</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Coins size={14} className="text-amber-600" />
                   Total Outstanding
                 </span>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1 truncate">
+                <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-mono mt-1 truncate">
                   {MONEY(
                     Array.from(loanStatsMap.values()).reduce(
                       (sum, item) => sum + item.remainingBalance,
@@ -3014,12 +2921,12 @@ export default function FieldStaffPortal() {
                     value={staffLoanSearch}
                     onChange={(e) => setStaffLoanSearch(e.target.value)}
                     placeholder="Search by loan number, borrower name, NIC, phone..."
-                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" aria-label="Search by loan number, borrower name, NIC, phone..."
                   />
                   {staffLoanSearch && (
                     <button
                       onClick={() => setStaffLoanSearch("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Clear search"
                     >
                       <X size={14} />
                     </button>
@@ -3027,7 +2934,7 @@ export default function FieldStaffPortal() {
                 </div>
 
                 {/* Status Pills & Add Loan Button */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
                   <div className="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold shrink-0">
                     <button
                       onClick={() => setStaffLoanFilter("ALL")}
@@ -3096,19 +3003,19 @@ export default function FieldStaffPortal() {
               </div>
 
               {/* Table / Responsive List Container */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider select-none">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+                <table className="w-full text-left text-xs lms-table">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider select-none">
                     <tr>
-                      <th className="py-3 px-3.5">Loan No</th>
-                      <th className="py-3 px-3.5">Borrower</th>
-                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Principal</th>
-                      <th className="py-3 px-3.5 text-right hidden md:table-cell">Installment</th>
-                      <th className="py-3 px-3.5 text-right">Repayable</th>
-                      <th className="py-3 px-3.5 text-right">Balance Due</th>
-                      <th className="py-3 px-3.5 hidden lg:table-cell">Collection Progress</th>
-                      <th className="py-3 px-3.5 text-center">Status</th>
-                      <th className="py-3 px-3.5 text-right">Actions</th>
+                      <th className="py-3 px-3.5" scope="col">Loan No</th>
+                      <th className="py-3 px-3.5" scope="col">Borrower</th>
+                      <th className="py-3 px-3.5 text-right hidden sm:table-cell" scope="col">Principal</th>
+                      <th className="py-3 px-3.5 text-right hidden md:table-cell" scope="col">Installment</th>
+                      <th className="py-3 px-3.5 text-right" scope="col">Repayable</th>
+                      <th className="py-3 px-3.5 text-right" scope="col">Balance Due</th>
+                      <th className="py-3 px-3.5 hidden lg:table-cell" scope="col">Collection Progress</th>
+                      <th className="py-3 px-3.5 text-center" scope="col">Status</th>
+                      <th className="py-3 px-3.5 text-right" scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -3132,10 +3039,10 @@ export default function FieldStaffPortal() {
                           onClick={() => setSelectedStaffLoan(loan)}
                         >
                           <td className="py-3 px-3.5">
-                            <span className="font-mono font-black text-slate-900 bg-slate-100 px-2 py-1 rounded-md text-[11px] group-hover:bg-red-50 group-hover:text-red-600 transition">
+                            <span className="font-mono font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded-md text-[11px] group-hover:bg-red-50 group-hover:text-red-600 transition">
                               {loan.loanNo || loan.id}
                             </span>
-                            <span className="text-[10px] text-slate-400 block font-mono mt-0.5">
+                            <span className="text-[11px] text-slate-400 block font-mono mt-0.5">
                               {loan.issueDate || "—"}
                             </span>
                           </td>
@@ -3145,7 +3052,7 @@ export default function FieldStaffPortal() {
                               <p className="font-bold text-slate-900 truncate group-hover:text-red-600 transition-colors">
                                 {custName}
                               </p>
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono mt-0.5">
                                 <span>{cust?.nic || loan.guarantorNic || "No NIC"}</span>
                                 {cust?.phone && (
                                   <>
@@ -3159,26 +3066,26 @@ export default function FieldStaffPortal() {
 
                           <td className="py-3 px-3.5 text-right font-mono font-bold text-slate-800 hidden sm:table-cell">
                             {MONEY(loan.principal)}
-                            <span className="text-[10px] text-slate-400 font-normal block">
+                            <span className="text-[11px] text-slate-400 font-normal block">
                               {loan.interestRate}% {loan.repaymentFrequency}
                             </span>
                           </td>
 
                           <td className="py-3 px-3.5 text-right font-mono font-bold text-slate-900 hidden md:table-cell">
                             {MONEY(loan.installment)}
-                            <span className="text-[10px] text-slate-400 font-normal block">
+                            <span className="text-[11px] text-slate-400 font-normal block">
                               per {loan.repaymentFrequency?.toLowerCase() || "cycle"}
                             </span>
                           </td>
 
                           <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-700">
                             {MONEY(totalRepayment)}
-                            <span className="text-[10px] text-emerald-700 font-normal block hidden sm:block">
+                            <span className="text-[11px] text-emerald-700 font-normal block hidden sm:block">
                               Paid: {MONEY(stats.totalPaid)}
                             </span>
                           </td>
 
-                          <td className="py-3 px-3.5 text-right font-mono font-black text-slate-900">
+                          <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">
                             {stats.remainingBalance > 0 ? (
                               <span className="text-red-600">
                                 {MONEY(stats.remainingBalance)}
@@ -3190,7 +3097,7 @@ export default function FieldStaffPortal() {
 
                           <td className="py-3 px-3.5 hidden lg:table-cell">
                             <div className="w-28 space-y-1">
-                              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                              <div className="flex justify-between text-[11px] font-mono text-slate-500">
                                 <span>{progressPct}%</span>
                                 <span>{MONEY(stats.totalPaid)}</span>
                               </div>
@@ -3211,7 +3118,7 @@ export default function FieldStaffPortal() {
 
                           <td className="py-3 px-3.5 text-center">
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
                                 loan.status === "Active"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : loan.status === "Overdue"
@@ -3279,38 +3186,38 @@ export default function FieldStaffPortal() {
             onClick={() => setActiveTab("route")}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition cursor-pointer ${
               activeTab === "route"
-                ? "text-red-600 font-black bg-red-50"
+                ? "text-red-600 font-semibold bg-red-50"
                 : "text-slate-500 hover:text-slate-900 font-medium"
             }`}
           >
             <Calendar size={18} />
-            <span className="text-[10px] tracking-tight mt-1">Collections</span>
+            <span className="text-[11px] tracking-tight mt-1">Collections</span>
           </button>
 
           <button
             onClick={() => setActiveTab("quickpay")}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition cursor-pointer ${
               activeTab === "quickpay"
-                ? "text-red-600 font-black bg-red-50"
+                ? "text-red-600 font-semibold bg-red-50"
                 : "text-slate-500 hover:text-slate-900 font-medium"
             }`}
           >
             <Coins size={18} />
-            <span className="text-[10px] tracking-tight mt-1">Quick Pay</span>
+            <span className="text-[11px] tracking-tight mt-1">Quick Pay</span>
           </button>
 
           <button
             onClick={() => setActiveTab("receipts")}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition cursor-pointer relative ${
               activeTab === "receipts"
-                ? "text-red-600 font-black bg-red-50"
+                ? "text-red-600 font-semibold bg-red-50"
                 : "text-slate-500 hover:text-slate-900 font-medium"
             }`}
           >
             <Receipt size={18} />
-            <span className="text-[10px] tracking-tight mt-1">Receipts</span>
+            <span className="text-[11px] tracking-tight mt-1">Receipts</span>
             {myTodayPayments.length > 0 && (
-              <span className="absolute top-1 right-2 w-4 h-4 bg-red-600 text-white font-black text-[9px] rounded-full flex items-center justify-center">
+              <span className="absolute top-1 right-2 w-4 h-4 bg-red-600 text-white font-semibold text-[11px] rounded-full flex items-center justify-center">
                 {myTodayPayments.length}
               </span>
             )}
@@ -3320,14 +3227,14 @@ export default function FieldStaffPortal() {
             onClick={() => setActiveTab("online_slips")}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition cursor-pointer relative ${
               activeTab === "online_slips"
-                ? "text-red-600 font-black bg-red-50"
+                ? "text-red-600 font-semibold bg-red-50"
                 : "text-slate-500 hover:text-slate-900 font-medium"
             }`}
           >
             <ImageIcon size={18} />
-            <span className="text-[10px] tracking-tight mt-1">Slips</span>
+            <span className="text-[11px] tracking-tight mt-1">Slips</span>
             {pendingOnlineCount > 0 && (
-              <span className="absolute top-1 right-2 w-4 h-4 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute top-1 right-2 w-4 h-4 bg-amber-500 text-slate-950 font-semibold text-[11px] rounded-full flex items-center justify-center animate-pulse">
                 {pendingOnlineCount}
               </span>
             )}
@@ -3338,11 +3245,11 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Mobile Detailed View Sheet ───────────────────────────────── */}
       {viewItem && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 lg:hidden"
+          className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 lg:hidden lms-overlay"
           onClick={() => setViewItem(null)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-200 max-h-[90vh] overflow-y-auto"
+            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-200 max-h-[90vh] overflow-y-auto lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto -mt-1 sm:hidden" />
@@ -3350,12 +3257,12 @@ export default function FieldStaffPortal() {
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3 className="text-base font-black text-slate-900">
+                  <h3 className="text-base font-semibold text-slate-900">
                     {viewItem.customer?.fullName || viewItem.customer?.name || viewItem.loan.customerName || "Customer"}
                   </h3>
                   {viewItem.isCollectedToday && (
                     <span
-                      className={`text-[10px] font-black uppercase font-mono px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                      className={`text-[11px] font-semibold uppercase font-mono px-2 py-0.5 rounded-md border flex items-center gap-1 ${
                         (viewItem.todaysPayment?.method || "Cash").toLowerCase() === "cash"
                           ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                           : "bg-blue-100 text-blue-800 border-blue-200"
@@ -3365,7 +3272,7 @@ export default function FieldStaffPortal() {
                     </span>
                   )}
                   {viewItem.hasArrears && (
-                    <span className="text-[10px] font-black uppercase font-mono px-2 py-0.5 rounded-md bg-red-100 text-red-700 border border-red-200">
+                    <span className="text-[11px] font-semibold uppercase font-mono px-2 py-0.5 rounded-md bg-red-100 text-red-700 border border-red-200">
                       Arrears
                     </span>
                   )}
@@ -3378,7 +3285,7 @@ export default function FieldStaffPortal() {
 
               <button
                 onClick={() => setViewItem(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -3408,14 +3315,14 @@ export default function FieldStaffPortal() {
                   {/* Big Total Due Box */}
                   <div className="bg-emerald-50 border-2 border-emerald-500/80 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800 block">
                         Total To Collect Now
                       </span>
                       <span className="text-xs text-slate-600 font-medium">
                         Cycle #{viewItem.cycleNumber} / {viewItem.totalCycles} ({viewItem.loan.repaymentFrequency || "Daily"})
                       </span>
                     </div>
-                    <span className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
+                    <span className="text-2xl font-semibold text-emerald-700 font-mono tracking-tight">
                       {MONEY(viewItem.totalDueToday)}
                     </span>
                   </div>
@@ -3431,7 +3338,7 @@ export default function FieldStaffPortal() {
                     <div className="flex justify-between items-center text-slate-600">
                       <span>Past Due / Arrears</span>
                       {viewItem.arrearsAmount > 0 ? (
-                        <span className="font-black text-red-600 font-mono">
+                        <span className="font-semibold text-red-600 font-mono">
                           + {MONEY(viewItem.arrearsAmount)}
                         </span>
                       ) : (
@@ -3564,7 +3471,7 @@ export default function FieldStaffPortal() {
                       setViewItem(null);
                       openCollectModal(it);
                     }}
-                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Wallet size={16} />
                     Collect Cash Now ({MONEY(viewItem.totalDueToday)})
@@ -3594,23 +3501,23 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Collect Cash Modal (Responsive Light Bottom Sheet / Modal) ── */}
       {collectItem && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setCollectItem(null)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-200"
+            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-200 lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-black text-slate-900">Record Collection</h3>
+                <h3 className="text-base font-semibold text-slate-900">Record Collection</h3>
                 <p className="text-xs text-slate-500">
                   {collectItem.customer?.fullName || collectItem.customer?.name || collectItem.loan.customerName || "Customer"} • Loan {collectItem.loan.loanNo}
                 </p>
               </div>
               <button
                 onClick={() => setCollectItem(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -3618,7 +3525,7 @@ export default function FieldStaffPortal() {
 
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-600 uppercase">
+                <label className="text-[11px] font-bold text-slate-600 uppercase" htmlFor="field-app-field-page-1">
                   Amount to Collect (LKR)
                 </label>
                 <input
@@ -3627,8 +3534,8 @@ export default function FieldStaffPortal() {
                   required
                   value={collectAmount}
                   onChange={(e) => setCollectAmount(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-2xl font-black text-emerald-700 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-mono shadow-2xs"
-                  placeholder="0.00"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-2xl font-semibold text-emerald-700 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-mono shadow-2xs"
+                  placeholder="0.00" id="field-app-field-page-1"
                 />
 
                 <div className="grid grid-cols-3 gap-1.5 pt-1">
@@ -3675,7 +3582,7 @@ export default function FieldStaffPortal() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-600 uppercase">
+                <label className="text-[11px] font-bold text-slate-600 uppercase">
                   Payment Method
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -3707,7 +3614,7 @@ export default function FieldStaffPortal() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-600 uppercase">
+                <label className="text-[11px] font-bold text-slate-600 uppercase" htmlFor="field-app-field-page-2">
                   Field Remarks (Optional)
                 </label>
                 <input
@@ -3715,13 +3622,13 @@ export default function FieldStaffPortal() {
                   value={collectNotes}
                   onChange={(e) => setCollectNotes(e.target.value)}
                   placeholder="e.g. Paid at shop, next visit Monday"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600" id="field-app-field-page-2"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs sm:text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-2xl text-xs sm:text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <CheckCircle2 size={16} />
                 Confirm Collection & Issue Receipt
@@ -3734,23 +3641,23 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Promise to Pay (PTP) ─────────────────────────────────────── */}
       {ptpItem && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setPtpItem(null)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-200"
+            className="bg-white border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-200 lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-black text-slate-900">Log Promise to Pay</h3>
+                <h3 className="text-base font-semibold text-slate-900">Log Promise to Pay</h3>
                 <p className="text-xs text-slate-500">
                   {ptpItem.customer?.fullName || ptpItem.customer?.name || ptpItem.loan.customerName || "Customer"}
                 </p>
               </div>
               <button
                 onClick={() => setPtpItem(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer" aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -3758,7 +3665,7 @@ export default function FieldStaffPortal() {
 
             <form onSubmit={handleSavePtp} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-600 uppercase">
+                <label className="text-[11px] font-bold text-slate-600 uppercase" htmlFor="field-app-field-page-3">
                   Promised Date
                 </label>
                 <input
@@ -3766,12 +3673,12 @@ export default function FieldStaffPortal() {
                   required
                   value={ptpDate}
                   onChange={(e) => setPtpDate(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600" id="field-app-field-page-3"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-600 uppercase">
+                <label className="text-[11px] font-bold text-slate-600 uppercase" htmlFor="field-app-field-page-4">
                   Visit Notes / Reason
                 </label>
                 <textarea
@@ -3780,13 +3687,13 @@ export default function FieldStaffPortal() {
                   value={ptpNoteText}
                   onChange={(e) => setPtpNoteText(e.target.value)}
                   placeholder="e.g. Borrower was out of town, promised full settlement on Friday 10 AM"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-600"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-600" id="field-app-field-page-4"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-xs"
+                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold rounded-xl text-xs transition cursor-pointer shadow-xs"
               >
                 Save PTP Record
               </button>
@@ -3806,11 +3713,11 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Originate New Loan Facility ─────────────────────────────── */}
       {showNewLoanModal && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150 overflow-y-auto lms-overlay"
           onClick={() => setShowNewLoanModal(false)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-4xl rounded-3xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto my-auto"
+            className="bg-white border border-slate-200 w-full max-w-4xl rounded-3xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto my-auto lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -3819,7 +3726,7 @@ export default function FieldStaffPortal() {
                   <PlusCircle size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">
                     Originate New Loan Facility (Staff Portal)
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
@@ -3830,7 +3737,7 @@ export default function FieldStaffPortal() {
               <button
                 type="button"
                 onClick={() => setShowNewLoanModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -3856,11 +3763,11 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Register New Borrower ──────────────────────────────────── */}
       {showNewCustomerModal && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150 overflow-y-auto lms-overlay"
           onClick={() => setShowNewCustomerModal(false)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto my-auto"
+            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto my-auto lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-5">
@@ -3869,7 +3776,7 @@ export default function FieldStaffPortal() {
                   <UserPlus size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">
                     Register New Borrower
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
@@ -3880,7 +3787,7 @@ export default function FieldStaffPortal() {
               <button
                 type="button"
                 onClick={() => setShowNewCustomerModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -3889,7 +3796,7 @@ export default function FieldStaffPortal() {
             <form onSubmit={handleCreateCustomer} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-5">
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -3898,12 +3805,12 @@ export default function FieldStaffPortal() {
                     value={newCustFullName}
                     onChange={(e) => setNewCustFullName(e.target.value)}
                     placeholder="e.g. Sunil Shantha Perera"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-5"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-6">
                     Display / Calling Name
                   </label>
                   <input
@@ -3911,12 +3818,12 @@ export default function FieldStaffPortal() {
                     value={newCustName}
                     onChange={(e) => setNewCustName(e.target.value)}
                     placeholder="e.g. Sunil"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-6"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-7">
                     NIC Number <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -3925,12 +3832,12 @@ export default function FieldStaffPortal() {
                     value={newCustNic}
                     onChange={(e) => setNewCustNic(e.target.value)}
                     placeholder="e.g. 198512345678 or 851234567V"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition uppercase"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition uppercase" id="field-app-field-page-7"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-8">
                     Primary Mobile Phone <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -3939,12 +3846,12 @@ export default function FieldStaffPortal() {
                     value={newCustPhone}
                     onChange={(e) => setNewCustPhone(e.target.value)}
                     placeholder="e.g. 077 123 4567"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-8"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-9">
                     Secondary / Landline Phone
                   </label>
                   <input
@@ -3952,12 +3859,12 @@ export default function FieldStaffPortal() {
                     value={newCustAltPhone}
                     onChange={(e) => setNewCustAltPhone(e.target.value)}
                     placeholder="e.g. 011 234 5678"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-9"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-10">
                     Monthly Income (LKR)
                   </label>
                   <input
@@ -3965,7 +3872,7 @@ export default function FieldStaffPortal() {
                     value={newCustIncome}
                     onChange={(e) => setNewCustIncome(e.target.value)}
                     placeholder="e.g. 65000"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-10"
                   />
                 </div>
               </div>
@@ -3973,7 +3880,7 @@ export default function FieldStaffPortal() {
               {/* Address Section */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-11">
                     Residential Address
                   </label>
                   <input
@@ -3981,12 +3888,12 @@ export default function FieldStaffPortal() {
                     value={newCustAddress}
                     onChange={(e) => setNewCustAddress(e.target.value)}
                     placeholder="Street number, road, lane"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-11"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block" htmlFor="field-app-field-page-12">
                     Town / City
                   </label>
                   <input
@@ -3994,20 +3901,20 @@ export default function FieldStaffPortal() {
                     value={newCustTown}
                     onChange={(e) => setNewCustTown(e.target.value)}
                     placeholder="e.g. Maharagama"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600 focus:bg-white transition" id="field-app-field-page-12"
                   />
                 </div>
               </div>
 
               {/* Guarantor Details Accordion / Sub-card */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
                   <UserCheck size={14} className="text-red-600" />
                   <span>Guarantor Information</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase block">
+                    <label className="text-[11px] font-bold text-slate-600 uppercase block" htmlFor="field-app-field-page-13">
                       Guarantor Name
                     </label>
                     <input
@@ -4015,12 +3922,12 @@ export default function FieldStaffPortal() {
                       value={newCustGuarantorName}
                       onChange={(e) => setNewCustGuarantorName(e.target.value)}
                       placeholder="Guarantor Full Name"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-600" id="field-app-field-page-13"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase block">
+                    <label className="text-[11px] font-bold text-slate-600 uppercase block" htmlFor="field-app-field-page-14">
                       Guarantor Phone
                     </label>
                     <input
@@ -4028,12 +3935,12 @@ export default function FieldStaffPortal() {
                       value={newCustGuarantorPhone}
                       onChange={(e) => setNewCustGuarantorPhone(e.target.value)}
                       placeholder="07X XXXXXXX"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600" id="field-app-field-page-14"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase block">
+                    <label className="text-[11px] font-bold text-slate-600 uppercase block" htmlFor="field-app-field-page-15">
                       Guarantor NIC
                     </label>
                     <input
@@ -4041,7 +3948,7 @@ export default function FieldStaffPortal() {
                       value={newCustGuarantorNic}
                       onChange={(e) => setNewCustGuarantorNic(e.target.value)}
                       placeholder="NIC Number"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600 uppercase"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-red-600 uppercase" id="field-app-field-page-15"
                     />
                   </div>
                 </div>
@@ -4072,11 +3979,11 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: View Full Bank Slip (Staff Verification) ───────────────── */}
       {selectedSlipImage && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setSelectedSlipImage(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col"
+            className="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -4085,7 +3992,7 @@ export default function FieldStaffPortal() {
                   <ImageIcon size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
+                  <h3 className="text-base font-semibold text-slate-900">
                     Customer Deposit Slip Proof
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
@@ -4096,7 +4003,7 @@ export default function FieldStaffPortal() {
               <button
                 type="button"
                 onClick={() => setSelectedSlipImage(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -4105,7 +4012,7 @@ export default function FieldStaffPortal() {
             {/* Slip Details Banner */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Borrower
                 </span>
                 <span className="font-bold text-slate-900 truncate block">
@@ -4113,15 +4020,15 @@ export default function FieldStaffPortal() {
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Amount
                 </span>
-                <span className="font-mono font-black text-emerald-700">
+                <span className="font-mono font-semibold text-emerald-700">
                   {MONEY(selectedSlipImage.amount)}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Bank Name
                 </span>
                 <span className="font-bold text-slate-900 truncate block">
@@ -4129,7 +4036,7 @@ export default function FieldStaffPortal() {
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                <span className="text-[11px] text-slate-500 font-bold uppercase block">
                   Transfer Date
                 </span>
                 <span className="font-mono font-bold text-slate-900">
@@ -4146,24 +4053,24 @@ export default function FieldStaffPortal() {
 
                 if (fieldSlipImgError || !safeUrl) {
                   return (
-                    <div className="w-full max-w-md bg-white rounded-2xl p-4 text-left border border-slate-200 shadow-xl space-y-3">
+                    <div className="w-full max-w-md bg-white rounded-2xl p-4 text-left border border-slate-200 shadow-xl space-y-3 lms-dialog">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                        <span className="text-[10px] font-black uppercase text-red-600">Bank Deposit Slip</span>
+                        <span className="text-[11px] font-semibold uppercase text-red-600">Bank Deposit Slip</span>
                         <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{selectedSlipImage.referenceNumber}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-[10px] text-slate-400 font-bold block">Borrower</span>
+                          <span className="text-[11px] text-slate-400 font-bold block">Borrower</span>
                           <span className="font-bold text-slate-900">{selectedSlipImage.customerName}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 font-bold block">Bank</span>
+                          <span className="text-[11px] text-slate-400 font-bold block">Bank</span>
                           <span className="font-bold text-slate-900">{selectedSlipImage.bankName}</span>
                         </div>
                       </div>
                       <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-emerald-800">Amount Paid</span>
-                        <span className="text-lg font-black font-mono text-emerald-700">{MONEY(selectedSlipImage.amount)}</span>
+                        <span className="text-[11px] font-bold text-emerald-800">Amount Paid</span>
+                        <span className="text-lg font-semibold font-mono text-emerald-700">{MONEY(selectedSlipImage.amount)}</span>
                       </div>
                     </div>
                   );
@@ -4210,9 +4117,9 @@ export default function FieldStaffPortal() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       const reason = prompt("Enter reason for declining slip:") || "Declined by field officer";
-                      rejectOnlinePayment(selectedSlipImage.id, reason, currentOfficer?.name);
+                      if (!(await rejectOnlinePayment(selectedSlipImage.id, reason, currentOfficer?.name))) return;
                       setSelectedSlipImage(null);
                       showToast(`Slip ${selectedSlipImage.id} declined.`);
                     }}
@@ -4222,12 +4129,12 @@ export default function FieldStaffPortal() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      approveOnlinePayment(
+                    onClick={async () => {
+                      if (!(await approveOnlinePayment(
                         selectedSlipImage.id,
                         "Verified by Field Staff",
                         currentOfficer?.name
-                      );
+                      ))) return;
                       setSelectedSlipImage(null);
                       showToast(`Slip ${selectedSlipImage.id} approved and credited to loan!`);
                     }}
@@ -4245,26 +4152,26 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Customer Profile & Associated Loans ──────────────────────── */}
       {selectedStaffCustomer && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setSelectedStaffCustomer(null)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col"
+            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-semibold text-lg shadow-sm">
                   {(selectedStaffCustomer.fullName || selectedStaffCustomer.name).charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-tight">
                       {selectedStaffCustomer.fullName || selectedStaffCustomer.name}
                     </h3>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
                         (selectedStaffCustomer.status || "ACTIVE").toUpperCase() === "ACTIVE"
                           ? "bg-emerald-100 text-emerald-800"
                           : "bg-slate-100 text-slate-600"
@@ -4281,7 +4188,7 @@ export default function FieldStaffPortal() {
               <button
                 type="button"
                 onClick={() => setSelectedStaffCustomer(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -4301,20 +4208,20 @@ export default function FieldStaffPortal() {
                 return (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Active Loans</span>
-                      <span className="font-mono font-black text-slate-900 text-sm">{fin.activeLoans} of {fin.totalLoans}</span>
+                      <span className="text-[11px] text-slate-500 font-bold uppercase block">Active Loans</span>
+                      <span className="font-mono font-semibold text-slate-900 text-sm">{fin.activeLoans} of {fin.totalLoans}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Repayable</span>
+                      <span className="text-[11px] text-slate-500 font-bold uppercase block">Total Repayable</span>
                       <span className="font-mono font-bold text-slate-800 text-xs">{MONEY(fin.totalRepayable)}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Collected</span>
+                      <span className="text-[11px] text-slate-500 font-bold uppercase block">Total Collected</span>
                       <span className="font-mono font-bold text-emerald-700 text-xs">{MONEY(fin.totalPaid)}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Current Balance</span>
-                      <span className="font-mono font-black text-red-600 text-xs">{MONEY(fin.totalOutstanding)}</span>
+                      <span className="text-[11px] text-slate-500 font-bold uppercase block">Current Balance</span>
+                      <span className="font-mono font-semibold text-red-600 text-xs">{MONEY(fin.totalOutstanding)}</span>
                     </div>
                   </div>
                 );
@@ -4322,13 +4229,13 @@ export default function FieldStaffPortal() {
 
               {/* Personal & Contact Information */}
               <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                   <User size={13} className="text-red-600" />
                   Contact & Residence
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 font-medium block">Primary Phone</span>
+                    <span className="text-[11px] text-slate-400 font-medium block">Primary Phone</span>
                     {selectedStaffCustomer.phone ? (
                       <a
                         href={`tel:${selectedStaffCustomer.phone}`}
@@ -4342,23 +4249,23 @@ export default function FieldStaffPortal() {
                     )}
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-medium block">Alternate Phone</span>
+                    <span className="text-[11px] text-slate-400 font-medium block">Alternate Phone</span>
                     <span className="font-mono text-slate-700">{selectedStaffCustomer.alternatePhone || "—"}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-medium block">Monthly Income</span>
+                    <span className="text-[11px] text-slate-400 font-medium block">Monthly Income</span>
                     <span className="font-mono font-bold text-slate-800">
                       {selectedStaffCustomer.monthlyIncome ? MONEY(selectedStaffCustomer.monthlyIncome) : "—"}
                     </span>
                   </div>
                   <div className="sm:col-span-2">
-                    <span className="text-[10px] text-slate-400 font-medium block">Residential Address</span>
+                    <span className="text-[11px] text-slate-400 font-medium block">Residential Address</span>
                     <span className="text-slate-800 font-medium">
                       {selectedStaffCustomer.address || "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-medium block">Town & District</span>
+                    <span className="text-[11px] text-slate-400 font-medium block">Town & District</span>
                     <span className="text-slate-800 font-medium">
                       {[selectedStaffCustomer.town, selectedStaffCustomer.district].filter(Boolean).join(", ") || "—"}
                     </span>
@@ -4369,13 +4276,13 @@ export default function FieldStaffPortal() {
               {/* Guarantor Info */}
               {(selectedStaffCustomer.guarantorName || selectedStaffCustomer.guarantorPhone || selectedStaffCustomer.guarantorNic) && (
                 <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                     <UserCheck size={13} className="text-red-600" />
                     Guarantor Information
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-400 font-medium block">Name & Relation</span>
+                      <span className="text-[11px] text-slate-400 font-medium block">Name & Relation</span>
                       <span className="font-bold text-slate-800">
                         {selectedStaffCustomer.guarantorName || "—"}{" "}
                         {selectedStaffCustomer.guarantorRelationship && (
@@ -4384,11 +4291,11 @@ export default function FieldStaffPortal() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 font-medium block">NIC</span>
+                      <span className="text-[11px] text-slate-400 font-medium block">NIC</span>
                       <span className="font-mono text-slate-800">{selectedStaffCustomer.guarantorNic || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 font-medium block">Phone</span>
+                      <span className="text-[11px] text-slate-400 font-medium block">Phone</span>
                       {selectedStaffCustomer.guarantorPhone ? (
                         <a
                           href={`tel:${selectedStaffCustomer.guarantorPhone}`}
@@ -4408,7 +4315,7 @@ export default function FieldStaffPortal() {
               {/* Customer Loan Facilities */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                     <Wallet size={13} className="text-red-600" />
                     Loan Facilities ({loans.filter((l) => l.customerId === selectedStaffCustomer.id).length})
                   </h4>
@@ -4438,11 +4345,11 @@ export default function FieldStaffPortal() {
                         >
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">
+                              <span className="font-mono font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">
                                 {loan.loanNo || loan.id}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ${
                                   loan.status === "Active"
                                     ? "bg-emerald-100 text-emerald-800"
                                     : loan.status === "Overdue"
@@ -4460,8 +4367,8 @@ export default function FieldStaffPortal() {
 
                           <div className="flex items-center justify-between w-full sm:w-auto gap-3 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                             <div className="text-right">
-                              <span className="text-[10px] text-slate-400 block uppercase font-bold">Balance Due</span>
-                              <span className="font-mono font-black text-red-600">
+                              <span className="text-[11px] text-slate-400 block uppercase font-bold">Balance Due</span>
+                              <span className="font-mono font-semibold text-red-600">
                                 {MONEY(stats.remainingBalance)}
                               </span>
                             </div>
@@ -4521,26 +4428,26 @@ export default function FieldStaffPortal() {
       {/* ── MODAL: Loan Facility Details & Terms Inspection ─────────────────── */}
       {selectedStaffLoan && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150 lms-overlay"
           onClick={() => setSelectedStaffLoan(null)}
         >
           <div
-            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col"
+            className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col lms-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center font-semibold text-lg shadow-sm">
                   <Wallet size={22} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-tight">
                       {selectedStaffLoan.loanNo || selectedStaffLoan.id}
                     </h3>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
                         selectedStaffLoan.status === "Active"
                           ? "bg-emerald-100 text-emerald-800"
                           : selectedStaffLoan.status === "Overdue"
@@ -4561,7 +4468,7 @@ export default function FieldStaffPortal() {
               <button
                 type="button"
                 onClick={() => setSelectedStaffLoan(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition" aria-label="Close"
               >
                 <X size={16} />
               </button>
@@ -4580,26 +4487,26 @@ export default function FieldStaffPortal() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Principal</span>
-                        <span className="font-mono font-black text-slate-900 text-sm">
+                        <span className="text-[11px] text-slate-500 font-bold uppercase block">Principal</span>
+                        <span className="font-mono font-semibold text-slate-900 text-sm">
                           {MONEY(selectedStaffLoan.principal)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Interest Rate</span>
+                        <span className="text-[11px] text-slate-500 font-bold uppercase block">Interest Rate</span>
                         <span className="font-mono font-bold text-slate-800 text-sm">
                           {selectedStaffLoan.interestRate}% {selectedStaffLoan.repaymentFrequency}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Installment</span>
+                        <span className="text-[11px] text-slate-500 font-bold uppercase block">Installment</span>
                         <span className="font-mono font-bold text-emerald-700 text-sm">
                           {MONEY(selectedStaffLoan.installment)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Repayable</span>
-                        <span className="font-mono font-black text-slate-900 text-sm">
+                        <span className="text-[11px] text-slate-500 font-bold uppercase block">Total Repayable</span>
+                        <span className="font-mono font-semibold text-slate-900 text-sm">
                           {MONEY(totalRepay)}
                         </span>
                       </div>
@@ -4639,23 +4546,23 @@ export default function FieldStaffPortal() {
                 const cust = customers.find((c) => c.id === selectedStaffLoan.customerId);
                 return (
                   <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                       <User size={13} className="text-red-600" />
                       Borrower Information
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">Name</span>
+                        <span className="text-[11px] text-slate-400 font-medium block">Name</span>
                         <span className="font-bold text-slate-900">
                           {cust?.fullName || cust?.name || selectedStaffLoan.customerName || "Customer"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">NIC Number</span>
+                        <span className="text-[11px] text-slate-400 font-medium block">NIC Number</span>
                         <span className="font-mono font-bold text-slate-800">{cust?.nic || "—"}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">Phone Contact</span>
+                        <span className="text-[11px] text-slate-400 font-medium block">Phone Contact</span>
                         {cust?.phone ? (
                           <a
                             href={`tel:${cust.phone}`}
@@ -4669,7 +4576,7 @@ export default function FieldStaffPortal() {
                         )}
                       </div>
                       <div className="sm:col-span-3">
-                        <span className="text-[10px] text-slate-400 font-medium block">Address</span>
+                        <span className="text-[11px] text-slate-400 font-medium block">Address</span>
                         <span className="text-slate-800 font-medium">
                           {[cust?.address, cust?.town, cust?.district].filter(Boolean).join(", ") || "—"}
                         </span>
@@ -4682,21 +4589,21 @@ export default function FieldStaffPortal() {
               {/* Guarantor Details */}
               {(selectedStaffLoan.guarantorName || selectedStaffLoan.guarantorPhone || selectedStaffLoan.guarantorNic) && (
                 <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                     <UserCheck size={13} className="text-red-600" />
                     Guarantor on File
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-400 font-medium block">Guarantor Name</span>
+                      <span className="text-[11px] text-slate-400 font-medium block">Guarantor Name</span>
                       <span className="font-bold text-slate-800">{selectedStaffLoan.guarantorName || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 font-medium block">Guarantor NIC</span>
+                      <span className="text-[11px] text-slate-400 font-medium block">Guarantor NIC</span>
                       <span className="font-mono text-slate-800">{selectedStaffLoan.guarantorNic || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 font-medium block">Guarantor Phone</span>
+                      <span className="text-[11px] text-slate-400 font-medium block">Guarantor Phone</span>
                       {selectedStaffLoan.guarantorPhone ? (
                         <a
                           href={`tel:${selectedStaffLoan.guarantorPhone}`}

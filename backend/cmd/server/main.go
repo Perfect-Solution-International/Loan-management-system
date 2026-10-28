@@ -34,6 +34,18 @@ func main() {
 		defer db.Close()
 	}
 
+	r := newRouter(db, cfg)
+
+	// 6. Start HTTP Server
+	serverAddr := ":" + cfg.Port
+	log.Printf("🚀 Server listening on http://localhost%s", serverAddr)
+	if err := http.ListenAndServe(serverAddr, r); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Server error: %v", err)
+		os.Exit(1)
+	}
+}
+
+func newRouter(db *database.DB, cfg *config.Config) http.Handler {
 	// 3. Initialize Repositories
 	userRepo := repository.NewUserRepository(db)
 	custRepo := repository.NewCustomerRepository(db)
@@ -47,6 +59,7 @@ func main() {
 	custHandler := handlers.NewCustomerHandler(custRepo, auditRepo)
 	loanHandler := handlers.NewLoanHandler(loanRepo, custRepo, auditRepo)
 	payHandler := handlers.NewPaymentHandler(payRepo, loanRepo, auditRepo)
+	portalHandler := handlers.NewPortalHandler(custRepo, loanRepo, payRepo, settingsRepo, cfg, userRepo)
 	auditSettingsHandler := handlers.NewAuditAndSettingsHandler(auditRepo, settingsRepo)
 
 	// 5. Setup Router
@@ -97,57 +110,47 @@ func main() {
 		// Auth
 		api.Post("/auth/login", authHandler.Login)
 
-		// Public Borrower Lookup (for customer portal)
-		api.Get("/customers/lookup", custHandler.LookupCustomer)
-
-		// Public/Protected Data Routes
-		// (In production, wrap with middleware.AuthMiddleware(cfg))
-		api.Group(func(pub chi.Router) {
-			// Customers
-			pub.Get("/customers", custHandler.ListCustomers)
-			pub.Get("/customers/{id}", custHandler.GetCustomer)
-			pub.Post("/customers", custHandler.CreateCustomer)
-			pub.Put("/customers/{id}", custHandler.UpdateCustomer)
-			pub.Delete("/customers/{id}", custHandler.DeleteCustomer)
-
-			// Loans
-			pub.Get("/loans", loanHandler.ListLoans)
-			pub.Get("/loans/{id}", loanHandler.GetLoan)
-			pub.Post("/loans", loanHandler.CreateLoan)
-			pub.Patch("/loans/{id}/status", loanHandler.UpdateLoanStatus)
-
-			// Repayments / Payments
-			pub.Get("/payments", payHandler.ListPayments)
-			pub.Post("/payments", payHandler.RecordPayment)
-
-			// Online Payment Slips
-			pub.Get("/online-payments", payHandler.ListOnlinePayments)
-			pub.Post("/online-payments", payHandler.SubmitOnlinePayment)
-			pub.Patch("/online-payments/{id}/approve", payHandler.ApproveOnlinePayment)
-			pub.Patch("/online-payments/{id}/reject", payHandler.RejectOnlinePayment)
-
-			// Audit Logs
-			pub.Get("/audit-logs", auditSettingsHandler.ListAuditLogs)
-
-			// System Settings
-			pub.Get("/settings", auditSettingsHandler.GetSettings)
-			pub.Put("/settings", auditSettingsHandler.UpdateSettings)
+		api.Post("/portal/login", portalHandler.Login)
+		api.Post("/portal/register", portalHandler.Register)
+		api.Group(func(portal chi.Router) {
+			portal.Use(middleware.AuthMiddleware(cfg), middleware.RequireRole("Customer"), portalHandler.RequireCustomer)
+			portal.Get("/portal/me", portalHandler.Snapshot)
+			portal.Post("/portal/online-payments", payHandler.SubmitOnlinePayment)
 		})
-
-		// Protected Routes requiring JWT Token
 		api.Group(func(prot chi.Router) {
-			prot.Use(middleware.AuthMiddleware(cfg))
+			prot.Use(middleware.AuthMiddleware(cfg), authHandler.RequireStaff(""))
 			prot.Get("/auth/me", authHandler.GetMe)
 			prot.Get("/users", authHandler.ListUsers)
+			prot.With(authHandler.RequireStaff("admin")).Post("/users", authHandler.SaveUser)
+			prot.With(authHandler.RequireStaff("admin")).Put("/users/{id}", authHandler.SaveUser)
+			prot.Get("/customers/lookup", custHandler.LookupCustomer)
+			prot.Get("/customers", custHandler.ListCustomers)
+			prot.Get("/customers/{id}", custHandler.GetCustomer)
+			prot.With(authHandler.RequireStaff("manageCustomers")).Post("/customers", custHandler.CreateCustomer)
+			prot.With(authHandler.RequireStaff("manageCustomers")).Put("/customers/{id}", custHandler.UpdateCustomer)
+			prot.With(authHandler.RequireStaff("manageCustomers")).Delete("/customers/{id}", custHandler.DeleteCustomer)
+			prot.With(authHandler.RequireStaff("manageCustomers")).Post("/customers/{id}/documents", custHandler.AddDocument)
+			prot.With(authHandler.RequireStaff("manageCustomers")).Delete("/customers/{id}/documents/{documentID}", custHandler.DeleteDocument)
+			prot.Get("/loans", loanHandler.ListLoans)
+			prot.Get("/loan-notes", loanHandler.GetNotes)
+			prot.With(authHandler.RequireStaff("recordRepayments")).Put("/loans/{id}/note", loanHandler.SaveNote)
+			prot.With(authHandler.RequireStaff("admin")).Delete("/loans/{id}", loanHandler.DeleteLoan)
+			prot.Get("/loans/{id}", loanHandler.GetLoan)
+			prot.With(authHandler.RequireStaff("manageCustomers")).Post("/loans", loanHandler.CreateLoan)
+			prot.With(authHandler.RequireStaff("approveLoans")).Patch("/loans/{id}/status", loanHandler.UpdateLoanStatus)
+			prot.Get("/payments", payHandler.ListPayments)
+			prot.With(authHandler.RequireStaff("recordRepayments")).Post("/payments", payHandler.RecordPayment)
+			prot.With(authHandler.RequireStaff("admin")).Put("/payments/{id}", payHandler.UpdatePayment)
+			prot.With(authHandler.RequireStaff("admin")).Delete("/payments/{id}", payHandler.DeletePayment)
+			prot.Get("/online-payments", payHandler.ListOnlinePayments)
+			prot.With(authHandler.RequireStaff("recordRepayments")).Post("/online-payments", payHandler.SubmitOnlinePayment)
+			prot.With(authHandler.RequireStaff("recordRepayments")).Patch("/online-payments/{id}/approve", payHandler.ApproveOnlinePayment)
+			prot.With(authHandler.RequireStaff("recordRepayments")).Patch("/online-payments/{id}/reject", payHandler.RejectOnlinePayment)
+			prot.Get("/audit-logs", auditSettingsHandler.ListAuditLogs)
+			prot.Get("/settings", auditSettingsHandler.GetSettings)
+			prot.With(authHandler.RequireStaff("manageSettings")).Put("/settings", auditSettingsHandler.UpdateSettings)
 		})
 	})
 
-	// 6. Start HTTP Server
-	serverAddr := ":" + cfg.Port
-	log.Printf("🚀 Server listening on http://localhost%s", serverAddr)
-	if err := http.ListenAndServe(serverAddr, r); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Server error: %v", err)
-		os.Exit(1)
-	}
+	return r
 }
-

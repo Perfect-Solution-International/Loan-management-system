@@ -27,7 +27,16 @@ backend/
 ├── database/
 │   ├── database.go                  # PostgreSQL connection pool manager
 │   ├── migrations/
-│   │   └── 001_init.sql             # Complete PostgreSQL schema migrations
+│   │   ├── 001_create_users.sql
+│   │   ├── 002_create_customers.sql
+│   │   ├── 003_create_loans.sql
+│   │   ├── 004_create_payments.sql
+│   │   ├── 005_create_audit_logs.sql
+│   │   ├── 006_create_system_settings.sql
+│   │   ├── 007_create_online_payments.sql
+│   │   ├── 008_create_loan_notes.sql
+│   │   ├── 009_create_roles.sql
+│   │   └── 010_link_users_role.sql
 │   └── seed.sql                     # Initial demo data & seeds
 ├── handlers/
 │   ├── auth_handler.go              # Login, me, user management
@@ -67,7 +76,7 @@ backend/
 cd backend
 docker-compose up -d
 ```
-> මෙහිදී PostgreSQL container එක සෑදී `001_init.sql` සහ `seed.sql` ස්වයංක්‍රීයව execute වේ.
+> On a fresh PostgreSQL volume, Docker runs the numbered migrations in order, then `seed.sql`. Existing volumes are not migrated automatically.
 
 #### ක්‍රමය B: Local PostgreSQL (pgAdmin හෝ psql)
 1. PostgreSQL තුළ `loan_management_db` නමින් database එකක් සාදන්න:
@@ -75,10 +84,17 @@ docker-compose up -d
    CREATE DATABASE loan_management_db;
    ```
 2. Schema සහ Seed data run කරන්න:
-   ```bash
-   psql -U postgres -d loan_management_db -f database/migrations/001_init.sql
-   psql -U postgres -d loan_management_db -f database/seed.sql
+   ```powershell
+   $migrationArgs = @()
+   Get-ChildItem database/migrations/*.sql | Sort-Object Name | ForEach-Object {
+       $migrationArgs += "-f", $_.FullName
+   }
+   psql -X -U postgres -d loan_management_db -v ON_ERROR_STOP=1 --single-transaction @migrationArgs -f database/seed.sql
    ```
+
+Each table has its own create migration with its indexes and related sequence. Later migrations add relationships or other schema changes. Apply all files in filename order, then seed data. The SQL uses `IF NOT EXISTS` and seeds use `ON CONFLICT DO NOTHING`, so existing tables and seed records are preserved. Existing installations that ran `001_init.sql` and `002_frontend_integration.sql` can apply the new files without resetting the database.
+
+The only system roles are `Admin`, `Staff`, and `Customer`. `010_link_users_role.sql` maps legacy administrator accounts to Admin and other legacy staff accounts to Staff, preserving permission grants. Both role names and user assignments are constrained to these three values. Rerun the existing migrations in order to upgrade an existing database.
 
 ---
 
@@ -161,3 +177,13 @@ Server එක සාර්ථකව run වූ විට:
 | `GET` | `/api/settings` | Get loan configuration & interest rates |
 | `PUT` | `/api/settings` | Update system settings |
 
+
+### Local seed accounts
+
+| Email | Role | Password |
+|---|---|---|
+| admin@psione.lk | Admin | admin123 |
+| staff@psione.lk | Staff | staff123 |
+| customer@psione.lk | Customer | customer123 |
+
+The Customer seed includes a customer portal profile. Seed reruns repair the original invalid seed password hash but preserve subsequently changed passwords. Staff access is governed by individual permission grants; Customer tokens cannot access staff endpoints.

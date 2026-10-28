@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { DataProvider } from "@/providers/data-provider";
 
@@ -18,8 +19,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
-        <DataProvider>{children}</DataProvider>
+      <body className="lms-ui font-sans antialiased">
+        <Suspense fallback={<main className="p-12 text-center">Loading…</main>}>
+          <DataProvider>{children}</DataProvider>
+        </Suspense>
       </body>
     </html>
   );

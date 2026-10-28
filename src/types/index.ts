@@ -168,10 +168,13 @@ export interface StaffUser {
   id: string;
   name: string;
   email: string;
-  role: "Administrator" | "Loan Officer" | "Collection Agent" | "Auditor";
+  role: "Admin" | "Staff" | "Customer";
   branch: string;
   status: "Active" | "Inactive";
   joinedDate: string;
   password?: string;
   permissions: StaffPermissions;
 }
+export interface AuditLog { id: string; timestamp: string; userName: string; userRole: string; action: string; module: string; details: string; severity: "INFO" | "WARNING" | "CRITICAL"; ipAddress?: string }
+
+export interface LoanNote { promiseDate: string; note: string; updatedAt: string }
