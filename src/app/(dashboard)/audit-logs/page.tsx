@@ -43,7 +43,7 @@ interface AuditEntry {
 }
 
 export default function AuditLogsPage() {
-  const { customers, loans, payments, staffUsers, settings } = useData();
+  const { auditLogs, staffUsers } = useData();
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,90 +58,12 @@ export default function AuditLogsPage() {
   }, []);
 
   // ── Build Live Audit Trail from System Entities ─────────────────────────
-  const auditEntries: AuditEntry[] = useMemo(() => {
-    const entries: AuditEntry[] = [];
-
-    // 1. Payment & Collection Audits
-    for (const p of payments) {
-      const cust = customers.find((c) => c.id === p.customerId);
-      const ln = loans.find((l) => l.id === p.loanId);
-      const collector = p.collectedBy || "Field Officer";
-
-      entries.push({
-        id: `aud-pay-${p.id}`,
-        timestamp: `${p.date} 14:30`,
-        date: p.date,
-        category: "PAYMENT",
-        action: "Repayment Collection",
-        actor: collector,
-        actorRole: collector.toLowerCase().includes("admin") ? "Administrator" : "Field Officer",
-        details: `Collected ${MONEY(Number(p.amount) || 0)} via ${p.method || "Cash"} (Receipt: ${p.receiptNo || p.id})`,
-        targetId: ln?.loanNo || p.loanId,
-        targetName: cust?.fullName || cust?.name || ln?.customerName || "Customer",
-        amount: Number(p.amount) || 0,
-        status: "SUCCESS",
-      });
-    }
-
-    // 2. Loan Lifecycle Audits
-    for (const l of loans) {
-      const cust = customers.find((c) => c.id === l.customerId);
-      const custName = cust?.fullName || cust?.name || l.customerName || "Customer";
-
-      entries.push({
-        id: `aud-ln-${l.id}`,
-        timestamp: `${l.issueDate || todayStr} 10:15`,
-        date: l.issueDate || todayStr,
-        category: "LOAN",
-        action: `Loan Facility ${l.status || "Active"}`,
-        actor: l.approvedBy || "Credit Committee",
-        actorRole: "Credit Approver",
-        details: `Facility ${l.loanNo || l.id} for ${MONEY(l.principal || l.amount || 0)} approved (${l.repaymentFrequency} @ ${l.duration} cycles)`,
-        targetId: l.loanNo || l.id,
-        targetName: custName,
-        amount: l.principal || l.amount || 0,
-        status: l.status === "Pending" ? "PENDING" : "SUCCESS",
-      });
-    }
-
-    // 3. Customer Registration Audits
-    for (const c of customers) {
-      const regDate = c.registeredAt || "2026-10-10";
-      entries.push({
-        id: `aud-cust-${c.id}`,
-        timestamp: `${regDate} 09:00`,
-        date: regDate,
-        category: "CUSTOMER",
-        action: "Borrower Onboarding",
-        actor: "Branch Officer",
-        actorRole: "Registration Desk",
-        details: `Registered borrower profile (NIC: ${c.nic || "N/A"}, Phone: ${c.phone || "N/A"})`,
-        targetId: c.id,
-        targetName: c.fullName || c.name,
-        status: "SUCCESS",
-      });
-    }
-
-    // 4. Staff & System Configuration Audits
-    for (const s of staffUsers) {
-      entries.push({
-        id: `aud-stf-${s.id}`,
-        timestamp: `${s.joinedDate || "2026-01-15"} 08:30`,
-        date: s.joinedDate || "2026-01-15",
-        category: "STAFF",
-        action: "Staff Access Provisioned",
-        actor: "System Administrator",
-        actorRole: "Security Admin",
-        details: `Provisioned account with ${s.role} authority for ${s.branch}`,
-        targetId: s.id,
-        targetName: s.name,
-        status: "SUCCESS",
-      });
-    }
-
-    // Sort descending by date/timestamp
-    return entries.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [payments, loans, customers, staffUsers, todayStr]);
+  const auditEntries: AuditEntry[] = useMemo(() => auditLogs.map(log => ({
+    id: log.id, timestamp: log.timestamp, date: log.timestamp.slice(0, 10),
+    category: (/payment|repayment/i.test(log.module) ? "PAYMENT" : /loan/i.test(log.module) ? "LOAN" : /customer/i.test(log.module) ? "CUSTOMER" : /auth|staff/i.test(log.module) ? "STAFF" : "SYSTEM") as AuditEntry["category"],
+    action: log.action.replaceAll("_", " "), actor: log.userName, actorRole: log.userRole, details: log.details,
+    status: log.severity === "INFO" ? "SUCCESS" : "WARNING",
+  })), [auditLogs]);
 
   // ── Filtered Audit Entries ──────────────────────────────────────────────
   const filteredEntries = useMemo(() => {

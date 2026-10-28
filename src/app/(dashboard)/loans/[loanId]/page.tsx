@@ -41,7 +41,7 @@ interface ScheduleRow {
 function LoanDetailsContent() {
   const params = useParams();
   const router = useRouter();
-  const { loans, customers, payments, updateLoan } = useData();
+  const { deleteLoan, loans, customers, payments, updateLoan } = useData();
 
   const loanId = (params?.loanId as string) || (params?.id as string);
   const loan = loans.find((l: Loan) => l.id === loanId);
@@ -169,32 +169,34 @@ function LoanDetailsContent() {
   const repaymentScheme = loan.repaymentType || "Capital + Interest";
   const isPending = (loan.status || "").toLowerCase() === "pending";
 
-  const handleApprove = () => {
-    updateLoan(loan.id, {
+  const handleApprove = async () => {
+    if (!(await updateLoan(loan.id, {
       status: "Active",
       approvedBy: "Branch Credit Committee",
       approvedAt: new Date().toISOString().slice(0, 10),
       notes: approvalNote ? `${loan.notes ? loan.notes + " | " : ""}Approval Note: ${approvalNote}` : loan.notes,
-    });
+    }))) return;
     setDecisionFeedback("Facility has been approved and moved to ACTIVE lending ledger.");
     setTimeout(() => setDecisionFeedback(""), 6000);
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (confirm("Are you sure you want to REJECT this loan application?")) {
-      updateLoan(loan.id, {
+      if (!(await updateLoan(loan.id, {
         status: "Rejected",
         approvedBy: "Branch Credit Committee (Declined)",
         approvedAt: new Date().toISOString().slice(0, 10),
         notes: approvalNote ? `${loan.notes ? loan.notes + " | " : ""}Rejection Reason: ${approvalNote}` : loan.notes,
-      });
+      }))) return;
       setDecisionFeedback("Loan application has been marked as REJECTED.");
       setTimeout(() => setDecisionFeedback(""), 6000);
     }
   };
 
-  function handleDelete() {
+  async function handleDelete() {
+    if (!loan) return;
     if (confirm("Are you sure you want to delete this loan record? This action cannot be undone.")) {
+      if (!(await deleteLoan(loan.id))) return;
       router.push("/loans");
     }
   }
@@ -253,7 +255,7 @@ function LoanDetailsContent() {
           <button
             type="button"
             className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl transition cursor-pointer"
-            onClick={handleDelete}
+            onClick={handleDelete} disabled={loan.status !== "Pending" && loan.status !== "Rejected"} title="Only pending or rejected applications without payments can be deleted"
           >
             <Trash2 size={14} /> Delete
           </button>

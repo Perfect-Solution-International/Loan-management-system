@@ -288,7 +288,7 @@ export function CustomerPaymentGatewayModal({
   };
 
   // Handle Bank Slip / LankaQR Submission
-  const handleSubmitBankSlip = (e: React.FormEvent) => {
+  const handleSubmitBankSlip = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
@@ -299,6 +299,8 @@ export function CustomerPaymentGatewayModal({
       setErrorMessage("Please select a valid loan facility.");
       return;
     }
+
+    if (!slipImageBase64) { setErrorMessage("Please upload your bank payment slip."); return; }
 
     // Default SVG slip preview if user didn't upload custom file
     const effectiveBank = slipBank || "Bank Transfer";
@@ -353,7 +355,7 @@ export function CustomerPaymentGatewayModal({
       paymentMethod: "BANK_SLIP",
     };
 
-    addOnlinePayment(newOnlinePayment);
+    if (!(await addOnlinePayment(newOnlinePayment))) return;
 
     setCompletedTransaction({
       method: "BANK_SLIP",
@@ -367,108 +369,11 @@ export function CustomerPaymentGatewayModal({
     }
   };
 
-  // Handle Card Payment Trigger (Initiate 3D Secure)
   const handleInitiateCardPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage("");
-
-    const validAmt = validateAmount();
-    if (!validAmt) return;
-
-    const cleanCard = cardNumber.replace(/\s/g, "");
-    if (cleanCard.length < 15) {
-      setErrorMessage("Please enter a valid 16-digit card number.");
-      return;
-    }
-    if (!cardExpiry || cardExpiry.length < 5) {
-      setErrorMessage("Please enter a valid card expiration date (MM/YY).");
-      return;
-    }
-    if (!cardCvv || cardCvv.length < 3) {
-      setErrorMessage("Please enter a valid 3-digit CVV security code.");
-      return;
-    }
-
-    // Open Simulated 3D Secure OTP verification modal
-    setIsProcessingCard(true);
-    setTimeout(() => {
-      setIsProcessingCard(false);
-      setShowOtpModal(true);
-    }, 700);
+    e.preventDefault(); setErrorMessage("Card payments are not configured. Please submit a bank transfer slip for review.");
   };
-
-  // Complete 3D Secure & Execute Real-time Loan Settlement
   const handleConfirmOtpPayment = () => {
-    const validAmt = validateAmount();
-    if (!validAmt || !selectedLoan) return;
-
-    const receiptNo = getNextReceiptNo();
-    const cleanCard = cardNumber.replace(/\s/g, "");
-    const last4 = cleanCard.slice(-4);
-    const authCode = `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    // 1. Record in repayments / loans ledger
-    const newPayment: Payment = {
-      id: receiptNo,
-      loanId: selectedLoan.id,
-      customerId: customer.id,
-      amount: validAmt,
-      date: effectiveTodayDate,
-      type: "Capital",
-      method: "Card",
-      collectedBy: "Online Payment Gateway (Automated)",
-      receiptNo,
-      notes: `Card payment verified via 3D Secure. Auth: ${authCode}. Card: •••• ${last4}`,
-    };
-    addPayment(newPayment);
-
-    // 2. Also register in Online Payments for auditing (as COMPLETED)
-    const newOnlineRecord: OnlinePayment = {
-      id: `ONP-${Date.now().toString().slice(-6)}`,
-      loanId: selectedLoan.id,
-      loanNo: selectedLoan.loanNo || selectedLoan.id,
-      customerId: customer.id,
-      customerName: customer.fullName || customer.name || "Customer",
-      customerNic: customer.nic,
-      customerPhone: customer.phone,
-      amount: validAmt,
-      paymentDate: newPayment.date,
-      submittedAt: new Date().toISOString(),
-      bankName: `${cardBrand} Instant Gateway`,
-      referenceNumber: authCode,
-      slipUrl:
-        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360' viewBox='0 0 600 360'><rect width='100%' height='100%' fill='%230f172a'/><rect x='20' y='20' width='560' height='320' rx='16' fill='%231e293b' stroke='%23334155' stroke-width='2'/><text x='50' y='70' font-family='sans-serif' font-size='20' font-weight='bold' fill='%23ffffff'>CARD PAYMENT SUCCESSFUL</text><text x='50' y='110' font-family='sans-serif' font-size='13' fill='%2394a3b8'>Receipt: " +
-        encodeURIComponent(receiptNo) +
-        "</text><text x='50' y='140' font-family='sans-serif' font-size='13' fill='%2394a3b8'>Card: •••• •••• •••• " +
-        encodeURIComponent(last4) +
-        "</text><text x='50' y='170' font-family='sans-serif' font-size='13' fill='%2394a3b8'>Auth Code: " +
-        encodeURIComponent(authCode) +
-        "</text><text x='50' y='240' font-family='sans-serif' font-size='28' font-weight='bold' fill='%2322c55e'>LKR " +
-        encodeURIComponent(validAmt.toLocaleString()) +
-        "</text><text x='50' y='290' font-family='sans-serif' font-size='12' fill='%2364748b'>Instant 3D Secure Settlement · PSI ONE Gateway</text></svg>",
-      status: "COMPLETED",
-      reviewedBy: "Automated Gateway",
-      reviewedAt: new Date().toISOString(),
-      reviewNotes: "Instant 3D Secure card authorization",
-      receiptNo,
-      paymentMethod: "CARD",
-      cardLast4: last4,
-      cardBrand,
-    };
-    addOnlinePayment(newOnlineRecord);
-
-    setShowOtpModal(false);
-    setCompletedTransaction({
-      method: "CARD",
-      amount: validAmt,
-      receiptNo,
-      refNumber: authCode,
-      authCode,
-    });
-
-    if (onPaymentSuccess) {
-      onPaymentSuccess(receiptNo);
-    }
+    setShowOtpModal(false); setErrorMessage("Card payments are not configured. No payment has been recorded.");
   };
 
   if (!isOpen) return null;

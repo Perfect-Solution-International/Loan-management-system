@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"loan-management-backend/config"
+	"loan-management-backend/models"
 )
 
 type contextKey string
@@ -15,9 +16,11 @@ type contextKey string
 const UserContextKey = contextKey("user")
 
 type Claims struct {
-	UserID string `json:"userId"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
+	Name        string                  `json:"name,omitempty"`
+	Permissions models.StaffPermissions `json:"-"`
+	UserID      string                  `json:"userId"`
+	Email       string                  `json:"email"`
+	Role        string                  `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -56,7 +59,7 @@ func AuthMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 
 			token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 				return []byte(cfg.JWTSecret), nil
-			})
+			}, jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired())
 
 			if err != nil || !token.Valid {
 				http.Error(w, `{"error": "Invalid or expired authorization token"}`, http.StatusUnauthorized)
@@ -95,4 +98,3 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 		})
 	}
 }
-

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Track the environment template
 !.env.example
+
+# Local integration test artifacts
+/.tmp/

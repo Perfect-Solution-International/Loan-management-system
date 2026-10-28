@@ -156,14 +156,14 @@ export default function OnlinePaymentsPage() {
   }, [onlinePayments, activeTab, bankFilter, searchQuery]);
 
   // Handle Approve Confirmation
-  const handleConfirmApproval = () => {
+  const handleConfirmApproval = async () => {
     if (!approvingPayment) return;
 
-    approveOnlinePayment(
+    if (!(await approveOnlinePayment(
       approvingPayment.id,
       approvalNotes.trim() || undefined,
       "Super Admin"
-    );
+    ))) return;
 
     setNotificationMsg(
       `Online payment ${approvingPayment.id} for ${MONEY(
@@ -177,7 +177,7 @@ export default function OnlinePaymentsPage() {
   };
 
   // Handle Reject Confirmation
-  const handleConfirmRejection = () => {
+  const handleConfirmRejection = async () => {
     if (!rejectingPayment) return;
 
     if (!rejectionReason.trim()) {
@@ -185,11 +185,11 @@ export default function OnlinePaymentsPage() {
       return;
     }
 
-    rejectOnlinePayment(
+    if (!(await rejectOnlinePayment(
       rejectingPayment.id,
       rejectionReason.trim(),
       "Super Admin"
-    );
+    ))) return;
 
     setNotificationMsg(
       `Payment slip ${rejectingPayment.id} has been declined. Customer notified.`

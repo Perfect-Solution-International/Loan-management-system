@@ -19,11 +19,11 @@ import {
   KeyRound,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
-import { useData } from "@/providers/data-provider";
+import { api, saveSession, clearSession } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { customers, staffUsers } = useData();
+  const [submitting, setSubmitting] = useState(false);
 
   // Unified login credentials state
   const [identifier, setIdentifier] = useState("");
@@ -32,186 +32,23 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedPortal, setSelectedPortal] = useState<"admin" | "staff" | "customer">("admin");
 
-  // Centralized login submission handler with strict role-based routing & password verification
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
-
-    const term = identifier.trim().toLowerCase();
-    const enteredPass = password.trim();
-
-    if (!term) {
-      setErrorMsg("Please enter your email, username, Customer ID, or NIC.");
-      return;
-    }
-    if (!enteredPass) {
-      setErrorMsg("Please enter your password.");
-      return;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 1. Check Administrator Account (STRICT: only admin123 / admin password)
-    // ─────────────────────────────────────────────────────────────────────────
-    const adminUser = staffUsers.find(
-      (s) =>
-        s.role === "Administrator" &&
-        (s.email.toLowerCase() === term ||
-          s.id.toLowerCase() === term ||
-          s.name.toLowerCase() === term)
-    );
-    const isAdminIdentifier =
-      adminUser ||
-      term === "admin@psione.lk" ||
-      term === "admin" ||
-      term === "superadmin" ||
-      term === "stf-01";
-
-    if (isAdminIdentifier) {
-      const expectedAdminPass = adminUser?.password || "admin123";
-      if (enteredPass !== expectedAdminPass) {
-        if (enteredPass === "Staff@123" || enteredPass === "User@123") {
-          setErrorMsg(
-            "Access Denied: This is an Administrator account. Staff@123 or User@123 cannot be used. Please enter the Administrator password."
-          );
-        } else {
-          setErrorMsg("Invalid Administrator password. Please verify your credentials.");
-        }
-        return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); if (submitting) return;
+    setErrorMsg(""); setSubmitting(true);
+    try {
+      if (selectedPortal === "customer") {
+        const result = await api.customerLogin(identifier.trim(), password);
+        saveSession(result.token, "customer");
+        sessionStorage.setItem("customerSessionId", result.customer.id);
+        router.push("/customerdashboard");
+      } else {
+        const result = await api.login(identifier.trim(), password);
+        if (selectedPortal === "admin" && result.user.role !== "Administrator") throw new Error("Use the Staff portal for this account.");
+        saveSession(result.token, "staff");
+        router.push(result.user.role === "Administrator" ? "/dashboard" : "/field");
       }
-
-      // Valid Administrator credentials
-      if (typeof window !== "undefined") {
-        localStorage.setItem("psi_active_staff_id", adminUser?.id || "STF-01");
-        localStorage.setItem("psi_user_role", "Administrator");
-        localStorage.setItem("psi_logged_staff_name", "System Administrator");
-      }
-      router.push("/dashboard");
-      return;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 2. Check Staff User (STRICT: only Staff@123 / staff password)
-    // ─────────────────────────────────────────────────────────────────────────
-    const matchedStaff = staffUsers.find(
-      (s) =>
-        s.role !== "Administrator" &&
-        (s.email.toLowerCase() === term ||
-          s.id.toLowerCase() === term ||
-          s.name.toLowerCase() === term)
-    );
-    const isStaffIdentifier =
-      matchedStaff ||
-      term.includes("officer") ||
-      term.includes("agent") ||
-      term.includes("field") ||
-      term.startsWith("stf-") ||
-      term === "staff@psione.lk";
-
-    if (isStaffIdentifier) {
-      const expectedStaffPass = matchedStaff?.password || "Staff@123";
-      if (enteredPass !== expectedStaffPass) {
-        if (enteredPass === "admin123") {
-          setErrorMsg(
-            "Access Denied: This is a Staff account. The Administrator password cannot be used. Please enter the Staff password (Staff@123)."
-          );
-        } else if (enteredPass === "User@123") {
-          setErrorMsg(
-            "Access Denied: This is a Staff account. Customer password User@123 cannot be used. Please enter the Staff password (Staff@123)."
-          );
-        } else {
-          setErrorMsg("Invalid Staff password. Please use your assigned staff password (Staff@123).");
-        }
-        return;
-      }
-
-      // Valid Staff credentials
-      if (typeof window !== "undefined") {
-        const staffId = matchedStaff?.id || "STF-02";
-        const staffName = matchedStaff?.name || (term.includes("@") ? "Staff Officer" : term);
-        localStorage.setItem("psi_active_staff_id", staffId);
-        localStorage.setItem("psi_logged_staff_name", staffName);
-        localStorage.setItem("psi_user_role", "Staff");
-      }
-
-      // If Field Officer or Collection Agent -> route directly to /field app!
-      if (
-        matchedStaff?.role === "Loan Officer" ||
-        matchedStaff?.role === "Collection Agent" ||
-        term.includes("field") ||
-        term.includes("officer") ||
-        term.includes("agent")
-      ) {
-        router.push("/field");
-        return;
-      }
-
-      // Other staff / auditor -> operations dashboard
-      router.push("/dashboard");
-      return;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 3. Check Customer Account (STRICT: only User@123 / customer password)
-    // ─────────────────────────────────────────────────────────────────────────
-    const matchedCustomer = customers.find(
-      (c) =>
-        c.id.toLowerCase() === term ||
-        c.nic.toLowerCase() === term ||
-        (c.email && c.email.toLowerCase() === term) ||
-        (c.phone && c.phone.replace(/[^0-9]/g, "") === term.replace(/[^0-9]/g, "")) ||
-        c.name.toLowerCase() === term
-    );
-    const isCustomerIdentifier =
-      matchedCustomer ||
-      term.startsWith("cus-") ||
-      /^\d{9}[vVxX]$/.test(term) ||
-      /^\d{12}$/.test(term) ||
-      term.includes("customer") ||
-      term === "user@psione.lk";
-
-    if (isCustomerIdentifier) {
-      const expectedCustomerPass = matchedCustomer?.password || "User@123";
-      if (enteredPass !== expectedCustomerPass) {
-        if (enteredPass === "admin123") {
-          setErrorMsg(
-            "Access Denied: This is a Customer account. Administrator password cannot be used. Please enter the Customer password (User@123)."
-          );
-        } else if (enteredPass === "Staff@123") {
-          setErrorMsg(
-            "Access Denied: This is a Customer account. Staff password cannot be used. Please enter the Customer password (User@123)."
-          );
-        } else {
-          setErrorMsg("Invalid Customer password. Please use your customer password (User@123).");
-        }
-        return;
-      }
-
-      // Valid Customer credentials
-      const customerId = matchedCustomer?.id || term.toUpperCase();
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("customerSessionId", customerId);
-      }
-      router.push(`/customerdashboard?customerId=${customerId}`);
-      return;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 4. Fallback for unrecognized identifiers with role passwords
-    // ─────────────────────────────────────────────────────────────────────────
-    if (enteredPass === "admin123") {
-      setErrorMsg("No Administrator account found for this identifier. Please verify your admin username/email.");
-      return;
-    }
-    if (enteredPass === "Staff@123") {
-      setErrorMsg("No Staff account found for this identifier. Please verify your staff ID or registered work email.");
-      return;
-    }
-    if (enteredPass === "User@123") {
-      setErrorMsg("No Customer record found for this identifier. Please verify your Customer ID, NIC, or phone number.");
-      return;
-    }
-
-    setErrorMsg("Invalid login credentials. Please check your username/email and password.");
+    } catch (error) { clearSession(); setErrorMsg(error instanceof Error ? error.message : "Login failed"); }
+    finally { setSubmitting(false); }
   };
 
   return (
@@ -311,8 +148,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setSelectedPortal("admin");
-                  setIdentifier("admin@psione.lk");
-                  setPassword("admin123");
+                  setIdentifier(""); setPassword("");
                   setErrorMsg("");
                 }}
                 className={`p-2.5 rounded-xl text-left transition cursor-pointer border flex flex-col items-start ${
@@ -325,18 +161,14 @@ export default function LoginPage() {
                   <Shield size={13} className="text-red-600" />
                   <span>Admin</span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
-                  admin123
-                </span>
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">Staff account</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setSelectedPortal("staff");
-                  const activeStaff = staffUsers.find((s) => s.role !== "Administrator");
-                  setIdentifier(activeStaff?.email || activeStaff?.id || "officer@psione.lk");
-                  setPassword("Staff@123");
+                  setIdentifier(""); setPassword("");
                   setErrorMsg("");
                 }}
                 className={`p-2.5 rounded-xl text-left transition cursor-pointer border flex flex-col items-start ${
@@ -349,18 +181,14 @@ export default function LoginPage() {
                   <Briefcase size={13} className="text-red-600" />
                   <span>Staff / Field</span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
-                  Staff@123
-                </span>
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">Staff account</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setSelectedPortal("customer");
-                  const activeCustomer = customers[0];
-                  setIdentifier(activeCustomer?.id || activeCustomer?.nic || "CUS-001");
-                  setPassword("User@123");
+                  setIdentifier(""); setPassword("");
                   setErrorMsg("");
                 }}
                 className={`p-2.5 rounded-xl text-left transition cursor-pointer border flex flex-col items-start ${
@@ -373,9 +201,7 @@ export default function LoginPage() {
                   <User size={13} className="text-red-600" />
                   <span>Customer</span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
-                  User@123
-                </span>
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">Customer account</span>
               </button>
             </div>
           </div>
@@ -439,10 +265,10 @@ export default function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 placeholder={
                   selectedPortal === "customer"
-                    ? "Enter customer password (User@123)"
+                    ? "Enter customer password"
                     : selectedPortal === "staff"
-                    ? "Enter staff password (Staff@123)"
-                    : "Enter admin password (admin123)"
+                    ? "Enter staff password"
+                    : "Enter admin password"
                 }
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -464,7 +290,7 @@ export default function LoginPage() {
               <span>Remember me on this workstation</span>
             </label>
 
-            <button type="submit" className="login-submit cursor-pointer">
+            <button type="submit" disabled={submitting} className="login-submit cursor-pointer">
               Sign in
               <ArrowRight size={18} />
             </button>

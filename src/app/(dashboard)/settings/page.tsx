@@ -62,18 +62,18 @@ function SettingsContent() {
   const [notificationMsg, setNotificationMsg] = useState("");
 
   // Handle saving financial configuration
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(formSettings);
+    if (!(await updateSettings(formSettings))) return;
     setNotificationMsg("System configuration & interest rate rules saved successfully!");
     setTimeout(() => setNotificationMsg(""), 4500);
   };
 
   // Handle restoring factory default configuration
-  const handleResetDefaults = () => {
+  const handleResetDefaults = async () => {
     if (confirm("Are you sure you want to restore factory default calculation rules?")) {
+      if (!(await updateSettings(initialSettings))) return;
       setFormSettings(initialSettings);
-      updateSettings(initialSettings);
       setNotificationMsg("System settings restored to factory defaults.");
       setTimeout(() => setNotificationMsg(""), 4500);
     }

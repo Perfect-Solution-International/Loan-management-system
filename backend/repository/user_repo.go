@@ -22,7 +22,7 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	query := `
 		SELECT id, name, email, password_hash, role, branch, status, joined_date, permissions, created_at, updated_at
 		FROM users
-		WHERE LOWER(email) = LOWER($1)
+		WHERE LOWER(email) = LOWER($1) OR LOWER(id) = LOWER($1)
 	`
 	row := r.db.QueryRow(query, email)
 
@@ -92,7 +92,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 	}
 	defer rows.Close()
 
-	var users []models.User
+	users := make([]models.User, 0)
 	for rows.Next() {
 		var u models.User
 		var permsJSON []byte
@@ -113,7 +113,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 		users = append(users, u)
 	}
 
-	return users, nil
+	return users, rows.Err()
 }
 
 func (r *UserRepository) Create(u *models.User) error {
@@ -125,4 +125,3 @@ func (r *UserRepository) Create(u *models.User) error {
 	_, err := r.db.Exec(query, u.ID, u.Name, u.Email, u.PasswordHash, u.Role, u.Branch, u.Status, u.JoinedDate, permsJSON)
 	return err
 }
-

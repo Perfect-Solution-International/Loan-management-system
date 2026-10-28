@@ -232,7 +232,7 @@ export default function ArrearsPage() {
   };
 
   // Submit Recovery
-  const handleConfirmRecovery = (e: React.FormEvent) => {
+  const handleConfirmRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recoveringLoan) return;
 
@@ -256,7 +256,7 @@ export default function ArrearsPage() {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setNotification(
       `Recovery Receipt ${receiptNo} generated: Successfully recorded ${MONEY(
         numAmount

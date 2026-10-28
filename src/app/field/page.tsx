@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 // Field Staff Portal - Today's Collections & Rapid Repayment Desk
 "use client";
+import { clearSession } from "@/lib/api-client";
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
@@ -68,6 +69,9 @@ interface PtpRecord {
 
 export default function FieldStaffPortal() {
   const {
+    loanNotes: ptpNotes,
+    saveLoanNote,
+    currentUser,
     customers,
     loans,
     payments,
@@ -82,83 +86,13 @@ export default function FieldStaffPortal() {
   } = useData();
 
   // ── 1. Active Officer Session & Isolation ─────────────────────────────────
-  const fieldStaffList = useMemo(() => {
-    const fieldOnly = staffUsers.filter(
-      (s) =>
-        s.role === "Loan Officer" ||
-        s.role === "Collection Agent" ||
-        (s.role as string) === "Staff" ||
-        (s.role as string) === "Field Officer"
-    );
-    if (fieldOnly.length > 0) return fieldOnly;
-    return staffUsers.map((s) =>
-      s.role === "Administrator"
-        ? { ...s, name: "Staff Officer", role: "Loan Officer" as const }
-        : s
-    );
-  }, [staffUsers]);
-
-  const [activeOfficerId, setActiveOfficerId] = useState<string>("");
-  const [loggedStaffName, setLoggedStaffName] = useState<string>("");
-  const [showOfficerModal, setShowOfficerModal] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedName = localStorage.getItem("psi_logged_staff_name");
-      if (storedName) {
-        setLoggedStaffName(storedName);
-      }
-
-      const saved = localStorage.getItem("psi_active_staff_id");
-      // If saved is STF-01 (Admin) but field staff exist, prefer field staff in the field portal
-      const fieldStaff = fieldStaffList.find((s) => s.id !== "STF-01");
-      if (saved && saved !== "STF-01" && fieldStaffList.some((s) => s.id === saved)) {
-        setActiveOfficerId(saved);
-      } else if (fieldStaff) {
-        setActiveOfficerId(fieldStaff.id);
-        localStorage.setItem("psi_active_staff_id", fieldStaff.id);
-      } else if (fieldStaffList.length > 0) {
-        setActiveOfficerId(fieldStaffList[0].id);
-        localStorage.setItem("psi_active_staff_id", fieldStaffList[0].id);
-      }
-    }
-  }, [fieldStaffList]);
-
-  const currentOfficer: StaffUser | undefined = useMemo(() => {
-    return fieldStaffList.find((s) => s.id === activeOfficerId) || fieldStaffList[0];
-  }, [fieldStaffList, activeOfficerId]);
-
-  const staffDisplayName = useMemo(() => {
-    if (loggedStaffName && loggedStaffName !== "System Administrator") {
-      return loggedStaffName;
-    }
-    if (currentOfficer && currentOfficer.name !== "System Administrator") {
-      return currentOfficer.name;
-    }
-    return "Staff Officer";
-  }, [loggedStaffName, currentOfficer]);
-
-  const handleSelectOfficer = (officerId: string) => {
-    setActiveOfficerId(officerId);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("psi_active_staff_id", officerId);
-      const officer = fieldStaffList.find((s) => s.id === officerId);
-      if (officer) {
-        localStorage.setItem("psi_logged_staff_name", officer.name);
-        setLoggedStaffName(officer.name);
-      }
-    }
-    setShowOfficerModal(false);
-  };
-
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("psi_active_staff_id");
-      localStorage.removeItem("staff_token");
-      sessionStorage.clear();
-      window.location.href = "/login";
-    }
-  };
+  const fieldStaffList = currentUser ? [currentUser] : [];
+  const currentOfficer = currentUser || undefined;
+  const activeOfficerId = currentUser?.id || "";
+  const staffDisplayName = currentUser?.name || "Staff Officer";
+  const [showOfficerModal, setShowOfficerModal] = useState(false);
+  const handleSelectOfficer = (_officerId?: string) => setShowOfficerModal(false);
+  const handleLogout = () => { clearSession(); window.location.href = "/login"; };
 
   // ── 2. Today's Date & System Clock ────────────────────────────────────────
   const [todayStr, setTodayStr] = useState<string>("2026-10-15");
@@ -267,7 +201,7 @@ export default function FieldStaffPortal() {
     });
   }, [payments, allPaymentsSearch, allPaymentsTypeFilter, customers]);
 
-  const handleCreateCustomer = (e: React.FormEvent) => {
+  const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustFullName.trim() || !newCustNic.trim() || !newCustPhone.trim()) {
       showToast("Please fill in required fields: Full Name, NIC, and Phone");
@@ -298,7 +232,7 @@ export default function FieldStaffPortal() {
       initialOutstandingBalance: 0,
     };
 
-    addCustomer(newCustomer);
+    if (!(await addCustomer(newCustomer))) return;
     setShowNewCustomerModal(false);
 
     // Reset Form
@@ -327,33 +261,6 @@ export default function FieldStaffPortal() {
   };
 
   // ── 5. PTP Notes State ────────────────────────────────────────────────────
-  const [ptpNotes, setPtpNotes] = useState<Record<string, PtpRecord>>({});
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("psi_field_ptp_notes");
-      if (stored) {
-        setPtpNotes(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error("Failed to load PTP notes", e);
-    }
-  }, []);
-
-  const savePtpNote = (loanId: string, promiseDate: string, note: string) => {
-    const updated = {
-      ...ptpNotes,
-      [loanId]: {
-        promiseDate,
-        note,
-        updatedAt: new Date().toISOString(),
-      },
-    };
-    setPtpNotes(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("psi_field_ptp_notes", JSON.stringify(updated));
-    }
-  };
-
   // ── 6. Officer Scoped Payments & Cash In Hand ─────────────────────────────
   const myTodayPayments = useMemo(() => {
     if (!currentOfficer) return [];
@@ -636,7 +543,7 @@ export default function FieldStaffPortal() {
     }
   };
 
-  const handleRecordPayment = (e: React.FormEvent) => {
+  const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!collectItem) return;
 
@@ -662,11 +569,11 @@ export default function FieldStaffPortal() {
         : `[Field App - ${currentOfficer?.name || "Officer"}] Route collection`,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setCollectItem(null);
     setViewItem(null);
     showToast(
-      `Collected ${MONEY(amountNum)} from ${collectItem.customer?.fullName || collectItem.customer?.name || collectItem.loan.customerName || "Customer"}. Receipt: ${receiptNum}`
+      `Collected ${MONEY(amountNum)} from ${collectItem.customer?.fullName || collectItem.customer?.name || collectItem.loan.customerName || "Customer"}. Receipt: ${newPayment.receiptNo}`
     );
     setSelectedReceipt(newPayment);
   };
@@ -683,10 +590,10 @@ export default function FieldStaffPortal() {
     setPtpNoteText(existing?.note || "");
   };
 
-  const handleSavePtp = (e: React.FormEvent) => {
+  const handleSavePtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ptpItem) return;
-    savePtpNote(ptpItem.loan.id, ptpDate, ptpNoteText);
+    if (!(await saveLoanNote(ptpItem.loan.id, ptpDate, ptpNoteText))) return;
     setPtpItem(null);
     showToast(`Promise to Pay saved for ${ptpItem.customer?.fullName || ptpItem.customer?.name || ptpItem.loan.customerName || "Customer"}`);
   };
@@ -2597,8 +2504,8 @@ export default function FieldStaffPortal() {
                               <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    approveOnlinePayment(item.id, "Verified by Staff Officer", currentOfficer?.name);
+                                  onClick={async () => {
+                                    if (!(await approveOnlinePayment(item.id, "Verified by Staff Officer", currentOfficer?.name))) return;
                                     showToast(`Slip ${item.id} approved and credited to loan!`);
                                   }}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
@@ -2608,9 +2515,9 @@ export default function FieldStaffPortal() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     const reason = prompt("Enter reason for declining slip:") || "Declined by officer";
-                                    rejectOnlinePayment(item.id, reason, currentOfficer?.name);
+                                    if (!(await rejectOnlinePayment(item.id, reason, currentOfficer?.name))) return;
                                     showToast(`Slip ${item.id} declined.`);
                                   }}
                                   className="inline-flex items-center gap-1 px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-lg text-xs font-bold transition cursor-pointer"
@@ -4210,9 +4117,9 @@ export default function FieldStaffPortal() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       const reason = prompt("Enter reason for declining slip:") || "Declined by field officer";
-                      rejectOnlinePayment(selectedSlipImage.id, reason, currentOfficer?.name);
+                      if (!(await rejectOnlinePayment(selectedSlipImage.id, reason, currentOfficer?.name))) return;
                       setSelectedSlipImage(null);
                       showToast(`Slip ${selectedSlipImage.id} declined.`);
                     }}
@@ -4222,12 +4129,12 @@ export default function FieldStaffPortal() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      approveOnlinePayment(
+                    onClick={async () => {
+                      if (!(await approveOnlinePayment(
                         selectedSlipImage.id,
                         "Verified by Field Staff",
                         currentOfficer?.name
-                      );
+                      ))) return;
                       setSelectedSlipImage(null);
                       showToast(`Slip ${selectedSlipImage.id} approved and credited to loan!`);
                     }}

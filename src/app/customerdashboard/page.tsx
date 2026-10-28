@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
+import { clearSession } from "@/lib/api-client";
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
@@ -273,7 +274,7 @@ export function getLoanNextDueInfo(
 }
 
 export default function CustomerDashboardPage() {
-  const { customers, loans, repayments, onlinePayments, addOnlinePayment } = useData();
+  const { currentCustomer: authenticatedCustomer, customers, loans, repayments, onlinePayments, addOnlinePayment } = useData();
 
   // Session customer state & today's date
   const [sessionCustomerId, setSessionCustomerId] = useState<string>("");
@@ -288,7 +289,7 @@ export default function CustomerDashboardPage() {
     if (typeof window !== "undefined") {
       setTodayStr(new Date().toISOString().slice(0, 10));
       const params = new URLSearchParams(window.location.search);
-      const urlId = params.get("customerId");
+      const urlId = authenticatedCustomer?.id || params.get("customerId");
       const stored = sessionStorage.getItem("customerSessionId");
       if (urlId) {
         setSessionCustomerId(urlId);
@@ -301,7 +302,7 @@ export default function CustomerDashboardPage() {
         setActiveLoanId(urlLoanId);
       }
     }
-  }, []);
+  }, [authenticatedCustomer]);
 
   const [lookupQuery, setLookupQuery] = useState<string>("");
   const [lookupError, setLookupError] = useState<string>("");
@@ -681,7 +682,7 @@ export default function CustomerDashboardPage() {
 
   const handleSignOut = () => {
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("customerSessionId");
+      clearSession();
     }
     window.location.href = "/login";
   };

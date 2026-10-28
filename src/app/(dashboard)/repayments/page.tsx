@@ -34,14 +34,8 @@ export default function RepaymentsCollectionsPage() {
   } = useData();
 
   // RBAC: Check if current logged-in user is an Administrator
-  const [isAdmin, setIsAdmin] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("psi_user_role", "Administrator");
-    localStorage.setItem("psi_active_staff_id", "STF-01");
-    setIsAdmin(true);
-  }, []);
+  const { currentUser } = useData();
+  const isAdmin = currentUser?.role === "Administrator";
 
   const [selectedLoanId, setSelectedLoanId] = useState<string>(
     loans.find((l) => l.status === "Active" || l.status === "Overdue")?.id || loans[0]?.id || ""
@@ -89,7 +83,7 @@ export default function RepaymentsCollectionsPage() {
     setEditNotes(p.notes || "");
   };
 
-  const handleConfirmEditPayment = (e: React.FormEvent) => {
+  const handleConfirmEditPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPayment) return;
     const numAmount = Number(editAmount);
@@ -98,13 +92,13 @@ export default function RepaymentsCollectionsPage() {
       return;
     }
 
-    updatePayment(editingPayment.id, {
+    if (!(await updatePayment(editingPayment.id, {
       amount: numAmount,
       date: editDate,
       type: editType,
       method: editMethod,
       notes: editNotes.trim() || undefined,
-    });
+    }))) return;
 
     setNotificationMsg(
       `Payment record ${editingPayment.receiptNo || editingPayment.id} updated successfully.`
@@ -113,10 +107,10 @@ export default function RepaymentsCollectionsPage() {
     setTimeout(() => setNotificationMsg(""), 4500);
   };
 
-  const handleConfirmDeletePayment = () => {
+  const handleConfirmDeletePayment = async () => {
     if (!deletingPayment) return;
     const p = deletingPayment;
-    deletePayment(p.id);
+    if (!(await deletePayment(p.id))) return;
     setNotificationMsg(`Payment record ${p.receiptNo || p.id} reversed and deleted.`);
     setDeletingPayment(null);
     setTimeout(() => setNotificationMsg(""), 4500);
@@ -159,7 +153,7 @@ export default function RepaymentsCollectionsPage() {
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const completedLoansCount = loans.filter((l) => (l.status || "").toLowerCase() === "completed").length;
 
-  const handleRecordRepayment = (e: React.FormEvent) => {
+  const handleRecordRepayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLoan || numEnteredAmount <= 0) return;
 
@@ -177,7 +171,7 @@ export default function RepaymentsCollectionsPage() {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setActiveReceipt(newPayment);
 
     const completionMsg =

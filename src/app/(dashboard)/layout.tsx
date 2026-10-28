@@ -26,18 +26,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     [loans]
   );
 
-  // In the Admin Dashboard portal, ensure Administrator session is active
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const role = localStorage.getItem("psi_user_role");
-      if (!role || role === "Staff" || role !== "Administrator") {
-        localStorage.setItem("psi_user_role", "Administrator");
-        localStorage.setItem("psi_active_staff_id", "STF-01");
-        localStorage.setItem("psi_logged_staff_name", "System Administrator");
-      }
-    }
-  }, []);
-
   // Dynamic header breadcrumb name
   const pageTitle = React.useMemo(() => {
     if (pathname === "/" || pathname === "/dashboard") return "Dashboard";

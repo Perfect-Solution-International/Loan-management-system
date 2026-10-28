@@ -134,9 +134,9 @@ function CustomerDetailsContent() {
     }
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadTitle.trim()) return;
+    if (!uploadTitle.trim() || !selectedFileUrl) { alert("Please choose a file and enter its title."); return; }
 
     const newDoc: CustomerDocument = {
       id: createDocId(),
@@ -157,7 +157,7 @@ function CustomerDetailsContent() {
       uploader: "Admin Officer",
     };
 
-    addDocument(newDoc);
+    if (!(await addDocument(newDoc))) return;
     setIsUploadModalOpen(false);
     setUploadTitle("");
     setSelectedFileName("");
@@ -506,7 +506,7 @@ function CustomerDetailsContent() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => deleteDocument(doc.id)}
+                        onClick={async () => await deleteDocument(doc.id)}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition"
                         title="Delete File"
                        aria-label="Delete File">

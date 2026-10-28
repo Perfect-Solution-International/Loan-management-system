@@ -180,6 +180,7 @@ function UserManagementContent() {
   });
 
   const handleOpenEditCustomer = (c: Customer) => {
+    setCustomerPassword("");
     setCustomerForm({
       id: String(c.id),
       fullName: c.fullName || c.name || "",
@@ -202,14 +203,15 @@ function UserManagementContent() {
     setIsEditCustomerModalOpen(true);
   };
 
-  const handleSaveCustomer = (e: React.FormEvent) => {
+  const handleSaveCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerForm.fullName.trim() || !customerForm.nic.trim()) {
       alert("Please provide at least a full name and NIC number.");
       return;
     }
 
-    updateCustomer(customerForm.id, {
+    if (!(await updateCustomer(customerForm.id, {
+      password: customerPassword || undefined,
       fullName: customerForm.fullName.trim(),
       name: customerForm.fullName.trim(),
       nic: customerForm.nic.trim(),
@@ -227,17 +229,17 @@ function UserManagementContent() {
       guarantorNic: customerForm.guarantorNic.trim() || undefined,
       guarantorPhone: customerForm.guarantorPhone.trim() || undefined,
       guarantorRelationship: customerForm.guarantorRelationship.trim() || undefined,
-    });
+    }))) return;
 
     setIsEditCustomerModalOpen(false);
     setToastMsg(`Customer "${customerForm.fullName}" updated successfully.`);
     setTimeout(() => setToastMsg(""), 4000);
   };
 
-  const handleConfirmDeleteCustomer = () => {
+  const handleConfirmDeleteCustomer = async () => {
     if (!deletingCustomer) return;
     const name = deletingCustomer.fullName || deletingCustomer.name || "Customer";
-    deleteCustomer(deletingCustomer.id);
+    if (!(await deleteCustomer(deletingCustomer.id))) return;
     if (selectedCustomerId === deletingCustomer.id) {
       setSelectedCustomerId(null);
     }
@@ -248,6 +250,8 @@ function UserManagementContent() {
 
   // Staff Modal State
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffPassword, setStaffPassword] = useState("");
+  const [customerPassword, setCustomerPassword] = useState("");
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [isRbacOpen, setIsRbacOpen] = useState(false);
   const [staffForm, setStaffForm] = useState<{
@@ -372,6 +376,7 @@ function UserManagementContent() {
   const handleOpenAddStaff = () => {
     const nextNum = staffUsers.length + 1;
     const newId = `STF-${nextNum < 10 ? `0${nextNum}` : nextNum}`;
+    setStaffPassword("");
     setEditingStaffId(null);
     setStaffForm({
       id: newId,
@@ -387,6 +392,7 @@ function UserManagementContent() {
 
   // Open modal for editing staff
   const handleOpenEditStaff = (user: StaffUser) => {
+    setStaffPassword("");
     setEditingStaffId(user.id);
     setStaffForm({
       id: user.id,
@@ -408,7 +414,7 @@ function UserManagementContent() {
     }));
   };
 
-  const handleSaveStaff = (e: React.FormEvent) => {
+  const handleSaveStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staffForm.name.trim() || !staffForm.email.trim()) {
       alert("Please provide both name and email address.");
@@ -416,19 +422,21 @@ function UserManagementContent() {
     }
 
     if (editingStaffId) {
-      updateStaffUser(editingStaffId, {
+      if (!(await updateStaffUser(editingStaffId, {
+        password: staffPassword || undefined,
         name: staffForm.name,
         email: staffForm.email,
         role: staffForm.role,
         branch: staffForm.branch,
         status: staffForm.status,
         permissions: staffForm.permissions,
-      });
+      }))) return;
       setToastMsg(`Staff member ${staffForm.name} updated successfully.`);
     } else {
       const todayStr = new Date().toISOString().slice(0, 10);
       const newStaff: StaffUser = {
         id: staffForm.id,
+        password: staffPassword || undefined,
         name: staffForm.name,
         email: staffForm.email,
         role: staffForm.role,
@@ -437,7 +445,7 @@ function UserManagementContent() {
         joinedDate: todayStr,
         permissions: staffForm.permissions,
       };
-      addStaffUser(newStaff);
+      if (!(await addStaffUser(newStaff))) return;
       setToastMsg(`New staff member ${staffForm.name} registered.`);
     }
 
@@ -445,9 +453,9 @@ function UserManagementContent() {
     setTimeout(() => setToastMsg(""), 4500);
   };
 
-  const handleToggleStaffStatus = (user: StaffUser) => {
+  const handleToggleStaffStatus = async (user: StaffUser) => {
     const newStatus = user.status === "Active" ? "Inactive" : "Active";
-    updateStaffUser(user.id, { status: newStatus });
+    if (!(await updateStaffUser(user.id, { status: newStatus }))) return;
     setToastMsg(`Staff member ${user.name} is now ${newStatus}.`);
     setTimeout(() => setToastMsg(""), 3500);
   };
@@ -1310,6 +1318,8 @@ function UserManagementContent() {
               </div>
 
               <form onSubmit={handleSaveCustomer} className="space-y-3.5">
+<label className="block text-xs font-bold text-slate-700">New portal password (leave blank to keep current)<input type="password" autoComplete="new-password" minLength={6} value={customerPassword} onChange={e => setCustomerPassword(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl" /></label>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1 sm:col-span-2">
                     <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-1">Full Name *</label>
@@ -1575,6 +1585,9 @@ function UserManagementContent() {
                   />
                 </div>
 
+                <label className="block text-xs font-bold text-slate-700">{editingStaffId ? "New password (leave blank to keep current)" : "Password"}
+                  <input type="password" autoComplete="new-password" required={!editingStaffId} minLength={6} value={staffPassword} onChange={e => setStaffPassword(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl" />
+                </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-14">Assigned Role</label>

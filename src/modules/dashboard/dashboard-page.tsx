@@ -295,7 +295,7 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
     setCollectAmount(String(item.totalDueToday || item.installmentAmount));
   };
 
-  const handleConfirmCollect = (e: React.FormEvent) => {
+  const handleConfirmCollect = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!collectingItem) return;
 
@@ -316,10 +316,10 @@ export function DashboardPage({ initialRole = "admin" }: DashboardPageProps) {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setActiveReceiptPayment(newPayment);
     setNotification(
-      `Receipt ${receiptNo} recorded: ${MONEY(numAmount)} collected from ${
+      `Receipt ${newPayment.receiptNo} recorded: ${MONEY(numAmount)} collected from ${
         collectingItem.customer?.name || collectingItem.loan.customerName
       }. Official receipt generated.`
     );

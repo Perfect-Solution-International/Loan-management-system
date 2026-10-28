@@ -400,7 +400,7 @@ function IssueNewLoanContent() {
     setStep("form");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -467,7 +467,9 @@ function IssueNewLoanContent() {
       notes: notes.trim() || undefined,
     };
 
-    addLoan(newLoan);
+    const savedLoan = await addLoan(newLoan);
+    setIsSubmitting(false);
+    if (!savedLoan) return;
     setSubmittedLoanId(newId);
     setStep("done");
     setIsSubmitting(false);

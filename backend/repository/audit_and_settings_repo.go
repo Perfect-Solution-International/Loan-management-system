@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"loan-management-backend/database"
 	"loan-management-backend/models"
@@ -33,7 +32,7 @@ func (r *AuditRepository) GetAll(limit int) ([]models.AuditLog, error) {
 	}
 	defer rows.Close()
 
-	var logs []models.AuditLog
+	logs := make([]models.AuditLog, 0)
 	for rows.Next() {
 		var l models.AuditLog
 		var ip *string
@@ -49,7 +48,7 @@ func (r *AuditRepository) GetAll(limit int) ([]models.AuditLog, error) {
 		logs = append(logs, l)
 	}
 
-	return logs, nil
+	return logs, rows.Err()
 }
 
 func (r *AuditRepository) Create(log *models.AuditLog) error {
@@ -118,4 +117,3 @@ func (r *SettingsRepository) Update(s *models.SystemSettings) error {
 	)
 	return err
 }
-

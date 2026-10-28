@@ -111,14 +111,14 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fullName.trim() || !form.nic.trim() || !form.phone.trim()) {
       alert("Full Name, NIC, and Contact Phone are required.");
       return;
     }
 
-    updateCustomer(customer.id, {
+    if (!(await updateCustomer(customer.id, {
       name: form.fullName.trim(),
       fullName: form.fullName.trim(),
       nic: form.nic.trim().toUpperCase(),
@@ -135,7 +135,7 @@ function EditCustomerForm({ customer }: { customer: Customer }) {
       photoUrl: form.photoUrl || undefined,
       nicFrontUrl: form.nicFrontUrl || undefined,
       nicBackUrl: form.nicBackUrl || undefined,
-    });
+    }))) return;
 
     setNotificationMsg("Customer profile updated successfully!");
     setTimeout(() => {

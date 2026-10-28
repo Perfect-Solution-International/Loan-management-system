@@ -46,76 +46,79 @@ type CustomerDocument struct {
 
 // Customer Model
 type Customer struct {
-	ID                       string             `json:"id"`
-	Name                     string             `json:"name"`
-	FullName                 string             `json:"fullName,omitempty"`
-	NIC                      string             `json:"nic"`
-	Phone                    string             `json:"phone"`
-	AlternatePhone           string             `json:"alternatePhone,omitempty"`
-	Email                    string             `json:"email,omitempty"`
-	DOB                      string             `json:"dob,omitempty"`
-	Gender                   string             `json:"gender,omitempty"`
-	PrimaryContact           string             `json:"primaryContact,omitempty"`
-	Address                  string             `json:"address"`
-	Village                  string             `json:"village,omitempty"`
-	Town                     string             `json:"town"`
-	District                 string             `json:"district"`
-	Occupation               string             `json:"occupation,omitempty"`
-	MonthlyIncome            float64            `json:"monthlyIncome"`
-	EmergencyContact         string             `json:"emergencyContact,omitempty"`
-	GuarantorName            string             `json:"guarantorName,omitempty"`
-	GuarantorNIC             string             `json:"guarantorNic,omitempty"`
-	GuarantorPhone           string             `json:"guarantorPhone,omitempty"`
-	GuarantorRelationship    string             `json:"guarantorRelationship,omitempty"`
-	Status                   string             `json:"status"` // Active, Inactive, Suspended
-	RegisteredAt             string             `json:"registeredAt"`
-	PhotoURL                 string             `json:"photoUrl,omitempty"`
-	NICFrontURL              string             `json:"nicFrontUrl,omitempty"`
-	NICBackURL               string             `json:"nicBackUrl,omitempty"`
-	Documents                []CustomerDocument `json:"documents,omitempty"`
-	HasExistingLoan          bool               `json:"hasExistingLoan"`
-	ExistingLoanNotes        string             `json:"existingLoanNotes,omitempty"`
-	PriorRepaymentHistory    string             `json:"priorRepaymentHistory,omitempty"`
-	InitialOutstandingBalance float64          `json:"initialOutstandingBalance"`
-	CreatedAt                time.Time          `json:"createdAt"`
-	UpdatedAt                time.Time          `json:"updatedAt"`
+	Password                  string             `json:"password,omitempty"`
+	PasswordHash              string             `json:"-"`
+	Username                  string             `json:"username,omitempty"`
+	ID                        string             `json:"id"`
+	Name                      string             `json:"name"`
+	FullName                  string             `json:"fullName,omitempty"`
+	NIC                       string             `json:"nic"`
+	Phone                     string             `json:"phone"`
+	AlternatePhone            string             `json:"alternatePhone,omitempty"`
+	Email                     string             `json:"email,omitempty"`
+	DOB                       string             `json:"dob,omitempty"`
+	Gender                    string             `json:"gender,omitempty"`
+	PrimaryContact            string             `json:"primaryContact,omitempty"`
+	Address                   string             `json:"address"`
+	Village                   string             `json:"village,omitempty"`
+	Town                      string             `json:"town"`
+	District                  string             `json:"district"`
+	Occupation                string             `json:"occupation,omitempty"`
+	MonthlyIncome             float64            `json:"monthlyIncome"`
+	EmergencyContact          string             `json:"emergencyContact,omitempty"`
+	GuarantorName             string             `json:"guarantorName,omitempty"`
+	GuarantorNIC              string             `json:"guarantorNic,omitempty"`
+	GuarantorPhone            string             `json:"guarantorPhone,omitempty"`
+	GuarantorRelationship     string             `json:"guarantorRelationship,omitempty"`
+	Status                    string             `json:"status"` // Active, Inactive, Suspended
+	RegisteredAt              string             `json:"registeredAt"`
+	PhotoURL                  string             `json:"photoUrl,omitempty"`
+	NICFrontURL               string             `json:"nicFrontUrl,omitempty"`
+	NICBackURL                string             `json:"nicBackUrl,omitempty"`
+	Documents                 []CustomerDocument `json:"documents,omitempty"`
+	HasExistingLoan           bool               `json:"hasExistingLoan"`
+	ExistingLoanNotes         string             `json:"existingLoanNotes,omitempty"`
+	PriorRepaymentHistory     string             `json:"priorRepaymentHistory,omitempty"`
+	InitialOutstandingBalance float64            `json:"initialOutstandingBalance"`
+	CreatedAt                 time.Time          `json:"createdAt"`
+	UpdatedAt                 time.Time          `json:"updatedAt"`
 }
 
 // Loan Model
 type Loan struct {
-	ID                 string    `json:"id"`
-	CustomerID         string    `json:"customerId"`
-	CustomerName       string    `json:"customerName,omitempty"`
-	LoanNo             string    `json:"loanNo"`
-	Amount             float64   `json:"amount"`
-	Principal          float64   `json:"principal"`
-	CapitalDeduction   float64   `json:"capitalDeduction"`
-	InterestDeduction  float64   `json:"interestDeduction"`
-	OtherFees          float64   `json:"otherFees"`
-	InterestRate       float64   `json:"interestRate"`
-	RatePeriod         string    `json:"ratePeriod"`         // Daily, Weekly, Monthly, Flat
-	RepaymentFrequency string    `json:"repaymentFrequency"` // Daily, Weekly, Monthly
-	RepaymentType      string    `json:"repaymentType"`      // Capital + Interest, Interest Only
-	Duration           int       `json:"duration"`
-	IssueDate          string    `json:"issueDate"`
-	FirstPaymentDate   string    `json:"firstPaymentDate"`
-	Purpose            string    `json:"purpose,omitempty"`
-	Status             string    `json:"status"` // Pending, Active, Completed, Rejected, Overdue
-	Interest           float64   `json:"interest"`
-	TotalRepayment     float64   `json:"totalRepayment"`
-	NetDisbursement    float64   `json:"netDisbursement"`
-	Installment        float64   `json:"installment"`
-	GuarantorName      string    `json:"guarantorName,omitempty"`
-	GuarantorNIC       string    `json:"guarantorNic,omitempty"`
-	GuarantorPhone     string    `json:"guarantorPhone,omitempty"`
-	GuarantorRelationship string `json:"guarantorRelationship,omitempty"`
-	GuarantorAddress   string    `json:"guarantorAddress,omitempty"`
-	DisbursementMethod string    `json:"disbursementMethod,omitempty"`
-	ApprovedBy         string    `json:"approvedBy,omitempty"`
-	ApprovedAt         string    `json:"approvedAt,omitempty"`
-	Notes              string    `json:"notes,omitempty"`
-	CreatedAt          time.Time `json:"createdAt"`
-	UpdatedAt          time.Time `json:"updatedAt"`
+	ID                    string    `json:"id"`
+	CustomerID            string    `json:"customerId"`
+	CustomerName          string    `json:"customerName,omitempty"`
+	LoanNo                string    `json:"loanNo"`
+	Amount                float64   `json:"amount"`
+	Principal             float64   `json:"principal"`
+	CapitalDeduction      float64   `json:"capitalDeduction"`
+	InterestDeduction     float64   `json:"interestDeduction"`
+	OtherFees             float64   `json:"otherFees"`
+	InterestRate          float64   `json:"interestRate"`
+	RatePeriod            string    `json:"ratePeriod"`         // Daily, Weekly, Monthly, Flat
+	RepaymentFrequency    string    `json:"repaymentFrequency"` // Daily, Weekly, Monthly
+	RepaymentType         string    `json:"repaymentType"`      // Capital + Interest, Interest Only
+	Duration              int       `json:"duration"`
+	IssueDate             string    `json:"issueDate"`
+	FirstPaymentDate      string    `json:"firstPaymentDate"`
+	Purpose               string    `json:"purpose,omitempty"`
+	Status                string    `json:"status"` // Pending, Active, Completed, Rejected, Overdue
+	Interest              float64   `json:"interest"`
+	TotalRepayment        float64   `json:"totalRepayment"`
+	NetDisbursement       float64   `json:"netDisbursement"`
+	Installment           float64   `json:"installment"`
+	GuarantorName         string    `json:"guarantorName,omitempty"`
+	GuarantorNIC          string    `json:"guarantorNic,omitempty"`
+	GuarantorPhone        string    `json:"guarantorPhone,omitempty"`
+	GuarantorRelationship string    `json:"guarantorRelationship,omitempty"`
+	GuarantorAddress      string    `json:"guarantorAddress,omitempty"`
+	DisbursementMethod    string    `json:"disbursementMethod,omitempty"`
+	ApprovedBy            string    `json:"approvedBy,omitempty"`
+	ApprovedAt            string    `json:"approvedAt,omitempty"`
+	Notes                 string    `json:"notes,omitempty"`
+	CreatedAt             time.Time `json:"createdAt"`
+	UpdatedAt             time.Time `json:"updatedAt"`
 }
 
 // Payment / Repayment Model
@@ -204,4 +207,3 @@ func (p *StaffPermissions) Scan(src interface{}) error {
 	}
 	return json.Unmarshal(bytes, p)
 }
-

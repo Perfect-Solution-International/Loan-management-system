@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { clearSession } from "@/lib/api-client";
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -367,7 +368,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             </div>
           </div>
           <Link
-            href="/login"
+            href="/login" onClick={clearSession}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0"
             title="Sign Out"
             aria-label="Sign out"

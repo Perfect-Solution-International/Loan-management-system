@@ -175,3 +175,6 @@ export interface StaffUser {
   password?: string;
   permissions: StaffPermissions;
 }
+export interface AuditLog { id: string; timestamp: string; userName: string; userRole: string; action: string; module: string; details: string; severity: "INFO" | "WARNING" | "CRITICAL"; ipAddress?: string }
+
+export interface LoanNote { promiseDate: string; note: string; updatedAt: string }

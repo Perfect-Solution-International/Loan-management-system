@@ -37,7 +37,7 @@ func (r *LoanRepository) GetAll() ([]models.Loan, error) {
 	}
 	defer rows.Close()
 
-	var loans []models.Loan
+	loans := make([]models.Loan, 0)
 	for rows.Next() {
 		loan, err := scanLoan(rows)
 		if err != nil {
@@ -46,7 +46,7 @@ func (r *LoanRepository) GetAll() ([]models.Loan, error) {
 		loans = append(loans, *loan)
 	}
 
-	return loans, nil
+	return loans, rows.Err()
 }
 
 func (r *LoanRepository) GetByID(id string) (*models.Loan, error) {
@@ -88,7 +88,7 @@ func (r *LoanRepository) GetByCustomerID(customerID string) ([]models.Loan, erro
 	}
 	defer rows.Close()
 
-	var loans []models.Loan
+	loans := make([]models.Loan, 0)
 	for rows.Next() {
 		loan, err := scanLoan(rows)
 		if err != nil {
@@ -96,7 +96,7 @@ func (r *LoanRepository) GetByCustomerID(customerID string) ([]models.Loan, erro
 		}
 		loans = append(loans, *loan)
 	}
-	return loans, nil
+	return loans, rows.Err()
 }
 
 func (r *LoanRepository) Create(l *models.Loan) error {
@@ -194,21 +194,42 @@ func scanLoanRow(row *sql.Row) (*models.Loan, error) {
 }
 
 func applyLoanPointers(l *models.Loan, custName, purpose, repType, gName, gNIC, gPhone, gRel, gAddr, disbMethod, appBy, notes *string, issueDate, firstPaymentDate time.Time, appAt *time.Time) {
-	if custName != nil { l.CustomerName = *custName }
-	if purpose != nil { l.Purpose = *purpose }
-	if repType != nil { l.RepaymentType = *repType }
-	if gName != nil { l.GuarantorName = *gName }
-	if gNIC != nil { l.GuarantorNIC = *gNIC }
-	if gPhone != nil { l.GuarantorPhone = *gPhone }
-	if gRel != nil { l.GuarantorRelationship = *gRel }
-	if gAddr != nil { l.GuarantorAddress = *gAddr }
-	if disbMethod != nil { l.DisbursementMethod = *disbMethod }
-	if appBy != nil { l.ApprovedBy = *appBy }
-	if notes != nil { l.Notes = *notes }
+	if custName != nil {
+		l.CustomerName = *custName
+	}
+	if purpose != nil {
+		l.Purpose = *purpose
+	}
+	if repType != nil {
+		l.RepaymentType = *repType
+	}
+	if gName != nil {
+		l.GuarantorName = *gName
+	}
+	if gNIC != nil {
+		l.GuarantorNIC = *gNIC
+	}
+	if gPhone != nil {
+		l.GuarantorPhone = *gPhone
+	}
+	if gRel != nil {
+		l.GuarantorRelationship = *gRel
+	}
+	if gAddr != nil {
+		l.GuarantorAddress = *gAddr
+	}
+	if disbMethod != nil {
+		l.DisbursementMethod = *disbMethod
+	}
+	if appBy != nil {
+		l.ApprovedBy = *appBy
+	}
+	if notes != nil {
+		l.Notes = *notes
+	}
 	l.IssueDate = issueDate.Format("2006-01-02")
 	l.FirstPaymentDate = firstPaymentDate.Format("2006-01-02")
 	if appAt != nil {
 		l.ApprovedAt = appAt.Format(time.RFC3339)
 	}
 }
-

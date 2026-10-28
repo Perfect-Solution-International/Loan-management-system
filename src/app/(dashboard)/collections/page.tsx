@@ -45,15 +45,8 @@ export default function CollectionsPage() {
   } = useData();
 
   // RBAC: Check if current logged-in user is an Administrator
-  const [isAdmin, setIsAdmin] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // In the Administrator Dashboard portal, ensure Administrator authority is active
-    localStorage.setItem("psi_user_role", "Administrator");
-    localStorage.setItem("psi_active_staff_id", "STF-01");
-    setIsAdmin(true);
-  }, []);
+  const { currentUser } = useData();
+  const isAdmin = currentUser?.role === "Administrator";
 
   // Selected collection date (defaults dynamically to today)
   const [selectedDate, setSelectedDate] = useState<string>("2026-10-19");
@@ -96,7 +89,7 @@ export default function CollectionsPage() {
     setEditNotes(p.notes || "");
   };
 
-  const handleConfirmEditPayment = (e: React.FormEvent) => {
+  const handleConfirmEditPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPayment) return;
     const numAmount = Number(editAmount);
@@ -105,12 +98,12 @@ export default function CollectionsPage() {
       return;
     }
 
-    updatePayment(editingPayment.id, {
+    if (!(await updatePayment(editingPayment.id, {
       amount: numAmount,
       date: editDate,
       method: editMethod,
       notes: editNotes.trim() || undefined,
-    });
+    }))) return;
 
     setNotification(
       `Payment record ${editingPayment.receiptNo || editingPayment.id} updated successfully.`
@@ -119,10 +112,10 @@ export default function CollectionsPage() {
     setTimeout(() => setNotification(""), 4500);
   };
 
-  const handleConfirmDeletePayment = () => {
+  const handleConfirmDeletePayment = async () => {
     if (!deletingPaymentItem?.todaysPayment) return;
     const p = deletingPaymentItem.todaysPayment;
-    deletePayment(p.id);
+    if (!(await deletePayment(p.id))) return;
     setNotification(`Payment record ${p.receiptNo || p.id} reversed and deleted.`);
     setDeletingPaymentItem(null);
     setTimeout(() => setNotification(""), 4500);
@@ -203,7 +196,7 @@ export default function CollectionsPage() {
     setPaymentNotes("");
   };
 
-  const handleConfirmCollection = (e: React.FormEvent) => {
+  const handleConfirmCollection = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!collectingItem) return;
 
@@ -227,7 +220,7 @@ export default function CollectionsPage() {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setNotification(
       `Receipt ${receiptNo} generated: Collected ${MONEY(numAmount)} from ${
         collectingItem.customer?.name || collectingItem.loan.customerName

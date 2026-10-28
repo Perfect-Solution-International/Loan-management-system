@@ -373,7 +373,7 @@ function CustomerRegistrationContent() {
     form.customOutstandingBalance,
   ]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -436,14 +436,14 @@ function CustomerRegistrationContent() {
           )}). ${form.previousRepaymentNotes}`
         : undefined,
       initialOutstandingBalance: computedLoanCalculations?.outstanding,
-      password: "User@123",
+
     };
 
-    addCustomer(newCustomer);
+    if (!(await addCustomer(newCustomer))) return;
 
     // 2. Attach Dedicated NIC Front & Back Documents if uploaded
     if (nicFrontUrl) {
-      addDocument({
+      if (!(await addDocument({
         id: `DOC-NICF-${Date.now()}`,
         customerId: newCustomer.id,
         title: "National Identity Card (Front)",
@@ -454,11 +454,11 @@ function CustomerRegistrationContent() {
         fileUrl: nicFrontUrl,
         uploadedAt: new Date().toISOString().slice(0, 10),
         uploader: "Registration Desk",
-      });
+      }))) return;
     }
 
     if (nicBackUrl) {
-      addDocument({
+      if (!(await addDocument({
         id: `DOC-NICB-${Date.now()}`,
         customerId: newCustomer.id,
         title: "National Identity Card (Back)",
@@ -469,11 +469,11 @@ function CustomerRegistrationContent() {
         fileUrl: nicBackUrl,
         uploadedAt: new Date().toISOString().slice(0, 10),
         uploader: "Registration Desk",
-      });
+      }))) return;
     }
 
     // 2. Attach All Uploaded Identity Documents
-    attachedDocs.forEach((doc, idx) => {
+    for (const [idx, doc] of attachedDocs.entries()) {
       const customerDoc: CustomerDocument = {
         id: `DOC-${Date.now()}-${idx}`,
         customerId: newCustomer.id,
@@ -486,8 +486,8 @@ function CustomerRegistrationContent() {
         uploadedAt: new Date().toISOString().slice(0, 10),
         uploader: "Registration Desk",
       };
-      addDocument(customerDoc);
-    });
+      if (!(await addDocument(customerDoc))) return;
+    }
 
     // 3. Register Existing Loan & Repayment History if present
     if (form.hasExistingLoan && computedLoanCalculations) {
@@ -522,7 +522,7 @@ function CustomerRegistrationContent() {
         installment: computedLoanCalculations.installment,
       };
 
-      addLoan(existingLoan);
+      if (!(await addLoan(existingLoan))) return;
 
       // 4. Create Previous Repayment Record if amount paid > 0
       if (computedLoanCalculations.paid > 0) {
@@ -540,7 +540,7 @@ function CustomerRegistrationContent() {
           collectedBy: "Branch Credit Officer",
           receiptNo: getNextReceiptNo(),
         };
-        addPayment(paymentRecord);
+        if (!(await addPayment(paymentRecord))) return;
       }
     }
 

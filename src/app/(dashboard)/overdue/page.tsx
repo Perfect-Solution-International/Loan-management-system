@@ -221,7 +221,7 @@ export default function OverduePage() {
   };
 
   // Submit Overdue Settlement
-  const handleConfirmSettlement = (e: React.FormEvent) => {
+  const handleConfirmSettlement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settlingItem) return;
 
@@ -245,7 +245,7 @@ export default function OverduePage() {
       receiptNo,
     };
 
-    addPayment(newPayment);
+    if (!(await addPayment(newPayment))) return;
     setActiveReceiptPayment(newPayment);
     setToastMessage(
       `Successfully collected ${MONEY(numAmount)} from ${
