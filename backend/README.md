@@ -27,7 +27,14 @@ backend/
 ├── database/
 │   ├── database.go                  # PostgreSQL connection pool manager
 │   ├── migrations/
-│   │   └── 001_init.sql             # Complete PostgreSQL schema migrations
+│   │   ├── 001_create_users.sql
+│   │   ├── 002_create_customers.sql
+│   │   ├── 003_create_loans.sql
+│   │   ├── 004_create_payments.sql
+│   │   ├── 005_create_audit_logs.sql
+│   │   ├── 006_create_system_settings.sql
+│   │   ├── 007_create_online_payments.sql
+│   │   └── 008_create_loan_notes.sql
 │   └── seed.sql                     # Initial demo data & seeds
 ├── handlers/
 │   ├── auth_handler.go              # Login, me, user management
@@ -67,7 +74,7 @@ backend/
 cd backend
 docker-compose up -d
 ```
-> මෙහිදී PostgreSQL container එක සෑදී `001_init.sql` සහ `seed.sql` ස්වයංක්‍රීයව execute වේ.
+> On a fresh PostgreSQL volume, Docker runs the numbered migrations in order, then `seed.sql`. Existing volumes are not migrated automatically.
 
 #### ක්‍රමය B: Local PostgreSQL (pgAdmin හෝ psql)
 1. PostgreSQL තුළ `loan_management_db` නමින් database එකක් සාදන්න:
@@ -75,10 +82,15 @@ docker-compose up -d
    CREATE DATABASE loan_management_db;
    ```
 2. Schema සහ Seed data run කරන්න:
-   ```bash
-   psql -U postgres -d loan_management_db -f database/migrations/001_init.sql
-   psql -U postgres -d loan_management_db -f database/seed.sql
+   ```powershell
+   $migrationArgs = @()
+   Get-ChildItem database/migrations/*.sql | Sort-Object Name | ForEach-Object {
+       $migrationArgs += "-f", $_.FullName
+   }
+   psql -X -U postgres -d loan_management_db -v ON_ERROR_STOP=1 --single-transaction @migrationArgs -f database/seed.sql
    ```
+
+Each numbered migration creates one table with its indexes and related sequence. Apply all files in filename order, then seed data. The SQL uses `IF NOT EXISTS` and seeds use `ON CONFLICT DO NOTHING`, so existing tables and seed records are preserved. Existing installations that ran `001_init.sql` and `002_frontend_integration.sql` can apply the new files without resetting the database.
 
 ---
 

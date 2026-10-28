@@ -38,8 +38,14 @@ func TestFrontendAPIIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer scoped.Close()
-	for _, file := range []string{"migrations/001_init.sql", "migrations/002_frontend_integration.sql", "seed.sql"} {
-		data, err := os.ReadFile(filepath.Join("..", "..", "database", file))
+	files, err := filepath.Glob(filepath.Join("..", "..", "database", "migrations", "*.sql"))
+	if err != nil || len(files) == 0 {
+		t.Fatalf("find migrations: %v (found %d)", err, len(files))
+	}
+	// Glob returns filename order, so referenced tables exist before their dependents.
+	files = append(files, filepath.Join("..", "..", "database", "seed.sql"))
+	for _, file := range files {
+		data, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)
 		}
