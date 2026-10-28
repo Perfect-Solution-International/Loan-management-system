@@ -83,11 +83,28 @@ func TestFrontendAPIIntegration(t *testing.T) {
 	}
 	login := decode(call("POST", "/api/auth/login", "", map[string]string{"email": "admin@psione.lk", "password": "Integration-test-only-123"}, 200))
 	token := login["token"].(string)
+	if login["user"].(map[string]interface{})["role"] != "Admin" {
+		t.Fatal("expected Admin role")
+	}
+	seedCustomer := decode(call("POST", "/api/portal/login", "", map[string]string{"identifier": "customer@psione.lk", "password": "customer123"}, 200))
+	seedToken := seedCustomer["token"].(string)
+	call("GET", "/api/portal/me", seedToken, nil, 200)
+	call("GET", "/api/users", seedToken, nil, 403)
+	call("POST", "/api/auth/login", "", map[string]string{"email": "customer@psione.lk", "password": "customer123"}, 401)
+	call("POST", "/api/portal/login", "", map[string]string{"identifier": "admin@psione.lk", "password": "admin123"}, 401)
+	if _, err := scoped.Exec("UPDATE users SET role='Administrator' WHERE id='STF-02'"); err == nil {
+		t.Fatal("legacy database role accepted")
+	}
+	if _, err := scoped.Exec("INSERT INTO roles(name) VALUES('Auditor')"); err == nil {
+		t.Fatal("legacy catalog role accepted")
+	}
+	call("POST", "/api/users", token, map[string]string{"name": "Invalid Role", "email": "invalid@test.local", "password": "Invalid-test-123", "role": "Administrator"}, 400)
+
 	call("POST", "/api/auth/login", "", map[string]string{"email": "admin@psione.lk", "password": "admin123"}, 401)
 	for _, path := range []string{"/customers", "/customers/C-1", "/customers/lookup?query=C-1", "/loans", "/payments", "/online-payments", "/users", "/settings", "/audit-logs"} {
 		call("GET", "/api"+path, "", nil, 401)
 	}
-	for _, path := range []string{"/customers", "/loans", "/payments", "/online-payments"} {
+	for _, path := range []string{"/loans", "/payments", "/online-payments"} {
 		if string(bytes.TrimSpace(call("GET", "/api"+path, token, nil, 200))) != "[]" {
 			t.Fatal("empty list must be []: " + path)
 		}
@@ -107,11 +124,29 @@ func TestFrontendAPIIntegration(t *testing.T) {
 		t.Fatal("partial update lost fields/documents")
 	}
 	call("DELETE", "/api/customers/C-1/documents/DOC-1", token, nil, 200)
-	staff := map[string]interface{}{"id": "STF-TEST", "name": "Test Officer", "email": "officer@test.local", "password": "Officer-test-123", "role": "Collection Agent", "permissions": map[string]bool{"manageCustomers": true, "recordRepayments": true}}
+	staff := map[string]interface{}{"id": "STF-TEST", "name": "Test Officer", "email": "officer@test.local", "password": "Officer-test-123", "role": "Staff", "permissions": map[string]bool{"manageCustomers": true, "recordRepayments": true}}
 	call("POST", "/api/users", token, staff, 200)
 	call("GET", "/api/users", token, nil, 200)
 	staffLogin := decode(call("POST", "/api/auth/login", "", map[string]string{"email": "officer@test.local", "password": "Officer-test-123"}, 200))
 	staffToken := staffLogin["token"].(string)
+	if staffLogin["user"].(map[string]interface{})["role"] != "Staff" {
+		t.Fatal("expected Staff role")
+	}
+	if _, err := scoped.Exec("UPDATE users SET role='Customer' WHERE id='STF-TEST'"); err != nil {
+		t.Fatal(err)
+	}
+	call("GET", "/api/auth/me", staffToken, nil, 401)
+	if _, err := scoped.Exec("UPDATE users SET role='Staff' WHERE id='STF-TEST'"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := scoped.Exec("UPDATE users SET status='Inactive' WHERE id='CUS-01'"); err != nil {
+		t.Fatal(err)
+	}
+	call("GET", "/api/portal/me", seedToken, nil, 401)
+	if _, err := scoped.Exec("UPDATE users SET status='Active' WHERE id='CUS-01'"); err != nil {
+		t.Fatal(err)
+	}
+
 	call("PUT", "/api/settings", staffToken, map[string]string{"systemName": "Forbidden"}, 403)
 	loan := map[string]interface{}{"id": "LN-TEST", "loanNo": "LN-TEST", "customerId": "C-1", "principal": 1000, "interestRate": 0, "duration": 10, "totalRepayment": 1000, "status": "Pending"}
 	call("POST", "/api/loans", token, loan, 201)

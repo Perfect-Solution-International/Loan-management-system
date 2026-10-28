@@ -10,7 +10,7 @@ import Sidebar from "@/components/layout/Sidebar";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { loans } = useData();
+  const { loans, currentUser } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -49,7 +49,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     return "Portfolio Operations";
   }, [pathname]);
 
-  const isStaffView = pathname === "/staffdashboard";
+  const isStaffView = currentUser?.role === "Staff";
 
   // Role-appropriate notification count
   const notificationCount = isStaffView ? overdueLoans.length : pendingLoans.length;

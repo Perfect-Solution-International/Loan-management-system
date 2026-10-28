@@ -888,7 +888,7 @@ export default function FinancialReportsPage() {
           </div>
           <div>
             <div className="w-40 border-b border-slate-400 mb-1" />
-            <p className="font-bold">Internal Auditor</p>
+            <p className="font-bold">Staff Reviewer</p>
             <p className="text-slate-500">Financial Audit & Compliance</p>
           </div>
         </div>

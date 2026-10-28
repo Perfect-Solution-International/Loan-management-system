@@ -143,7 +143,7 @@ PSI One solves these operational challenges by centralizing customer records, au
 - **System Defaults Restore:** One-click rollback to default system parameters.
 
 ### Staff Management & Access Control
-- **Multi-Role User Directory:** Pre-configured roles for `Administrator`, `Loan Officer`, `Collection Agent`, and `Auditor`.
+- **Multi-Role User Directory:** Pre-configured roles for `Admin`, `Staff`, and `Customer`.
 - **Branch Allocation:** Assign personnel across branch offices (Colombo Central, Gampaha, Kandy, Galle, Kurunegala, Kalutara, Head Office).
 - **Granular Permission Matrix:**
   - Approve Loans
@@ -513,8 +513,8 @@ erDiagram
 | `POST` | `/api/payments` | Record a repayment and generate receipt | Bearer Token | *Not implemented* |
 | `POST` | `/api/documents/upload` | Securely upload KYC documents to storage | Bearer Token | *Not implemented* |
 | `GET` | `/api/settings` | Fetch global interest rules and fees | Bearer Token | *Not implemented* |
-| `PUT` | `/api/settings` | Update system lending rules | Administrator | *Not implemented* |
-| `GET` | `/api/staff` | List staff users and permissions | Administrator | *Not implemented* |
+| `PUT` | `/api/settings` | Update system lending rules | Admin | *Not implemented* |
+| `GET` | `/api/staff` | List staff users and permissions | Admin | *Not implemented* |
 
 ---
 
@@ -667,7 +667,7 @@ erDiagram
 ### Current Implementation
 - **Prototype Authentication View:** An interface is implemented at `/login` featuring branding, credential input fields, password visibility toggles, and access alerts.
 - **Client-Side Simulation:** Submitting credentials navigates to the dashboard preview (`/`).
-- **Role & Permission Representation:** Roles (`Administrator`, `Loan Officer`, `Collection Agent`, `Auditor`) and their granular rights are fully modeled in `src/types/index.ts` and managed under `/settings?tab=staff`.
+- **Role & Permission Representation:** Roles (`Admin`, `Staff`, `Customer`) and their granular rights are fully modeled in `src/types/index.ts` and managed under `/settings?tab=staff`.
 
 ```mermaid
 stateDiagram-v2
@@ -675,10 +675,9 @@ stateDiagram-v2
     LoginPage --> Dashboard : Submit Form (Demo Mode)
     Dashboard --> RolePermissions : Enforce UI Capabilities
     note right of RolePermissions
-      - Administrator: Full Access
-      - Loan Officer: Approve & Disburse
-      - Collection Agent: Record Repayments
-      - Auditor: Read-only Reports
+      - Admin: Full access
+      - Staff: Assigned permission grants
+      - Customer: Own account only
     end note
 ```
 
@@ -1000,8 +999,8 @@ erDiagram
 | `POST` | `/api/payments` | Record a repayment and generate receipt | Bearer Token | *Not implemented* |
 | `POST` | `/api/documents/upload` | Securely upload KYC documents to storage | Bearer Token | *Not implemented* |
 | `GET` | `/api/settings` | Fetch global interest rules and fees | Bearer Token | *Not implemented* |
-| `PUT` | `/api/settings` | Update system lending rules | Administrator | *Not implemented* |
-| `GET` | `/api/staff` | List staff users and permissions | Administrator | *Not implemented* |
+| `PUT` | `/api/settings` | Update system lending rules | Admin | *Not implemented* |
+| `GET` | `/api/staff` | List staff users and permissions | Admin | *Not implemented* |
 
 ---
 

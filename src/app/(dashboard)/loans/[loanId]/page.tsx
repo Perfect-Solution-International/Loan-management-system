@@ -286,7 +286,7 @@ function LoanDetailsContent() {
           </div>
 
           <p className="text-xs text-amber-900 font-medium">
-            This loan application requires sign-off by an authorized Administrator or Branch Credit Committee member. Review customer KYC, guarantor stakes, and repayment ability before releasing funds.
+            This loan application requires sign-off by an authorized Admin or Branch Credit Committee member. Review customer KYC, guarantor stakes, and repayment ability before releasing funds.
           </p>
 
           <div className="space-y-3">

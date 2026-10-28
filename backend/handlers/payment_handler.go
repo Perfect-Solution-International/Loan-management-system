@@ -98,7 +98,7 @@ func (h *PaymentHandler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 	_ = h.auditRepo.Create(&models.AuditLog{
 		ID:        "AUD-" + uuid.New().String()[:8],
 		UserName:  p.CollectedBy,
-		UserRole:  "Collection Agent",
+		UserRole:  r.Context().Value(middleware.UserContextKey).(*middleware.Claims).Role,
 		Action:    "PAYMENT_COLLECTED",
 		Module:    "Repayments",
 		Details:   fmt.Sprintf("Collected repayment of %.2f for Loan %s (Receipt: %s)", p.Amount, loan.LoanNo, p.ReceiptNo),

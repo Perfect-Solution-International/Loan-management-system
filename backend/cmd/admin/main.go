@@ -32,11 +32,11 @@ func main() {
 		log.Fatal(err)
 	}
 	exists := user != nil
-	if exists && user.Role != "Administrator" {
+	if exists && user.Role != "Admin" {
 		log.Fatal("The email belongs to a non-administrator; use the staff management screen")
 	}
 	if !exists {
-		user = &models.User{ID: "STF-" + uuid.NewString()[:8], Name: "System Administrator", Email: email, Role: "Administrator", Branch: "Head Office", JoinedDate: time.Now().Format("2006-01-02")}
+		user = &models.User{ID: "STF-" + uuid.NewString()[:8], Name: "System Administrator", Email: email, Role: "Admin", Branch: "Head Office", JoinedDate: time.Now().Format("2006-01-02")}
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

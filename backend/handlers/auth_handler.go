@@ -49,7 +49,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user == nil {
+	if user == nil || (user.Role != "Admin" && user.Role != "Staff") {
 		sendJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 		return
 	}

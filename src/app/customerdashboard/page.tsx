@@ -1599,7 +1599,7 @@ export default function CustomerDashboardPage() {
                     No active loan facilities found
                   </h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    There are no registered loans under your borrower account. Please contact your loan officer or branch office.
+                    There are no registered loans under your borrower account. Please contact your staff contact or branch office.
                   </p>
                 </div>
               )}
@@ -2225,7 +2225,7 @@ export default function CustomerDashboardPage() {
               </div>
 
               <p className="text-[11px] text-slate-400 pt-1">
-                For settlement queries or installment adjustments, contact your loan officer directly.
+                For settlement queries or installment adjustments, contact your staff contact directly.
               </p>
             </div>
           </div>

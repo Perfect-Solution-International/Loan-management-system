@@ -38,7 +38,12 @@ VALUES
     ) ON CONFLICT (id) DO NOTHING;
 
 -- 2. One default user for each account role (fresh database seeds).
--- Preserve existing accounts and password hashes when seeds are rerun.
+-- Seeded users use only Admin, Staff, or Customer.
+-- Credentials:
+--   STF-01  System Admin    admin@psione.lk    admin123
+--   STF-02  Staff Officer   staff@psione.lk    Staff@123
+--   CUS-01  Demo Customer   customer@psione.lk Customer@123
+-- Repair only the original unusable seed hash; preserve changed passwords.
 INSERT INTO
     users (
         id,
@@ -54,37 +59,48 @@ INSERT INTO
 VALUES
     (
         'STF-01',
-        'Ajith Wickramasinghe',
+        'System Admin',
         'admin@psione.lk',
-        '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
+        '$2a$10$0HckGxHnKHZqvp7UvMMGZ.kAuHjPYyN4RfpqOjFCEbOxRWSEjGOrG',
         'Admin',
-        'Colombo Central',
+        'Head Office',
         'Active',
-        '2025-01-15',
+        '2025-01-01',
         '{"approveLoans": true, "recordRepayments": true, "exportReports": true, "manageSettings": true, "manageCustomers": true}'
     ),
     (
         'STF-02',
-        'Chaminda Bandara',
+        'Staff Officer',
         'staff@psione.lk',
-        '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
+        '$2a$10$tGdjyWQ8NuG9elcFS4Hauur.KFO3oqqLzC29bcDJ2Bo4UrniWzERe',
         'Staff',
         'Colombo Central',
         'Active',
-        '2025-04-10',
-        '{"approveLoans": false, "recordRepayments": true, "exportReports": false, "manageSettings": false, "manageCustomers": true}'
+        '2025-01-15',
+        '{"approveLoans": true, "recordRepayments": true, "exportReports": false, "manageSettings": false, "manageCustomers": true}'
     ),
     (
         'CUS-01',
-        'Customer Account',
+        'Demo Customer',
         'customer@psione.lk',
-        '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie',
+        '$2a$10$.80U3HP2i0q.lT0apdyHN.A948nTj560yiamBlWMFZP6OpK3gDL9K',
         'Customer',
         'Colombo Central',
         'Active',
         CURRENT_DATE,
         '{"approveLoans": false, "recordRepayments": false, "exportReports": false, "manageSettings": false, "manageCustomers": false}'
-    ) ON CONFLICT (id) DO NOTHING;
+    ) ON CONFLICT (id) DO UPDATE
+SET name = EXCLUDED.name,
+    role = EXCLUDED.role,
+    branch = EXCLUDED.branch,
+    password_hash = CASE WHEN users.password_hash = '$2a$10$wEeVg7OQ96f.aKkWzX46o.75Pz8187Z7eIuU31c8jXqD9dD05O1Ie' THEN EXCLUDED.password_hash ELSE users.password_hash END,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- Customer portal profile for the default Customer user.
+INSERT INTO customers (id, name, email, nic, phone, address, town, district, password_hash)
+SELECT id, name, email, 'UNVERIFIED-' || id, '', '', '', '', password_hash
+FROM users WHERE id = 'CUS-01' AND role = 'Customer'
+ON CONFLICT (id) DO NOTHING;
 
 -- 3. Initial Audit Trail
 INSERT INTO
@@ -103,7 +119,7 @@ VALUES
         'AUD-001',
         CURRENT_TIMESTAMP,
         'System',
-        'Administrator',
+        'Admin',
         'SYSTEM_INITIALIZATION',
         'System',
         'Database schema initialized with clean state',

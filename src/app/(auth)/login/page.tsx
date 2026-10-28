@@ -30,11 +30,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [selectedPortal, setSelectedPortal] = useState<"admin" | "staff" | "customer">("admin");
+  const [selectedPortal, setSelectedPortal] = useState<
+    "admin" | "staff" | "customer"
+  >("admin");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); if (submitting) return;
-    setErrorMsg(""); setSubmitting(true);
+    e.preventDefault();
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
     try {
       if (selectedPortal === "customer") {
         const result = await api.customerLogin(identifier.trim(), password);
@@ -43,12 +47,17 @@ export default function LoginPage() {
         router.push("/customerdashboard");
       } else {
         const result = await api.login(identifier.trim(), password);
-        if (selectedPortal === "admin" && result.user.role !== "Administrator") throw new Error("Use the Staff portal for this account.");
+        if (selectedPortal === "admin" && result.user.role !== "Admin")
+          throw new Error("Use the Staff portal for this account.");
         saveSession(result.token, "staff");
-        router.push(result.user.role === "Administrator" ? "/dashboard" : "/field");
+        router.push(result.user.role === "Admin" ? "/dashboard" : "/field");
       }
-    } catch (error) { clearSession(); setErrorMsg(error instanceof Error ? error.message : "Login failed"); }
-    finally { setSubmitting(false); }
+    } catch (error) {
+      clearSession();
+      setErrorMsg(error instanceof Error ? error.message : "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -75,26 +84,33 @@ export default function LoginPage() {
           </h1>
 
           <p>
-            Manage customers, track repayments, review loan statements, and make confident lending decisions — all from one centralized workspace.
+            Manage customers, track repayments, review loan statements, and make
+            confident lending decisions — all from one centralized workspace.
           </p>
 
           <div className="login-feature-list">
             <div>
-              <span><ShieldCheck size={18} /></span>
+              <span>
+                <ShieldCheck size={18} />
+              </span>
               <section>
                 <strong>Organized for daily lending</strong>
                 <small>
-                  Access your customer accounts, loan records, and daily lending tools in one place.
+                  Access your customer accounts, loan records, and daily lending
+                  tools in one place.
                 </small>
               </section>
             </div>
 
             <div>
-              <span><Fingerprint size={18} /></span>
+              <span>
+                <Fingerprint size={18} />
+              </span>
               <section>
                 <strong>One workspace</strong>
                 <small>
-                  Single point of access for portfolio management, daily collections, and customer accounts.
+                  Single point of access for portfolio management, daily
+                  collections, and customer accounts.
                 </small>
               </section>
             </div>
@@ -121,16 +137,13 @@ export default function LoginPage() {
             <LockKeyhole size={22} />
           </div>
 
-          <p className="login-eyebrow">
-            SECURE ACCESS
-          </p>
+          <p className="login-eyebrow">SECURE ACCESS</p>
 
-          <h2>
-            Sign in to your account
-          </h2>
+          <h2>Sign in to your account</h2>
 
           <p className="login-intro">
-            Enter your email, username, or Customer ID / NIC along with your password.
+            Enter your email, username, or Customer ID / NIC along with your
+            password.
           </p>
 
           {/* Professional Role / Portal Switcher */}
@@ -148,7 +161,8 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setSelectedPortal("admin");
-                  setIdentifier(""); setPassword("");
+                  setIdentifier("");
+                  setPassword("");
                   setErrorMsg("");
                 }}
                 className={`p-2.5 rounded-xl text-left transition cursor-pointer border flex flex-col items-start ${
@@ -161,14 +175,17 @@ export default function LoginPage() {
                   <Shield size={13} className="text-red-600" />
                   <span>Admin</span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">Staff account</span>
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
+                  Staff account
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setSelectedPortal("staff");
-                  setIdentifier(""); setPassword("");
+                  setIdentifier("");
+                  setPassword("");
                   setErrorMsg("");
                 }}
                 className={`p-2.5 rounded-xl text-left transition cursor-pointer border flex flex-col items-start ${
@@ -181,14 +198,17 @@ export default function LoginPage() {
                   <Briefcase size={13} className="text-red-600" />
                   <span>Staff / Field</span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">Staff account</span>
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
+                  Staff account
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setSelectedPortal("customer");
-                  setIdentifier(""); setPassword("");
+                  setIdentifier("");
+                  setPassword("");
                   setErrorMsg("");
                 }}
                 className={`p-2.5 rounded-xl text-left transition cursor-pointer border flex flex-col items-start ${
@@ -201,14 +221,22 @@ export default function LoginPage() {
                   <User size={13} className="text-red-600" />
                   <span>Customer</span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">Customer account</span>
+                <span className="text-[11px] font-mono font-bold text-red-600 mt-1">
+                  Customer account
+                </span>
               </button>
             </div>
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 mb-4 leading-relaxed font-medium" role="alert">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-600" />
+            <div
+              className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 mb-4 leading-relaxed font-medium"
+              role="alert"
+            >
+              <AlertCircle
+                size={16}
+                className="shrink-0 mt-0.5 text-rose-600"
+              />
               <p>{errorMsg}</p>
             </div>
           )}
@@ -218,8 +246,8 @@ export default function LoginPage() {
               {selectedPortal === "customer"
                 ? "Customer ID, NIC, or Registered Email"
                 : selectedPortal === "staff"
-                ? "Staff Work Email or Staff ID"
-                : "Administrator Email or Username"}
+                  ? "Staff Work Email or Staff ID"
+                  : "Admin Email or Username"}
             </label>
             <div className="login-input-wrap">
               <Mail size={18} />
@@ -231,8 +259,8 @@ export default function LoginPage() {
                   selectedPortal === "customer"
                     ? "e.g. CUS-001 or National Identity Card (NIC)"
                     : selectedPortal === "staff"
-                    ? "e.g. officer@psione.lk or STF-02"
-                    : "admin@psione.lk"
+                      ? "e.g. officer@psione.lk or STF-02"
+                      : "admin@psione.lk"
                 }
                 value={identifier}
                 onChange={(e) => {
@@ -250,7 +278,9 @@ export default function LoginPage() {
                 type="button"
                 className="login-text-button"
                 onClick={() =>
-                  alert("Password reset request logged. Please contact your System Administrator.")
+                  alert(
+                    "Password reset request logged. Please contact your System Admin.",
+                  )
                 }
               >
                 Forgot password?
@@ -267,8 +297,8 @@ export default function LoginPage() {
                   selectedPortal === "customer"
                     ? "Enter customer password"
                     : selectedPortal === "staff"
-                    ? "Enter staff password"
-                    : "Enter admin password"
+                      ? "Enter staff password"
+                      : "Enter admin password"
                 }
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -290,7 +320,11 @@ export default function LoginPage() {
               <span>Remember me on this workstation</span>
             </label>
 
-            <button type="submit" disabled={submitting} className="login-submit cursor-pointer">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="login-submit cursor-pointer"
+            >
               Sign in
               <ArrowRight size={18} />
             </button>
@@ -299,12 +333,11 @@ export default function LoginPage() {
           <div className="login-security-note">
             <ShieldCheck size={17} />
             <span>
-              Access is restricted to authorized company personnel and verified accounts.
+              Access is restricted to authorized company personnel and verified
+              accounts.
             </span>
           </div>
-
         </div>
-
       </section>
     </main>
   );

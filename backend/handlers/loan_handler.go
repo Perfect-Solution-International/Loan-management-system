@@ -87,7 +87,7 @@ func (h *LoanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 		l.Status = "Pending"
 	}
 	claims := r.Context().Value(middleware.UserContextKey).(*middleware.Claims)
-	if claims.Role != "Administrator" && !claims.Permissions.ApproveLoans {
+	if claims.Role != "Admin" && !claims.Permissions.ApproveLoans {
 		l.Status = "Pending"
 		l.ApprovedAt = ""
 		l.ApprovedBy = ""

@@ -168,7 +168,7 @@ export interface StaffUser {
   id: string;
   name: string;
   email: string;
-  role: "Administrator" | "Loan Officer" | "Collection Agent" | "Auditor";
+  role: "Admin" | "Staff" | "Customer";
   branch: string;
   status: "Active" | "Inactive";
   joinedDate: string;

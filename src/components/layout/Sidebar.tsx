@@ -167,8 +167,8 @@ interface SidebarProps {
 
 export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
-  const isStaff = pathname === "/staffdashboard";
-  const { onlinePayments } = useData();
+  const { onlinePayments, currentUser } = useData();
+  const isStaff = currentUser?.role === "Staff";
   const pendingOnlineCount = (onlinePayments || []).filter((p) => p.status === 'PENDING').length;
 
   const dynamicNavSections = React.useMemo(() => {
@@ -363,7 +363,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
                 {isStaff ? "Field Officer" : "Admin Officer"}
               </p>
               <p className="text-[11px] text-slate-400 font-medium">
-                {isStaff ? "Loan Officer" : "Administrator"}
+                {isStaff ? "Staff" : "Admin"}
               </p>
             </div>
           </div>

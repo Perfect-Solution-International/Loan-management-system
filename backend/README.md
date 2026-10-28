@@ -94,7 +94,7 @@ docker-compose up -d
 
 Each table has its own create migration with its indexes and related sequence. Later migrations add relationships or other schema changes. Apply all files in filename order, then seed data. The SQL uses `IF NOT EXISTS` and seeds use `ON CONFLICT DO NOTHING`, so existing tables and seed records are preserved. Existing installations that ran `001_init.sql` and `002_frontend_integration.sql` can apply the new files without resetting the database.
 
-The `roles` catalog includes `Admin`, `Staff`, and `Customer`, plus the existing staff roles (`Administrator`, `Loan Officer`, `Collection Agent`, `Auditor`). Migration `010_link_users_role.sql` preserves existing assignments and enforces `users.role` referencing `roles.name`. Assigned roles cannot be deleted or renamed. Existing permission checks continue to use the staff role names.
+The only system roles are `Admin`, `Staff`, and `Customer`. `010_link_users_role.sql` maps legacy administrator accounts to Admin and other legacy staff accounts to Staff, preserving permission grants. Both role names and user assignments are constrained to these three values. Rerun the existing migrations in order to upgrade an existing database.
 
 ---
 
@@ -177,3 +177,13 @@ Server එක සාර්ථකව run වූ විට:
 | `GET` | `/api/settings` | Get loan configuration & interest rates |
 | `PUT` | `/api/settings` | Update system settings |
 
+
+### Local seed accounts
+
+| Email | Role | Password |
+|---|---|---|
+| admin@psione.lk | Admin | admin123 |
+| staff@psione.lk | Staff | staff123 |
+| customer@psione.lk | Customer | customer123 |
+
+The Customer seed includes a customer portal profile. Seed reruns repair the original invalid seed password hash but preserve subsequently changed passwords. Staff access is governed by individual permission grants; Customer tokens cannot access staff endpoints.

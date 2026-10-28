@@ -59,7 +59,7 @@ func newRouter(db *database.DB, cfg *config.Config) http.Handler {
 	custHandler := handlers.NewCustomerHandler(custRepo, auditRepo)
 	loanHandler := handlers.NewLoanHandler(loanRepo, custRepo, auditRepo)
 	payHandler := handlers.NewPaymentHandler(payRepo, loanRepo, auditRepo)
-	portalHandler := handlers.NewPortalHandler(custRepo, loanRepo, payRepo, settingsRepo, cfg)
+	portalHandler := handlers.NewPortalHandler(custRepo, loanRepo, payRepo, settingsRepo, cfg, userRepo)
 	auditSettingsHandler := handlers.NewAuditAndSettingsHandler(auditRepo, settingsRepo)
 
 	// 5. Setup Router

@@ -72,11 +72,11 @@ func (h *AuthHandler) RequireStaff(permission string) func(http.Handler) http.Ha
 				return
 			}
 			user, err := h.userRepo.FindByID(claims.UserID)
-			if err != nil || user == nil || user.Status != "Active" {
+			if err != nil || user == nil || user.Status != "Active" || (user.Role != "Admin" && user.Role != "Staff") {
 				sendJSON(w, 401, map[string]string{"error": "Staff account unavailable"})
 				return
 			}
-			allowed := permission == "" || user.Role == "Administrator"
+			allowed := permission == "" || user.Role == "Admin"
 			switch permission {
 			case "manageCustomers":
 				allowed = allowed || user.Permissions.ManageCustomers
@@ -131,7 +131,7 @@ func (h *AuthHandler) SaveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch u.Role {
-	case "Administrator", "Loan Officer", "Collection Agent", "Auditor":
+	case "Admin", "Staff":
 	default:
 		fail(w, errors.New("invalid staff role"))
 		return
@@ -144,7 +144,7 @@ func (h *AuthHandler) SaveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	claims := r.Context().Value(middleware.UserContextKey).(*middleware.Claims)
-	if id == claims.UserID && (u.Role != "Administrator" || u.Status != "Active") {
+	if id == claims.UserID && (u.Role != "Admin" || u.Status != "Active") {
 		fail(w, errors.New("you cannot deactivate or demote your own administrator account"))
 		return
 	}
@@ -179,6 +179,7 @@ func (h *AuthHandler) SaveUser(w http.ResponseWriter, r *http.Request) {
 }
 
 type PortalHandler struct {
+	users     *repository.UserRepository
 	customers *repository.CustomerRepository
 	loans     *repository.LoanRepository
 	payments  *repository.PaymentRepository
@@ -186,8 +187,13 @@ type PortalHandler struct {
 	cfg       *config.Config
 }
 
-func NewPortalHandler(c *repository.CustomerRepository, l *repository.LoanRepository, p *repository.PaymentRepository, s *repository.SettingsRepository, cfg *config.Config) *PortalHandler {
-	return &PortalHandler{c, l, p, s, cfg}
+func NewPortalHandler(c *repository.CustomerRepository, l *repository.LoanRepository, p *repository.PaymentRepository, s *repository.SettingsRepository, cfg *config.Config, users *repository.UserRepository) *PortalHandler {
+	return &PortalHandler{users, c, l, p, s, cfg}
+}
+
+func (h *PortalHandler) accountEnabled(id string) bool {
+	user, err := h.users.FindByID(id)
+	return err == nil && (user == nil || (user.Role == "Customer" && user.Status == "Active"))
 }
 
 func (h *PortalHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +211,7 @@ func (h *PortalHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := h.customers.GetByID(id)
-	if err != nil || c == nil || !strings.EqualFold(c.Status, "Active") {
+	if err != nil || c == nil || !strings.EqualFold(c.Status, "Active") || !h.accountEnabled(c.ID) {
 		sendJSON(w, 401, map[string]string{"error": "Customer account unavailable"})
 		return
 	}
@@ -249,7 +255,7 @@ func (h *PortalHandler) Snapshot(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	if c == nil || !strings.EqualFold(c.Status, "Active") {
+	if c == nil || !strings.EqualFold(c.Status, "Active") || !h.accountEnabled(c.ID) {
 		sendJSON(w, 401, map[string]string{"error": "Customer account unavailable"})
 		return
 	}
@@ -351,7 +357,7 @@ func (h *PortalHandler) RequireCustomer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims := r.Context().Value(middleware.UserContextKey).(*middleware.Claims)
 		c, err := h.customers.GetByID(claims.UserID)
-		if err != nil || c == nil || !strings.EqualFold(c.Status, "Active") {
+		if err != nil || c == nil || !strings.EqualFold(c.Status, "Active") || !h.accountEnabled(c.ID) {
 			sendJSON(w, 401, map[string]string{"error": "Customer account unavailable"})
 			return
 		}

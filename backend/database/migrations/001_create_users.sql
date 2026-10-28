@@ -7,7 +7,7 @@ CREATE TABLE
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL DEFAULT 'Loan Officer', -- Administrator, Loan Officer, Collection Agent, Auditor
+        role VARCHAR(50) NOT NULL DEFAULT 'Staff', -- Admin, Staff, Customer
         branch VARCHAR(100) NOT NULL DEFAULT 'Colombo Central',
         status VARCHAR(20) NOT NULL DEFAULT 'Active', -- Active, Inactive
         joined_date DATE NOT NULL DEFAULT CURRENT_DATE,

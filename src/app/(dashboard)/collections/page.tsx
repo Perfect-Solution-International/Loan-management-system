@@ -44,9 +44,9 @@ export default function CollectionsPage() {
     getNextReceiptNo,
   } = useData();
 
-  // RBAC: Check if current logged-in user is an Administrator
+  // RBAC: Check if current logged-in user is an Admin
   const { currentUser } = useData();
-  const isAdmin = currentUser?.role === "Administrator";
+  const isAdmin = currentUser?.role === "Admin";
 
   // Selected collection date (defaults dynamically to today)
   const [selectedDate, setSelectedDate] = useState<string>("2026-10-19");

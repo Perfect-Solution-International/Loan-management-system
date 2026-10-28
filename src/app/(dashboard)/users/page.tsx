@@ -37,34 +37,35 @@ import {
 import { useData } from "@/providers/data-provider";
 import { MONEY } from "@/constants";
 import { getLoanTotalRepayment } from "@/lib/loan-financials";
-import type { Customer, CustomerStatus, StaffUser, StaffPermissions, Loan, Payment, CustomerDocument } from "@/types";
+import type {
+  Customer,
+  CustomerStatus,
+  StaffUser,
+  StaffPermissions,
+  Loan,
+  Payment,
+  CustomerDocument,
+} from "@/types";
 
 const ROLE_PRESET_PERMISSIONS: Record<StaffUser["role"], StaffPermissions> = {
-  Administrator: {
+  Admin: {
     approveLoans: true,
     recordRepayments: true,
     exportReports: true,
     manageSettings: true,
     manageCustomers: true,
   },
-  "Loan Officer": {
-    approveLoans: true,
-    recordRepayments: true,
-    exportReports: true,
-    manageSettings: false,
-    manageCustomers: true,
-  },
-  "Collection Agent": {
+  Staff: {
     approveLoans: false,
     recordRepayments: true,
     exportReports: false,
     manageSettings: false,
     manageCustomers: true,
   },
-  Auditor: {
+  Customer: {
     approveLoans: false,
     recordRepayments: false,
-    exportReports: true,
+    exportReports: false,
     manageSettings: false,
     manageCustomers: false,
   },
@@ -111,7 +112,8 @@ const BRANCH_OPTIONS = [
 function UserManagementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as "customers" | "staff") || "customers";
+  const initialTab =
+    (searchParams.get("tab") as "customers" | "staff") || "customers";
 
   const {
     customers,
@@ -136,11 +138,15 @@ function UserManagementContent() {
   const [toastMsg, setToastMsg] = useState("");
 
   // Customer Details Drawer
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
 
   // Customer Edit & Delete States
   const [isEditCustomerModalOpen, setIsEditCustomerModalOpen] = useState(false);
-  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(
+    null,
+  );
   const [customerForm, setCustomerForm] = useState<{
     id: string;
     fullName: string;
@@ -210,26 +216,30 @@ function UserManagementContent() {
       return;
     }
 
-    if (!(await updateCustomer(customerForm.id, {
-      password: customerPassword || undefined,
-      fullName: customerForm.fullName.trim(),
-      name: customerForm.fullName.trim(),
-      nic: customerForm.nic.trim(),
-      phone: customerForm.phone.trim(),
-      alternatePhone: customerForm.alternatePhone.trim() || undefined,
-      email: customerForm.email.trim() || undefined,
-      address: customerForm.address.trim(),
-      town: customerForm.town.trim(),
-      district: customerForm.district.trim(),
-      village: customerForm.village.trim() || undefined,
-      occupation: customerForm.occupation.trim() || undefined,
-      monthlyIncome: Number(customerForm.monthlyIncome) || 0,
-      status: customerForm.status,
-      guarantorName: customerForm.guarantorName.trim() || undefined,
-      guarantorNic: customerForm.guarantorNic.trim() || undefined,
-      guarantorPhone: customerForm.guarantorPhone.trim() || undefined,
-      guarantorRelationship: customerForm.guarantorRelationship.trim() || undefined,
-    }))) return;
+    if (
+      !(await updateCustomer(customerForm.id, {
+        password: customerPassword || undefined,
+        fullName: customerForm.fullName.trim(),
+        name: customerForm.fullName.trim(),
+        nic: customerForm.nic.trim(),
+        phone: customerForm.phone.trim(),
+        alternatePhone: customerForm.alternatePhone.trim() || undefined,
+        email: customerForm.email.trim() || undefined,
+        address: customerForm.address.trim(),
+        town: customerForm.town.trim(),
+        district: customerForm.district.trim(),
+        village: customerForm.village.trim() || undefined,
+        occupation: customerForm.occupation.trim() || undefined,
+        monthlyIncome: Number(customerForm.monthlyIncome) || 0,
+        status: customerForm.status,
+        guarantorName: customerForm.guarantorName.trim() || undefined,
+        guarantorNic: customerForm.guarantorNic.trim() || undefined,
+        guarantorPhone: customerForm.guarantorPhone.trim() || undefined,
+        guarantorRelationship:
+          customerForm.guarantorRelationship.trim() || undefined,
+      }))
+    )
+      return;
 
     setIsEditCustomerModalOpen(false);
     setToastMsg(`Customer "${customerForm.fullName}" updated successfully.`);
@@ -238,7 +248,8 @@ function UserManagementContent() {
 
   const handleConfirmDeleteCustomer = async () => {
     if (!deletingCustomer) return;
-    const name = deletingCustomer.fullName || deletingCustomer.name || "Customer";
+    const name =
+      deletingCustomer.fullName || deletingCustomer.name || "Customer";
     if (!(await deleteCustomer(deletingCustomer.id))) return;
     if (selectedCustomerId === deletingCustomer.id) {
       setSelectedCustomerId(null);
@@ -266,10 +277,10 @@ function UserManagementContent() {
     id: "",
     name: "",
     email: "",
-    role: "Loan Officer",
+    role: "Staff",
     branch: "Colombo Central",
     status: "Active",
-    permissions: ROLE_PRESET_PERMISSIONS["Loan Officer"],
+    permissions: ROLE_PRESET_PERMISSIONS["Staff"],
   });
 
   // Switch tab with URL reflection
@@ -287,7 +298,16 @@ function UserManagementContent() {
     return customers.filter((c) => {
       const matchesSearch =
         !q ||
-        [c.id, c.name, c.fullName, c.phone, c.nic, c.town, c.village, c.district]
+        [
+          c.id,
+          c.name,
+          c.fullName,
+          c.phone,
+          c.nic,
+          c.town,
+          c.village,
+          c.district,
+        ]
           .join(" ")
           .toLowerCase()
           .includes(q);
@@ -297,51 +317,64 @@ function UserManagementContent() {
   }, [customers, searchQuery]);
 
   const activeCustomerCount = useMemo(
-    () => customers.filter((c) => (c.status || "").toUpperCase() === "ACTIVE").length,
-    [customers]
+    () =>
+      customers.filter((c) => (c.status || "").toUpperCase() === "ACTIVE")
+        .length,
+    [customers],
   );
   const inactiveCustomerCount = customers.length - activeCustomerCount;
 
   const totalFinanced = useMemo(
     () => loans.reduce((sum, l) => sum + (l.principal || l.amount || 0), 0),
-    [loans]
+    [loans],
   );
 
   // Selected Customer Deep Data for slide-over drawer
   const selectedCustomer = useMemo(
-    () => (selectedCustomerId ? customers.find((c) => c.id === selectedCustomerId) ?? null : null),
-    [customers, selectedCustomerId]
+    () =>
+      selectedCustomerId
+        ? (customers.find((c) => c.id === selectedCustomerId) ?? null)
+        : null,
+    [customers, selectedCustomerId],
   );
 
   const customerLoans = useMemo(
-    () => (selectedCustomer ? loans.filter((l) => l.customerId === selectedCustomer.id) : []),
-    [loans, selectedCustomer]
+    () =>
+      selectedCustomer
+        ? loans.filter((l) => l.customerId === selectedCustomer.id)
+        : [],
+    [loans, selectedCustomer],
   );
 
   const customerPayments = useMemo(() => {
     if (!selectedCustomer) return [];
     const loanIds = customerLoans.map((l) => l.id);
-    return payments.filter((p) => p.customerId === selectedCustomer.id || loanIds.includes(p.loanId));
+    return payments.filter(
+      (p) => p.customerId === selectedCustomer.id || loanIds.includes(p.loanId),
+    );
   }, [payments, selectedCustomer, customerLoans]);
 
   const customerDocs = useMemo(
-    () => (selectedCustomer ? documents.filter((d) => d.customerId === selectedCustomer.id) : []),
-    [documents, selectedCustomer]
+    () =>
+      selectedCustomer
+        ? documents.filter((d) => d.customerId === selectedCustomer.id)
+        : [],
+    [documents, selectedCustomer],
   );
 
   const customerTotalRepayable = useMemo(
     () => customerLoans.reduce((sum, l) => sum + getLoanTotalRepayment(l), 0),
-    [customerLoans]
+    [customerLoans],
   );
 
   const customerTotalPaid = useMemo(
     () => customerPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
-    [customerPayments]
+    [customerPayments],
   );
 
   const customerOutstanding = Math.max(
     0,
-    Math.round((customerTotalRepayable - customerTotalPaid) * 100) / 100
+    Math.round((customerTotalRepayable - customerTotalPaid) * 100) / 100,
   );
 
   // ── STAFF COMPUTATIONS ────────────────────────────────────────────────────
@@ -356,7 +389,8 @@ function UserManagementContent() {
         (u.id || "").toLowerCase().includes(q);
 
       const matchesRole =
-        staffRoleFilter === "ALL" || u.role.toUpperCase() === staffRoleFilter.toUpperCase();
+        staffRoleFilter === "ALL" ||
+        u.role.toUpperCase() === staffRoleFilter.toUpperCase();
 
       return matchesSearch && matchesRole;
     });
@@ -364,13 +398,11 @@ function UserManagementContent() {
 
   const staffRoleCounts = useMemo(() => {
     return {
-      admin: staffUsers.filter((u) => u.role === "Administrator").length,
-      loanOfficer: staffUsers.filter((u) => u.role === "Loan Officer").length,
-      fieldOrAudit: staffUsers.filter(
-        (u) => u.role === "Collection Agent" || u.role === "Auditor"
-      ).length,
+      admin: staffUsers.filter((u) => u.role === "Admin").length,
+      staff: staffUsers.filter((u) => u.role === "Staff").length,
+      customer: customers.length,
     };
-  }, [staffUsers]);
+  }, [staffUsers, customers]);
 
   // Open modal for new staff
   const handleOpenAddStaff = () => {
@@ -382,10 +414,10 @@ function UserManagementContent() {
       id: newId,
       name: "",
       email: "",
-      role: "Loan Officer",
+      role: "Staff",
       branch: "Colombo Central",
       status: "Active",
-      permissions: { ...ROLE_PRESET_PERMISSIONS["Loan Officer"] },
+      permissions: { ...ROLE_PRESET_PERMISSIONS["Staff"] },
     });
     setIsStaffModalOpen(true);
   };
@@ -422,15 +454,18 @@ function UserManagementContent() {
     }
 
     if (editingStaffId) {
-      if (!(await updateStaffUser(editingStaffId, {
-        password: staffPassword || undefined,
-        name: staffForm.name,
-        email: staffForm.email,
-        role: staffForm.role,
-        branch: staffForm.branch,
-        status: staffForm.status,
-        permissions: staffForm.permissions,
-      }))) return;
+      if (
+        !(await updateStaffUser(editingStaffId, {
+          password: staffPassword || undefined,
+          name: staffForm.name,
+          email: staffForm.email,
+          role: staffForm.role,
+          branch: staffForm.branch,
+          status: staffForm.status,
+          permissions: staffForm.permissions,
+        }))
+      )
+        return;
       setToastMsg(`Staff member ${staffForm.name} updated successfully.`);
     } else {
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -465,14 +500,18 @@ function UserManagementContent() {
       <div className="mx-auto workspace-page">
         {/* Toast Feedback */}
         {toastMsg && (
-          <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs animate-in fade-in" role="status">
+          <div
+            className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-xs animate-in fade-in"
+            role="status"
+          >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
               <span>{toastMsg}</span>
             </div>
             <button
               onClick={() => setToastMsg("")}
-              className="text-emerald-700 hover:text-emerald-900 p-0.5 cursor-pointer" aria-label="Close"
+              className="text-emerald-700 hover:text-emerald-900 p-0.5 cursor-pointer"
+              aria-label="Close"
             >
               <X size={13} />
             </button>
@@ -503,7 +542,14 @@ function UserManagementContent() {
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <Users size={14} className={activeTab === "customers" ? "text-red-600" : "text-slate-400"} />
+                <Users
+                  size={14}
+                  className={
+                    activeTab === "customers"
+                      ? "text-red-600"
+                      : "text-slate-400"
+                  }
+                />
                 <span>Customer</span>
                 <span
                   className={`text-[11px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
@@ -525,7 +571,12 @@ function UserManagementContent() {
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <ShieldCheck size={14} className={activeTab === "staff" ? "text-red-600" : "text-slate-400"} />
+                <ShieldCheck
+                  size={14}
+                  className={
+                    activeTab === "staff" ? "text-red-600" : "text-slate-400"
+                  }
+                />
                 <span>Staff &amp; Roles</span>
                 <span
                   className={`text-[11px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
@@ -545,7 +596,9 @@ function UserManagementContent() {
             {activeTab === "customers" ? (
               <button
                 type="button"
-                onClick={() => router.push(`/customers/new?fresh=${Date.now()}`)}
+                onClick={() =>
+                  router.push(`/customers/new?fresh=${Date.now()}`)
+                }
                 className="inline-flex items-center gap-1.5 px-3.5 h-9 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs shadow-red-600/20 transition cursor-pointer"
               >
                 <UserPlus size={14} />
@@ -578,7 +631,9 @@ function UserManagementContent() {
                 <p className="text-lg font-semibold text-slate-900 leading-tight font-mono">
                   {customers.length}
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium truncate">Client directory registry</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  Client directory registry
+                </p>
               </div>
             </div>
 
@@ -593,7 +648,9 @@ function UserManagementContent() {
                 <p className="text-lg font-semibold text-emerald-600 leading-tight font-mono">
                   {activeCustomerCount}
                 </p>
-                <p className="text-[11px] text-emerald-700 font-semibold truncate">Performing accounts</p>
+                <p className="text-[11px] text-emerald-700 font-semibold truncate">
+                  Performing accounts
+                </p>
               </div>
             </div>
 
@@ -608,7 +665,9 @@ function UserManagementContent() {
                 <p className="text-lg font-semibold text-slate-700 leading-tight font-mono">
                   {inactiveCustomerCount}
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium truncate">No active dues</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  No active dues
+                </p>
               </div>
             </div>
 
@@ -623,7 +682,9 @@ function UserManagementContent() {
                 <p className="text-lg font-semibold text-slate-900 leading-tight font-mono truncate">
                   {MONEY(totalFinanced)}
                 </p>
-                <p className="text-[11px] text-blue-700 font-medium truncate">{loans.length} issued facilities</p>
+                <p className="text-[11px] text-blue-700 font-medium truncate">
+                  {loans.length} issued facilities
+                </p>
               </div>
             </div>
           </div>
@@ -640,7 +701,9 @@ function UserManagementContent() {
                 <p className="text-lg font-semibold text-slate-900 leading-tight font-mono">
                   {staffUsers.length}
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium truncate">Internal operators</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  Internal operators
+                </p>
               </div>
             </div>
 
@@ -650,12 +713,14 @@ function UserManagementContent() {
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Administrators
+                  Admins
                 </p>
                 <p className="text-lg font-semibold text-purple-700 leading-tight font-mono">
                   {staffRoleCounts.admin}
                 </p>
-                <p className="text-[11px] text-purple-700 font-semibold truncate">Tier 1 · Full access</p>
+                <p className="text-[11px] text-purple-700 font-semibold truncate">
+                  Tier 1 · Full access
+                </p>
               </div>
             </div>
 
@@ -665,12 +730,14 @@ function UserManagementContent() {
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Loan Officers
+                  Staff
                 </p>
                 <p className="text-lg font-semibold text-emerald-700 leading-tight font-mono">
-                  {staffRoleCounts.loanOfficer}
+                  {staffRoleCounts.staff}
                 </p>
-                <p className="text-[11px] text-emerald-700 font-semibold truncate">Tier 2 · Credit &amp; Onboarding</p>
+                <p className="text-[11px] text-emerald-700 font-semibold truncate">
+                  Tier 2 · Credit &amp; Onboarding
+                </p>
               </div>
             </div>
 
@@ -680,12 +747,14 @@ function UserManagementContent() {
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                  Field &amp; Audit
+                  Customers
                 </p>
                 <p className="text-lg font-semibold text-amber-700 leading-tight font-mono">
-                  {staffRoleCounts.fieldOrAudit}
+                  {staffRoleCounts.customer}
                 </p>
-                <p className="text-[11px] text-amber-700 font-semibold truncate">Collections &amp; Verification</p>
+                <p className="text-[11px] text-amber-700 font-semibold truncate">
+                  Customer portal access
+                </p>
               </div>
             </div>
           </div>
@@ -715,7 +784,8 @@ function UserManagementContent() {
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5" aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                aria-label="Clear search"
               >
                 <X size={12} />
               </button>
@@ -731,10 +801,8 @@ function UserManagementContent() {
                 className="h-8 px-3 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-semibold focus:outline-none focus:ring-1 focus:ring-red-500 cursor-pointer"
               >
                 <option value="ALL">All Roles ({staffUsers.length})</option>
-                <option value="ADMINISTRATOR">Administrator ({staffRoleCounts.admin})</option>
-                <option value="LOAN OFFICER">Loan Officer ({staffRoleCounts.loanOfficer})</option>
-                <option value="COLLECTION AGENT">Collection Agent</option>
-                <option value="AUDITOR">Auditor</option>
+                <option value="ADMIN">Admin ({staffRoleCounts.admin})</option>
+                <option value="STAFF">Staff ({staffRoleCounts.staff})</option>
               </select>
 
               <button
@@ -744,7 +812,11 @@ function UserManagementContent() {
               >
                 <HelpCircle size={13} className="text-slate-500" />
                 <span>RBAC Guide</span>
-                {isRbacOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {isRbacOpen ? (
+                  <ChevronUp size={12} />
+                ) : (
+                  <ChevronDown size={12} />
+                )}
               </button>
             </div>
           )}
@@ -760,37 +832,48 @@ function UserManagementContent() {
                   Role-Based Access Control Architecture
                 </h3>
               </div>
-              <span className="text-[11px] font-bold text-slate-500">Security Policies Active</span>
+              <span className="text-[11px] font-bold text-slate-500">
+                Security Policies Active
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-200/70 text-xs space-y-1">
                 <span className="text-[11px] font-semibold uppercase text-purple-800 bg-purple-100 px-2 py-0.5 rounded">
-                  Tier 1 · Administrator
+                  Tier 1 · Admin
                 </span>
-                <p className="font-bold text-slate-900 text-xs mt-1">Full System Authority</p>
+                <p className="font-bold text-slate-900 text-xs mt-1">
+                  Full System Authority
+                </p>
                 <p className="text-[11px] text-slate-600">
-                  Loan approval, interest configuration, fee rules, audit trail, user permission overrides.
+                  Loan approval, interest configuration, fee rules, audit trail,
+                  user permission overrides.
                 </p>
               </div>
 
               <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200/70 text-xs space-y-1">
                 <span className="text-[11px] font-semibold uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                  Tier 2 · Loan Officer
+                  Tier 2 · Staff
                 </span>
-                <p className="font-bold text-slate-900 text-xs mt-1">Credit &amp; Collections</p>
+                <p className="font-bold text-slate-900 text-xs mt-1">
+                  Credit &amp; Collections
+                </p>
                 <p className="text-[11px] text-slate-600">
-                  Borrower registration, loan appraisal, document uploads, repayment collections &amp; receipts.
+                  Borrower registration, loan appraisal, document uploads,
+                  repayment collections &amp; receipts.
                 </p>
               </div>
 
               <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/70 text-xs space-y-1">
                 <span className="text-[11px] font-semibold uppercase text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
-                  Tier 3 · Field &amp; Auditor
+                  Customer
                 </span>
-                <p className="font-bold text-slate-900 text-xs mt-1">Operations &amp; Verification</p>
+                <p className="font-bold text-slate-900 text-xs mt-1">
+                  Personal account access
+                </p>
                 <p className="text-[11px] text-slate-600">
-                  Field collections, receipt issuance, audit trail inspection, compliance reporting.
+                  Field collections, receipt issuance, audit trail inspection,
+                  compliance reporting.
                 </p>
               </div>
             </div>
@@ -800,17 +883,36 @@ function UserManagementContent() {
         {/* ═══ VIEW 1: CUSTOMERS (BORROWERS) DIRECTORY TABLE ══════════════════ */}
         {activeTab === "customers" && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <div
+              className="overflow-x-auto min-w-full table-scroll"
+              role="region"
+              aria-label="Scrollable records table"
+              tabIndex={0}
+            >
               <table className="w-full text-left text-xs whitespace-nowrap min-w-[860px] lms-table">
                 <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                   <tr>
-                    <th className="py-3 px-5" scope="col">Customer Profile</th>
-                    <th className="py-3 px-4" scope="col">Customer ID</th>
-                    <th className="py-3 px-4" scope="col">Contact Phone</th>
-                    <th className="py-3 px-4" scope="col">NIC Number</th>
-                    <th className="py-3 px-4" scope="col">Address</th>
-                    <th className="py-3 px-4 text-center" scope="col">Status</th>
-                    <th className="py-3 px-5 text-right" scope="col">Actions</th>
+                    <th className="py-3 px-5" scope="col">
+                      Customer Profile
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Customer ID
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Contact Phone
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      NIC Number
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Address
+                    </th>
+                    <th className="py-3 px-4 text-center" scope="col">
+                      Status
+                    </th>
+                    <th className="py-3 px-5 text-right" scope="col">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -822,10 +924,14 @@ function UserManagementContent() {
                       .slice(0, 2)
                       .join("")
                       .toUpperCase();
-                    const isActive = (c.status || "").toUpperCase() === "ACTIVE";
+                    const isActive =
+                      (c.status || "").toUpperCase() === "ACTIVE";
 
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={c.id}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
                         {/* Avatar & Name */}
                         <td className="py-2.5 px-5">
                           <div className="flex items-center gap-2.5">
@@ -867,7 +973,10 @@ function UserManagementContent() {
                               href={`tel:${c.phone}`}
                               className="text-slate-800 hover:text-red-600 transition inline-flex items-center gap-1"
                             >
-                              <Phone size={11} className="text-slate-400 shrink-0" />
+                              <Phone
+                                size={11}
+                                className="text-slate-400 shrink-0"
+                              />
                               <span>{c.phone}</span>
                             </a>
                           ) : (
@@ -918,7 +1027,8 @@ function UserManagementContent() {
                               type="button"
                               onClick={() => handleOpenEditCustomer(c)}
                               className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
-                              title="Edit Customer Details" aria-label="Edit Customer Details"
+                              title="Edit Customer Details"
+                              aria-label="Edit Customer Details"
                             >
                               <Edit size={13} />
                             </button>
@@ -933,7 +1043,8 @@ function UserManagementContent() {
                               type="button"
                               onClick={() => setDeletingCustomer(c)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                              title="Delete Customer" aria-label="Delete Customer"
+                              title="Delete Customer"
+                              aria-label="Delete Customer"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -948,8 +1059,13 @@ function UserManagementContent() {
               {filteredCustomers.length === 0 && (
                 <div className="p-10 text-center text-slate-500 text-xs space-y-2">
                   <Users size={28} className="mx-auto text-slate-300" />
-                  <p className="font-bold text-slate-700 text-sm">No customer records found</p>
-                  <p>Try modifying your search criteria or register a new customer.</p>
+                  <p className="font-bold text-slate-700 text-sm">
+                    No customer records found
+                  </p>
+                  <p>
+                    Try modifying your search criteria or register a new
+                    customer.
+                  </p>
                 </div>
               )}
             </div>
@@ -959,15 +1075,30 @@ function UserManagementContent() {
         {/* ═══ VIEW 2: STAFF & ROLES DIRECTORY TABLE ═════════════════════════ */}
         {activeTab === "staff" && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto min-w-full table-scroll" role="region" aria-label="Scrollable records table" tabIndex={0}>
+            <div
+              className="overflow-x-auto min-w-full table-scroll"
+              role="region"
+              aria-label="Scrollable records table"
+              tabIndex={0}
+            >
               <table className="w-full text-left text-xs whitespace-nowrap min-w-[860px] lms-table">
                 <thead className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
                   <tr>
-                    <th className="py-3 px-5" scope="col">Staff Member</th>
-                    <th className="py-3 px-4" scope="col">Role &amp; Status</th>
-                    <th className="py-3 px-4" scope="col">Branch Office</th>
-                    <th className="py-3 px-4" scope="col">System Authority Flags</th>
-                    <th className="py-3 px-5 text-right" scope="col">Actions</th>
+                    <th className="py-3 px-5" scope="col">
+                      Staff Member
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Role &amp; Status
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      Branch Office
+                    </th>
+                    <th className="py-3 px-4" scope="col">
+                      System Authority Flags
+                    </th>
+                    <th className="py-3 px-5 text-right" scope="col">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -980,16 +1111,17 @@ function UserManagementContent() {
                       .toUpperCase();
 
                     const roleBadgeColor =
-                      u.role === "Administrator"
+                      u.role === "Admin"
                         ? "bg-purple-50 text-purple-800 border-purple-200"
-                        : u.role === "Loan Officer"
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                        : u.role === "Collection Agent"
-                        ? "bg-amber-50 text-amber-900 border-amber-200"
-                        : "bg-red-50 text-red-800 border-red-200";
+                        : u.role === "Staff"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-red-50 text-red-800 border-red-200";
 
                     return (
-                      <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={u.id}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
                         {/* Staff Profile */}
                         <td className="py-2.5 px-5">
                           <div className="flex items-center gap-2.5">
@@ -1003,7 +1135,9 @@ function UserManagementContent() {
                               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 font-medium">
                                 <span>{u.email}</span>
                                 <span>•</span>
-                                <span className="font-mono font-semibold text-slate-700">{u.id}</span>
+                                <span className="font-mono font-semibold text-slate-700">
+                                  {u.id}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -1012,17 +1146,23 @@ function UserManagementContent() {
                         {/* Role & Status */}
                         <td className="py-2.5 px-4">
                           <div className="flex flex-col gap-0.5 items-start">
-                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${roleBadgeColor}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${roleBadgeColor}`}
+                            >
                               {u.role}
                             </span>
                             <span
                               className={`text-[11px] font-bold flex items-center gap-1 ${
-                                u.status === "Active" ? "text-emerald-700" : "text-slate-500"
+                                u.status === "Active"
+                                  ? "text-emerald-700"
+                                  : "text-slate-500"
                               }`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${
-                                  u.status === "Active" ? "bg-emerald-600" : "bg-slate-400"
+                                  u.status === "Active"
+                                    ? "bg-emerald-600"
+                                    : "bg-slate-400"
                                 }`}
                               />
                               {u.status}
@@ -1033,10 +1173,15 @@ function UserManagementContent() {
                         {/* Branch Office */}
                         <td className="py-2.5 px-4 text-slate-700">
                           <div className="flex items-center gap-1.5 font-semibold text-xs">
-                            <Building size={12} className="text-slate-400 shrink-0" />
+                            <Building
+                              size={12}
+                              className="text-slate-400 shrink-0"
+                            />
                             <span>{u.branch}</span>
                           </div>
-                          <span className="text-[11px] text-slate-400">Joined {u.joinedDate}</span>
+                          <span className="text-[11px] text-slate-400">
+                            Joined {u.joinedDate}
+                          </span>
                         </td>
 
                         {/* Permissions Chips */}
@@ -1089,8 +1234,14 @@ function UserManagementContent() {
                                   : "text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
                               }`}
                             >
-                              {u.status === "Active" ? <UserX size={11} /> : <Check size={11} />}
-                              <span>{u.status === "Active" ? "Disable" : "Enable"}</span>
+                              {u.status === "Active" ? (
+                                <UserX size={11} />
+                              ) : (
+                                <Check size={11} />
+                              )}
+                              <span>
+                                {u.status === "Active" ? "Disable" : "Enable"}
+                              </span>
                             </button>
                           </div>
                         </td>
@@ -1103,7 +1254,9 @@ function UserManagementContent() {
               {filteredStaff.length === 0 && (
                 <div className="p-10 text-center text-slate-500 text-xs space-y-2">
                   <ShieldCheck size={28} className="mx-auto text-slate-300" />
-                  <p className="font-bold text-slate-700 text-sm">No staff personnel found</p>
+                  <p className="font-bold text-slate-700 text-sm">
+                    No staff personnel found
+                  </p>
                   <p>Try modifying your search or role filter.</p>
                 </div>
               )}
@@ -1125,7 +1278,13 @@ function UserManagementContent() {
                     />
                   ) : (
                     <div className="w-11 h-11 rounded-xl bg-red-100 text-red-700 font-semibold text-sm flex items-center justify-center shrink-0">
-                      {(selectedCustomer.fullName || selectedCustomer.name || "C").slice(0, 2).toUpperCase()}
+                      {(
+                        selectedCustomer.fullName ||
+                        selectedCustomer.name ||
+                        "C"
+                      )
+                        .slice(0, 2)
+                        .toUpperCase()}
                     </div>
                   )}
                   <div>
@@ -1133,9 +1292,18 @@ function UserManagementContent() {
                       {selectedCustomer.fullName || selectedCustomer.name}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Borrower ID: <span className="font-mono font-bold text-slate-700">{selectedCustomer.id}</span>
+                      Borrower ID:{" "}
+                      <span className="font-mono font-bold text-slate-700">
+                        {selectedCustomer.id}
+                      </span>
                       {selectedCustomer.nic && (
-                        <span> · NIC: <span className="font-mono font-bold text-slate-700">{selectedCustomer.nic}</span></span>
+                        <span>
+                          {" "}
+                          · NIC:{" "}
+                          <span className="font-mono font-bold text-slate-700">
+                            {selectedCustomer.nic}
+                          </span>
+                        </span>
                       )}
                     </p>
                   </div>
@@ -1144,7 +1312,8 @@ function UserManagementContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedCustomerId(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition cursor-pointer" aria-label="Close"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition cursor-pointer"
+                  aria-label="Close"
                 >
                   <X size={15} />
                 </button>
@@ -1153,19 +1322,25 @@ function UserManagementContent() {
               {/* Financial Snapshot */}
               <div className="grid grid-cols-3 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
                 <div>
-                  <span className="text-[11px] font-bold uppercase text-slate-500 block">Total Borrowed</span>
+                  <span className="text-[11px] font-bold uppercase text-slate-500 block">
+                    Total Borrowed
+                  </span>
                   <span className="text-sm font-semibold font-mono text-slate-900 mt-0.5 block">
                     {MONEY(customerTotalRepayable)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase text-slate-500 block">Total Repaid</span>
+                  <span className="text-[11px] font-bold uppercase text-slate-500 block">
+                    Total Repaid
+                  </span>
                   <span className="text-sm font-semibold font-mono text-emerald-600 mt-0.5 block">
                     {MONEY(customerTotalPaid)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase text-slate-500 block">Outstanding</span>
+                  <span className="text-[11px] font-bold uppercase text-slate-500 block">
+                    Outstanding
+                  </span>
                   <span className="text-sm font-semibold font-mono text-rose-600 mt-0.5 block">
                     {MONEY(customerOutstanding)}
                   </span>
@@ -1198,7 +1373,8 @@ function UserManagementContent() {
                             {l.loanNo || l.id}
                           </p>
                           <p className="text-[11px] text-slate-500 font-mono">
-                            Disbursed: {MONEY(l.principal || l.amount || 0)} · {l.repaymentFrequency || "Monthly"}
+                            Disbursed: {MONEY(l.principal || l.amount || 0)} ·{" "}
+                            {l.repaymentFrequency || "Monthly"}
                           </p>
                         </div>
                         <div className="text-right">
@@ -1207,8 +1383,8 @@ function UserManagementContent() {
                               (l.status || "").toLowerCase() === "active"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : (l.status || "").toLowerCase() === "completed"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-amber-100 text-amber-800"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-amber-100 text-amber-800"
                             }`}
                           >
                             {l.status}
@@ -1237,7 +1413,9 @@ function UserManagementContent() {
                         className="p-2 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center gap-2 text-xs"
                       >
                         <FileText size={14} className="text-red-600 shrink-0" />
-                        <span className="truncate font-semibold text-slate-800">{d.title || d.fileName}</span>
+                        <span className="truncate font-semibold text-slate-800">
+                          {d.title || d.fileName}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1311,89 +1489,169 @@ function UserManagementContent() {
                 <button
                   type="button"
                   onClick={() => setIsEditCustomerModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer" aria-label="Close"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                  aria-label="Close"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               <form onSubmit={handleSaveCustomer} className="space-y-3.5">
-<label className="block text-xs font-bold text-slate-700">New portal password (leave blank to keep current)<input type="password" autoComplete="new-password" minLength={6} value={customerPassword} onChange={e => setCustomerPassword(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl" /></label>
+                <label className="block text-xs font-bold text-slate-700">
+                  New portal password (leave blank to keep current)
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={customerPassword}
+                    onChange={(e) => setCustomerPassword(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl"
+                  />
+                </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-1">Full Name *</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-1"
+                    >
+                      Full Name *
+                    </label>
                     <input
                       type="text"
                       required
                       value={customerForm.fullName}
-                      onChange={(e) => setCustomerForm({ ...customerForm, fullName: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          fullName: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
-                      placeholder="e.g. Sunil Perera" id="field-app-dashboard-users-page-1"
+                      placeholder="e.g. Sunil Perera"
+                      id="field-app-dashboard-users-page-1"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-2">NIC Number *</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-2"
+                    >
+                      NIC Number *
+                    </label>
                     <input
                       type="text"
                       required
                       value={customerForm.nic}
-                      onChange={(e) => setCustomerForm({ ...customerForm, nic: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          nic: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
-                      placeholder="e.g. 198512345678" id="field-app-dashboard-users-page-2"
+                      placeholder="e.g. 198512345678"
+                      id="field-app-dashboard-users-page-2"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-3">Primary Contact Phone *</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-3"
+                    >
+                      Primary Contact Phone *
+                    </label>
                     <input
                       type="text"
                       required
                       value={customerForm.phone}
-                      onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          phone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
-                      placeholder="e.g. 0771234567" id="field-app-dashboard-users-page-3"
+                      placeholder="e.g. 0771234567"
+                      id="field-app-dashboard-users-page-3"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-4">Alternate Phone</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-4"
+                    >
+                      Alternate Phone
+                    </label>
                     <input
                       type="text"
                       value={customerForm.alternatePhone}
-                      onChange={(e) => setCustomerForm({ ...customerForm, alternatePhone: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          alternatePhone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
-                      placeholder="e.g. 0719876543" id="field-app-dashboard-users-page-4"
+                      placeholder="e.g. 0719876543"
+                      id="field-app-dashboard-users-page-4"
                     />
                   </div>
 
                   <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-5">Residential Address</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-5"
+                    >
+                      Residential Address
+                    </label>
                     <input
                       type="text"
                       value={customerForm.address}
-                      onChange={(e) => setCustomerForm({ ...customerForm, address: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          address: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
-                      placeholder="Street address" id="field-app-dashboard-users-page-5"
+                      placeholder="Street address"
+                      id="field-app-dashboard-users-page-5"
                     />
                   </div>
 
-                  
-
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-6">Occupation / Business</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-6"
+                    >
+                      Occupation / Business
+                    </label>
                     <input
                       type="text"
                       value={customerForm.occupation}
-                      onChange={(e) => setCustomerForm({ ...customerForm, occupation: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          occupation: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
-                      placeholder="e.g. Retail Trader" id="field-app-dashboard-users-page-6"
+                      placeholder="e.g. Retail Trader"
+                      id="field-app-dashboard-users-page-6"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-7">Customer Status</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-7"
+                    >
+                      Customer Status
+                    </label>
                     <select
                       value={customerForm.status}
                       onChange={(e) =>
@@ -1402,9 +1660,12 @@ function UserManagementContent() {
                           status: e.target.value as CustomerStatus,
                         })
                       }
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-bold" id="field-app-dashboard-users-page-7"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-bold"
+                      id="field-app-dashboard-users-page-7"
                     >
-                      <option value="Active">Active (Eligible for Loans)</option>
+                      <option value="Active">
+                        Active (Eligible for Loans)
+                      </option>
                       <option value="Inactive">Inactive</option>
                       <option value="SUSPENDED">Suspended / Blacklisted</option>
                     </select>
@@ -1412,24 +1673,46 @@ function UserManagementContent() {
 
                   {/* Guarantor Info */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-8">Guarantor Name</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-8"
+                    >
+                      Guarantor Name
+                    </label>
                     <input
                       type="text"
                       value={customerForm.guarantorName}
-                      onChange={(e) => setCustomerForm({ ...customerForm, guarantorName: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          guarantorName: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
-                      placeholder="Guarantor name" id="field-app-dashboard-users-page-8"
+                      placeholder="Guarantor name"
+                      id="field-app-dashboard-users-page-8"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-9">Guarantor Contact</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-9"
+                    >
+                      Guarantor Contact
+                    </label>
                     <input
                       type="text"
                       value={customerForm.guarantorPhone}
-                      onChange={(e) => setCustomerForm({ ...customerForm, guarantorPhone: e.target.value })}
+                      onChange={(e) =>
+                        setCustomerForm({
+                          ...customerForm,
+                          guarantorPhone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white font-mono"
-                      placeholder="07xxxxxxxx" id="field-app-dashboard-users-page-9"
+                      placeholder="07xxxxxxxx"
+                      id="field-app-dashboard-users-page-9"
                     />
                   </div>
                 </div>
@@ -1477,19 +1760,33 @@ function UserManagementContent() {
                     Delete Customer Profile?
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Are you sure you want to remove <strong>{deletingCustomer.fullName || deletingCustomer.name}</strong> ({deletingCustomer.id}) from the system?
+                    Are you sure you want to remove{" "}
+                    <strong>
+                      {deletingCustomer.fullName || deletingCustomer.name}
+                    </strong>{" "}
+                    ({deletingCustomer.id}) from the system?
                   </p>
                 </div>
               </div>
 
-              {loans.filter((l) => l.customerId === deletingCustomer.id).length > 0 && (
+              {loans.filter((l) => l.customerId === deletingCustomer.id)
+                .length > 0 && (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
                   <div className="flex items-center gap-1.5 font-bold">
-                    <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                    <AlertTriangle
+                      size={14}
+                      className="text-amber-600 shrink-0"
+                    />
                     <span>Active Records Detected</span>
                   </div>
                   <p className="text-[11px] text-amber-800">
-                    This customer currently has {loans.filter((l) => l.customerId === deletingCustomer.id).length} recorded loan facility/facilities. Deleting will remove them from the active customer directory.
+                    This customer currently has{" "}
+                    {
+                      loans.filter((l) => l.customerId === deletingCustomer.id)
+                        .length
+                    }{" "}
+                    recorded loan facility/facilities. Deleting will remove them
+                    from the active customer directory.
                   </p>
                 </div>
               )}
@@ -1519,16 +1816,20 @@ function UserManagementContent() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                   <h3 className="text-base font-semibold text-slate-900">
-                    {editingStaffId ? "Edit Staff User Authority" : "Register New Staff Personnel"}
+                    {editingStaffId
+                      ? "Edit Staff User Authority"
+                      : "Register New Staff Personnel"}
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    Configure staff identity, operational role, and access rights.
+                    Configure staff identity, operational role, and access
+                    rights.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsStaffModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer" aria-label="Close"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                  aria-label="Close"
                 >
                   <X size={16} />
                 </button>
@@ -1537,16 +1838,27 @@ function UserManagementContent() {
               <form onSubmit={handleSaveStaff} className="space-y-3.5">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-10">Staff ID</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-10"
+                    >
+                      Staff ID
+                    </label>
                     <input
                       type="text"
                       value={staffForm.id}
                       disabled
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-mono font-semibold" id="field-app-dashboard-users-page-10"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-mono font-semibold"
+                      id="field-app-dashboard-users-page-10"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-11">Account Status</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-11"
+                    >
+                      Account Status
+                    </label>
                     <select
                       value={staffForm.status}
                       onChange={(e) =>
@@ -1555,7 +1867,8 @@ function UserManagementContent() {
                           status: e.target.value as "Active" | "Inactive",
                         })
                       }
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white" id="field-app-dashboard-users-page-11"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
+                      id="field-app-dashboard-users-page-11"
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
@@ -1564,51 +1877,92 @@ function UserManagementContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-12">Full Legal Name</label>
+                  <label
+                    className="text-xs font-bold text-slate-700"
+                    htmlFor="field-app-dashboard-users-page-12"
+                  >
+                    Full Legal Name
+                  </label>
                   <input
                     type="text"
                     value={staffForm.name}
-                    onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setStaffForm({ ...staffForm, name: e.target.value })
+                    }
                     className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                    required id="field-app-dashboard-users-page-12"
+                    required
+                    id="field-app-dashboard-users-page-12"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-13">Corporate Email</label>
+                  <label
+                    className="text-xs font-bold text-slate-700"
+                    htmlFor="field-app-dashboard-users-page-13"
+                  >
+                    Corporate Email
+                  </label>
                   <input
                     type="email"
                     value={staffForm.email}
-                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setStaffForm({ ...staffForm, email: e.target.value })
+                    }
                     className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold"
-                    required id="field-app-dashboard-users-page-13"
+                    required
+                    id="field-app-dashboard-users-page-13"
                   />
                 </div>
 
-                <label className="block text-xs font-bold text-slate-700">{editingStaffId ? "New password (leave blank to keep current)" : "Password"}
-                  <input type="password" autoComplete="new-password" required={!editingStaffId} minLength={6} value={staffPassword} onChange={e => setStaffPassword(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl" />
+                <label className="block text-xs font-bold text-slate-700">
+                  {editingStaffId
+                    ? "New password (leave blank to keep current)"
+                    : "Password"}
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required={!editingStaffId}
+                    minLength={6}
+                    value={staffPassword}
+                    onChange={(e) => setStaffPassword(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-xl"
+                  />
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-14">Assigned Role</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-14"
+                    >
+                      Assigned Role
+                    </label>
                     <select
                       value={staffForm.role}
-                      onChange={(e) => handleRoleChange(e.target.value as StaffUser["role"])}
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white" id="field-app-dashboard-users-page-14"
+                      onChange={(e) =>
+                        handleRoleChange(e.target.value as StaffUser["role"])
+                      }
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
+                      id="field-app-dashboard-users-page-14"
                     >
-                      <option value="Administrator">Administrator</option>
-                      <option value="Loan Officer">Loan Officer</option>
-                      <option value="Collection Agent">Collection Agent</option>
-                      <option value="Auditor">Auditor</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Staff">Staff</option>
                     </select>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700" htmlFor="field-app-dashboard-users-page-15">Branch Office</label>
+                    <label
+                      className="text-xs font-bold text-slate-700"
+                      htmlFor="field-app-dashboard-users-page-15"
+                    >
+                      Branch Office
+                    </label>
                     <select
                       value={staffForm.branch}
-                      onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white" id="field-app-dashboard-users-page-15"
+                      onChange={(e) =>
+                        setStaffForm({ ...staffForm, branch: e.target.value })
+                      }
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white"
+                      id="field-app-dashboard-users-page-15"
                     >
                       {BRANCH_OPTIONS.map((b) => (
                         <option key={b} value={b}>
@@ -1626,13 +1980,36 @@ function UserManagementContent() {
                   </span>
                   <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
                     {[
-                      { key: "approveLoans" as const, title: "Approve & Disburse Loans", desc: "Authorize pending credit lines" },
-                      { key: "recordRepayments" as const, title: "Record Collections", desc: "Accept payments & generate receipts" },
-                      { key: "exportReports" as const, title: "Export Financial Reports", desc: "Download CSV journals & audits" },
-                      { key: "manageCustomers" as const, title: "Manage Borrowers", desc: "Register & edit customer details" },
-                      { key: "manageSettings" as const, title: "System Configurations", desc: "Modify policy interest rates" },
+                      {
+                        key: "approveLoans" as const,
+                        title: "Approve & Disburse Loans",
+                        desc: "Authorize pending credit lines",
+                      },
+                      {
+                        key: "recordRepayments" as const,
+                        title: "Record Collections",
+                        desc: "Accept payments & generate receipts",
+                      },
+                      {
+                        key: "exportReports" as const,
+                        title: "Export Financial Reports",
+                        desc: "Download CSV journals & audits",
+                      },
+                      {
+                        key: "manageCustomers" as const,
+                        title: "Manage Borrowers",
+                        desc: "Register & edit customer details",
+                      },
+                      {
+                        key: "manageSettings" as const,
+                        title: "System Configurations",
+                        desc: "Modify policy interest rates",
+                      },
                     ].map((item) => (
-                      <label key={item.key} className="flex items-center gap-2 cursor-pointer">
+                      <label
+                        key={item.key}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                         <input
                           type="checkbox"
                           checked={staffForm.permissions[item.key]}
@@ -1648,8 +2025,12 @@ function UserManagementContent() {
                           className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                         />
                         <div className="leading-tight">
-                          <span className="font-bold text-slate-900 block">{item.title}</span>
-                          <span className="text-[11px] text-slate-500">{item.desc}</span>
+                          <span className="font-bold text-slate-900 block">
+                            {item.title}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {item.desc}
+                          </span>
                         </div>
                       </label>
                     ))}
@@ -1693,4 +2074,3 @@ export default function UserManagementPage() {
     </Suspense>
   );
 }
-

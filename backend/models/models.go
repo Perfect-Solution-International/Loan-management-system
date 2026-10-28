@@ -21,7 +21,7 @@ type User struct {
 	Email        string           `json:"email"`
 	PasswordHash string           `json:"-"`
 	Password     string           `json:"password,omitempty"`
-	Role         string           `json:"role"` // Administrator, Loan Officer, Collection Agent, Auditor
+	Role         string           `json:"role"` // Admin, Staff, Customer
 	Branch       string           `json:"branch"`
 	Status       string           `json:"status"` // Active, Inactive
 	JoinedDate   string           `json:"joinedDate"`

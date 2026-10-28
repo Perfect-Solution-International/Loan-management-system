@@ -33,9 +33,9 @@ export default function RepaymentsCollectionsPage() {
     getNextReceiptNo,
   } = useData();
 
-  // RBAC: Check if current logged-in user is an Administrator
+  // RBAC: Check if current logged-in user is an Admin
   const { currentUser } = useData();
-  const isAdmin = currentUser?.role === "Administrator";
+  const isAdmin = currentUser?.role === "Admin";
 
   const [selectedLoanId, setSelectedLoanId] = useState<string>(
     loans.find((l) => l.status === "Active" || l.status === "Overdue")?.id || loans[0]?.id || ""

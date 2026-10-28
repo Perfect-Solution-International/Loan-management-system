@@ -84,6 +84,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 	query := `
 		SELECT id, name, email, role, branch, status, joined_date, permissions, created_at, updated_at
 		FROM users
+		WHERE role IN ('Admin', 'Staff')
 		ORDER BY created_at DESC
 	`
 	rows, err := r.db.Query(query)
