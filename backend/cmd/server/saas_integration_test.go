@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -25,6 +26,21 @@ import (
 )
 
 type uncertainCheckoutProvider struct{ billing.TestProvider }
+
+type onePayClaimFixture struct {
+	billing.TestProvider
+	calls atomic.Int64
+	fail  bool
+}
+
+func (*onePayClaimFixture) Name() string { return "onepay" }
+func (p *onePayClaimFixture) Create(_ context.Context, payment billing.Payment) (string, string, error) {
+	p.calls.Add(1)
+	if p.fail {
+		return "", "", errors.New("uncertain response")
+	}
+	return "onepay_" + payment.ID, "https://checkout.onepay.lk/test", nil
+}
 
 func (uncertainCheckoutProvider) Create(context.Context, billing.Payment) (string, string, error) {
 	return "", "", errors.New("provider response timed out")
@@ -83,7 +99,7 @@ func TestSaaSIntegration(t *testing.T) {
 		}
 	}
 	for _, file := range files {
-		if !strings.HasPrefix(filepath.Base(file), "011_") {
+		if filepath.Base(file) < "011_" {
 			apply(file)
 		}
 	}
@@ -103,6 +119,11 @@ func TestSaaSIntegration(t *testing.T) {
 		before[table] = data
 	}
 	apply(filepath.Join("..", "..", "database", "migrations", "011_saas_subscriptions.sql"))
+	for _, file := range files {
+		if filepath.Base(file) > "011_saas_subscriptions.sql" {
+			apply(file)
+		}
+	}
 	run("migration_preserves_existing_records", func(t *testing.T) {
 		for _, table := range tables {
 			var data string
@@ -249,6 +270,30 @@ func TestSaaSIntegration(t *testing.T) {
 		}
 		call("PUT", "/api/platform/plans/"+id, platform, p, 200)
 	}
+	run("onepay_claim_survives_concurrent_requests_and_uncertain_outcomes", func(t *testing.T) {
+		for _, fail := range []bool{false, true} {
+			org := reg("OnePay fixture", fmt.Sprintf("onepay-%v@test.local", fail))
+			provider := &onePayClaimFixture{fail: fail}
+			repo := repository.NewBillingRepository(root)
+			var wg sync.WaitGroup
+			for i := 0; i < 8; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					_, _ = repo.Checkout(context.Background(), org["organizationId"], monthID, uuid.NewString(), provider)
+				}()
+			}
+			wg.Wait()
+			_, _ = repo.Checkout(context.Background(), org["organizationId"], monthID, uuid.NewString(), provider)
+			if provider.calls.Load() != 1 {
+				t.Fatalf("created %d external checkouts", provider.calls.Load())
+			}
+			var count int
+			if err := db.QueryRow(`SELECT count(*) FROM subscription_payments WHERE organization_id=$1 AND checkout_started_at IS NOT NULL AND status='pending'`, org["organizationId"]).Scan(&count); err != nil || count != 1 {
+				t.Fatalf("saved claim lost: %d %v", count, err)
+			}
+		}
+	})
 	run("expired_trial_preserves_recordkeeping", func(t *testing.T) {
 		// Explicit maintenance fixture in this disposable schema; public/runtime roles
 		// cannot alter trial timestamps. Both original timestamps move together.

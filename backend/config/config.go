@@ -21,6 +21,9 @@ type Config struct {
 	AllowedOrigins    []string
 	BillingProvider   string
 	BillingTestSecret string
+	OnePayAppID       string
+	OnePayHashSalt    string
+	OnePayReturnURL   string
 }
 
 func LoadConfig() *Config {
@@ -53,6 +56,9 @@ func LoadConfig() *Config {
 		AllowedOrigins:    allowed,
 		BillingProvider:   getEnv("BILLING_PROVIDER", ""),
 		BillingTestSecret: getEnv("BILLING_TEST_WEBHOOK_SECRET", ""),
+		OnePayAppID:       getEnv("ONEPAY_APP_ID", ""),
+		OnePayHashSalt:    getEnv("ONEPAY_HASH_SALT", ""),
+		OnePayReturnURL:   getEnv("ONEPAY_RETURN_URL", ""),
 	}
 }
 

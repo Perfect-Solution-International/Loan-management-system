@@ -69,10 +69,30 @@ func (r *BillingRepository) Checkout(ctx context.Context, org, planID, key strin
 	if p.Provider != provider.Name() {
 		return empty, errors.New("pending checkout belongs to a different provider; contact support for reconciliation")
 	}
-	// The provider must use p.ID as its idempotency key, including concurrent retries.
+	if provider.Name() == "onepay" {
+		if validator, ok := provider.(interface {
+			Validate(context.Context, billing.Payment) error
+		}); ok {
+			if err := validator.Validate(ctx, p); err != nil {
+				return p, err
+			}
+		}
+		result, claimErr := r.db.ExecContext(ctx, `UPDATE subscription_payments SET checkout_started_at=NOW() WHERE id=$1 AND checkout_started_at IS NULL AND provider_session_id IS NULL`, p.ID)
+		if claimErr != nil {
+			return p, claimErr
+		}
+		count, claimErr := result.RowsAffected()
+		if claimErr != nil {
+			return p, claimErr
+		}
+		if count != 1 {
+			return p, errors.New("OnePay checkout is already being prepared or requires reconciliation; open the saved payment from billing history")
+		}
+	}
+	// Providers with documented idempotency may retry; OnePay uses the claim above.
 	session, url, err := provider.Create(ctx, p)
 	if err != nil {
-		return p, fmt.Errorf("checkout outcome uncertain; retry this saved attempt: %w", err)
+		return p, fmt.Errorf("checkout outcome uncertain; retain this saved attempt for reconciliation: %w", err)
 	}
 	if session == "" || url == "" {
 		return p, errors.New("provider returned an incomplete checkout; saved attempt requires reconciliation")

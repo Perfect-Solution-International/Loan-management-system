@@ -1,6 +1,6 @@
 # PSI ONE Loan Management System - Go & PostgreSQL Backend
 
-For organization ownership, subscriptions, the versioned migration runner, platform administrators and payment configuration, see [the SaaS deployment guide](../docs/saas-subscriptions.md). Apply migration 011 before starting this backend. Live subscription checkout is disabled by default; the included adapter is development-only.
+For organization ownership, subscriptions, the versioned migration runner, platform administrators and payment configuration, see [the SaaS deployment guide](../docs/saas-subscriptions.md). Apply all versioned migrations before starting this backend. Subscription checkout is disabled by default; see [OnePay setup](../docs/onepay-billing.md) to configure hosted payments.
 
 Microfinance & Loan Management System එක සඳහා Go (Golang) සහ PostgreSQL පදනම් කරගත් high-performance, production-ready REST API backend එක.
 

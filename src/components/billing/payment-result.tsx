@@ -27,7 +27,15 @@ export function PaymentResult({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const load = useCallback(async () => {
-    const p = await billingApi.payment(paymentId);
+    let p = await billingApi.payment(paymentId);
+    if (
+      p.provider === "onepay" &&
+      p.status === "pending" &&
+      p.providerSessionId
+    ) {
+      setPayment(p);
+      p = await billingApi.reconcile(paymentId);
+    }
     setPayment(p);
     setError("");
     if (p.status !== "pending")
@@ -43,11 +51,18 @@ export function PaymentResult({
   useEffect(() => {
     if (!paymentId || currentUser?.role !== "Admin") return;
     let live = true;
+    let loading = false;
     const reload = () => {
-      if (live)
-        void load().catch((e) => {
-          if (live) setError(e.message);
-        });
+      if (live && !loading) {
+        loading = true;
+        void load()
+          .catch((e) => {
+            if (live) setError(e.message);
+          })
+          .finally(() => {
+            loading = false;
+          });
+      }
     };
     reload();
     const timer = window.setInterval(reload, 5000);

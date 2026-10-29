@@ -45,6 +45,7 @@ func newRouter(db *database.DB, cfg *config.Config) http.Handler {
 		admin.Post("/api/billing/renew", billing.Checkout)
 		admin.Post("/api/billing/cancel", billing.Cancel)
 		admin.Post("/api/billing/payments/{id}/test-complete", billing.TestComplete)
+		admin.Post("/api/billing/payments/{id}/reconcile", billing.Reconcile)
 	})
 	r.Group(func(platform chi.Router) {
 		platform.Use(middleware.AuthMiddleware(cfg), billing.RequirePlatform)

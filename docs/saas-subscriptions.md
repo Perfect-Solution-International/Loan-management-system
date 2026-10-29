@@ -72,7 +72,7 @@ The existing administrator recovery command now requires `ADMIN_ORGANIZATION_ID`
 
 ## Payment configuration and invariants
 
-**No live gateway is selected or implemented.** Paid plan prices and currencies start unset/inactive. The platform UI at `/platform` sets price, currency, currency exponent and publication state. A yearly discount is displayed only if explicitly entered. Changing plan pricing affects future checkout snapshots; saved attempts retain their original amount, currency, interval and exponent. All amounts use integer minor units.
+**OnePay hosted checkout is implemented; merchant configuration is required.** See [OnePay setup and verification](onepay-billing.md). Paid plan prices and currencies start unset/inactive. The platform UI at `/platform` sets price, currency, currency exponent and publication state. A yearly discount is displayed only if explicitly entered. Changing plan pricing affects future checkout snapshots; saved attempts retain their original amount, currency, interval and exponent. All amounts use integer minor units.
 
 Default `BILLING_PROVIDER=` leaves checkout disabled (503). The development adapter requires all of:
 
@@ -82,9 +82,9 @@ BILLING_PROVIDER=test
 BILLING_TEST_WEBHOOK_SECRET=<generate a separate random value of at least 32 characters>
 ```
 
-In production, leave the provider blank until a live implementation has been added. The server rejects test mode in production; test webhook/completion endpoints return 404 and cannot grant live access. Production also requires a unique `JWT_SECRET` of at least 32 characters.
+For OnePay, configure `BILLING_PROVIDER=onepay` and the backend credentials and HTTPS return URL described in the OnePay guide. Leave the provider blank to disable checkout. The server rejects test mode in production; test webhook/completion endpoints return 404 and cannot grant live access. Production also requires a unique `JWT_SECRET` of at least 32 characters.
 
-`billing.Provider` defines hosted checkout creation, verified event handling and recurring capability. Implement an approved provider in this layer and explicitly select it in the handler's provider factory. Before enabling it:
+`billing.Provider` defines hosted checkout creation, verified event handling and recurring capability. The OnePay adapter uses the documented hosted checkout and status APIs. For additional providers, implement their approved contract in this layer. Provider requirements:
 
 - Configure its actual sandbox/live credentials, supported currencies, signature verification and merchant account settings on the backend.
 - Use `Payment.ID` as the provider's idempotency key. Persist attempts before contacting the gateway. Retrying an uncertain timeout must retrieve/recreate the same provider session, never charge a fresh attempt. Pending attempts are not aged into failure without provider evidence.

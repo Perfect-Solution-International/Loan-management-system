@@ -14,6 +14,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"loan-management-backend/billing"
 	"loan-management-backend/config"
 	"loan-management-backend/database"
 	"loan-management-backend/handlers"
@@ -43,8 +44,13 @@ func main() {
 			log.Fatalf("SaaS database configuration: %v", err)
 		}
 	}
-	if cfg.BillingProvider != "" && (cfg.BillingProvider != "test" || cfg.Env != "development" || len(cfg.BillingTestSecret) < 32) {
-		log.Fatal("BILLING_PROVIDER is unsupported or unsafe: only an explicitly configured development test provider is available")
+	if cfg.BillingProvider == "onepay" {
+		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL}
+		if err := provider.ValidateConfig(); err != nil {
+			log.Fatal(err)
+		}
+	} else if cfg.BillingProvider != "" && (cfg.BillingProvider != "test" || cfg.Env != "development" || len(cfg.BillingTestSecret) < 32) {
+		log.Fatal("BILLING_PROVIDER must be blank, onepay, or an explicitly configured development test provider")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

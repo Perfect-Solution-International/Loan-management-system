@@ -37,6 +37,28 @@ func NewBillingHandler(db *database.DB, cfg *config.Config) *BillingHandler {
 	if cfg.Env == "development" && cfg.BillingProvider == "test" && len(cfg.BillingTestSecret) >= 32 {
 		h.provider = &billing.TestProvider{Secret: cfg.BillingTestSecret}
 	}
+	if cfg.BillingProvider == "onepay" {
+		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL}
+		provider.Contact = func(ctx context.Context, org string) (billing.BillingContact, error) {
+			var contact billing.BillingContact
+			err := db.QueryRowContext(ctx, `SELECT COALESCE(u.name,o.name),o.email,o.phone FROM organizations o LEFT JOIN users u ON u.id=o.owner_id AND u.organization_id=o.id WHERE o.id=$1`, org).Scan(&contact.Name, &contact.Email, &contact.Phone)
+			contact.Phone = strings.NewReplacer(" ", "", "-", "", "(", "", ")", "").Replace(contact.Phone)
+			if len(contact.Phone) == 10 && strings.HasPrefix(contact.Phone, "0") {
+				contact.Phone = "+94" + contact.Phone[1:]
+			}
+			return contact, err
+		}
+		provider.Lookup = func(ctx context.Context, session string) (billing.Payment, error) {
+			var org, id string
+			if err := db.QueryRowContext(ctx, `SELECT organization_id,id FROM subscription_payments WHERE provider='onepay' AND provider_session_id=$1`, session).Scan(&org, &id); err != nil {
+				return billing.Payment{}, err
+			}
+			return h.repo.Payment(org, id)
+		}
+		if provider.ValidateConfig() == nil {
+			h.provider = provider
+		}
+	}
 	return h
 }
 func billingFail(w http.ResponseWriter, err error) {
@@ -214,15 +236,59 @@ func (h *BillingHandler) Webhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	e, err := h.provider.Verify(r.Context(), r.Header, body)
-	if err != nil {
-		sendJSON(w, 401, map[string]string{"error": "Payment provider verification failed"})
+	if errors.Is(err, billing.ErrPaymentPending) {
+		sendJSON(w, 200, map[string]bool{"received": true})
 		return
+	}
+	if err != nil {
+		status := http.StatusUnauthorized
+		if h.provider.Name() == "onepay" {
+			status = http.StatusServiceUnavailable
+		}
+		sendJSON(w, status, map[string]string{"error": "Payment provider verification could not be completed"})
+		return
+	}
+	if h.provider.Name() == "onepay" {
+		body, _ = json.Marshal(e)
 	}
 	if err = h.repo.ApplyVerifiedEvent(r.Context(), h.provider.Name(), e, body); err != nil {
 		billingFail(w, err)
 		return
 	}
 	sendJSON(w, 200, map[string]bool{"received": true})
+}
+
+// Explicit authenticated reconciliation also handles a delayed/missed callback.
+func (h *BillingHandler) Reconcile(w http.ResponseWriter, r *http.Request) {
+	p, err := h.repo.Payment(orgClaims(r).OrganizationID, chi.URLParam(r, "id"))
+	if err != nil {
+		billingFail(w, err)
+		return
+	}
+	if p.Provider != "onepay" || p.Status == "succeeded" || p.SessionID == nil {
+		sendJSON(w, 200, p)
+		return
+	}
+	if h.provider == nil || h.provider.Name() != "onepay" {
+		sendJSON(w, 503, map[string]string{"error": "OnePay is unavailable"})
+		return
+	}
+	body, _ := json.Marshal(map[string]string{"transaction_id": *p.SessionID})
+	e, err := h.provider.Verify(r.Context(), nil, body)
+	if errors.Is(err, billing.ErrPaymentPending) {
+		sendJSON(w, 200, p)
+		return
+	}
+	if err != nil {
+		sendJSON(w, 503, map[string]string{"error": "Unable to confirm payment with OnePay. Your saved payment is retained."})
+		return
+	}
+	canonical, _ := json.Marshal(e)
+	if err = h.repo.ApplyVerifiedEvent(r.Context(), "onepay", e, canonical); err != nil {
+		billingFail(w, err)
+		return
+	}
+	h.Payment(w, r)
 }
 func (h *BillingHandler) TestComplete(w http.ResponseWriter, r *http.Request) {
 	test, ok := h.provider.(*billing.TestProvider)
