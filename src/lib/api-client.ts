@@ -14,8 +14,8 @@ export function saveSession(token: string, kind: "staff" | "customer") {
   clearSession(); sessionStorage.setItem("psi_token", token); sessionStorage.setItem("psi_session_kind", kind);
   window.dispatchEvent(new Event("psi-session"));
 }
-async function request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
-  const token = getToken();
+export async function request<T>(path: string, method = "GET", body?: unknown, tokenOverride?: string | null): Promise<T> {
+  const token = tokenOverride === undefined ? getToken() : tokenOverride;
   let response: Response;
   try {
     response = await fetch(API_BASE_URL + path, { method, cache: "no-store", headers: {
@@ -26,7 +26,8 @@ async function request<T>(path: string, method = "GET", body?: unknown): Promise
   let data: unknown;
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
   if (!response.ok) {
-    if (response.status === 401 && token && !path.endsWith("/login")) clearSession();
+    if (response.status === 401 && token && tokenOverride === undefined && !path.endsWith("/login")) clearSession();
+    if (response.status === 402 && typeof window !== "undefined") window.dispatchEvent(new Event("psi-subscription-required"));
     const message = data && typeof data === "object" && "error" in data ? String(data.error) : "Request failed (" + response.status + ")";
     throw new ApiError(message, response.status);
   }
@@ -40,8 +41,8 @@ const query = (values: Record<string, string | undefined>) => {
 export interface PortalSnapshot { customer: Customer; loans: Loan[]; payments: Payment[]; onlinePayments: OnlinePayment[]; settings: SystemSettings }
 export const api = {
   login: (email: string, password: string) => request<{token: string; user: StaffUser}>("/auth/login", "POST", {email, password}),
-  customerLogin: (identifier: string, password: string) => request<{token: string; customer: Customer}>("/portal/login", "POST", {identifier, password}),
-  register: (body: {name: string; username: string; email: string; password: string}) => request<Customer>("/portal/register", "POST", body),
+  customerLogin: (identifier: string, password: string, organizationId?: string) => request<{token: string; customer: Customer}>("/portal/login", "POST", {identifier, password, organizationId}),
+  register: (body: {name: string; username: string; email: string; password: string; organizationId?: string}) => request<Customer>("/portal/register", "POST", body),
   getMe: () => request<StaffUser>("/auth/me"),
   getPortal: () => request<PortalSnapshot>("/portal/me"),
   getCustomers: () => request<Customer[]>("/customers"),

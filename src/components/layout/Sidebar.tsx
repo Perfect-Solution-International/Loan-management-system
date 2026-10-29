@@ -292,7 +292,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
               </p>
 
               <nav className="space-y-1" aria-label={section.title}>
-                {section.items.map((item) => {
+                {[...section.items, ...(section.title === 'SYSTEM & INSIGHTS' && currentUser?.role === 'Admin' ? [{name: 'Subscription & Billing', href: '/dashboard/billing', icon: CreditCard, badge: undefined, badgeVariant: undefined}] : [])].map((item) => {
                   const Icon = item.icon;
                   const active = isPathActive(pathname, item.href);
 

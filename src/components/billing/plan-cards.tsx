@@ -1,0 +1,21 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { Check, ArrowRight } from "lucide-react";
+import { money, type PlansResponse, type SubscriptionPlan } from "@/lib/billing-api";
+
+export function PlanCards({data, onSelect, busy = false, includeTrial = true}: {data: PlansResponse; onSelect?: (plan: SubscriptionPlan) => void; busy?: boolean; includeTrial?: boolean}) {
+ const [interval, setInterval] = useState<"month" | "year">("month");
+ const paid = data.plans.filter(p => p.billingInterval === interval);
+ return <div className="space-y-5">
+  <div className="flex flex-wrap items-center justify-between gap-3"><div role="group" aria-label="Billing frequency" className="inline-flex rounded-xl border border-slate-200 bg-white p-1">{(["month", "year"] as const).map(value => <button key={value} type="button" aria-pressed={interval === value} onClick={() => setInterval(value)} className={`rounded-lg px-5 py-2 text-sm font-semibold ${interval === value ? "bg-red-600 text-white" : "text-slate-600"}`}>{value === "month" ? "Monthly" : "Yearly"}</button>)}</div><p className="text-xs text-slate-500">Subscriptions cover your lending organization.</p></div>
+  <div className={`grid gap-5 ${includeTrial ? "md:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+   {includeTrial && <section className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Start with confidence</p><h2 className="mt-3 text-xl font-semibold">7-day free trial</h2><p className="mt-4 text-3xl font-bold text-slate-900">Free</p><p className="mt-2 text-sm text-slate-500">7 days from organization registration. No card required.</p><Features /><Link href="/register" className="btn btn-primary mt-6 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold">Start Free Trial <ArrowRight size={16} /></Link></section>}
+   {paid.length ? paid.map(plan => <section key={plan.id} className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm"><p className="text-xs font-semibold uppercase tracking-widest text-red-700">{interval === "month" ? "One calendar month" : "Twelve calendar months"}</p><h2 className="mt-3 text-xl font-semibold">{plan.name}</h2><p className="mt-4 text-3xl font-bold text-slate-900">{money(plan.amountMinor, plan.currency, plan.currencyExponent)}</p><p className="mt-2 text-sm text-slate-500">per {interval === "month" ? "month" : "year"} / organization</p>{plan.yearlyDiscountPercent !== null && interval === "year" && <p className="mt-2 text-sm font-semibold text-red-700">Configured yearly discount: {plan.yearlyDiscountPercent}%</p>}<Features />{onSelect ? <button type="button" disabled={busy || !data.paymentsEnabled} onClick={() => onSelect(plan)} className="btn btn-primary mt-6 rounded-xl px-5 py-3 text-sm font-semibold disabled:opacity-50">{busy ? "Preparing checkout…" : "Subscribe / renew"}</button> : <Link href="/dashboard/billing" className="btn btn-primary mt-6 inline-flex rounded-xl px-5 py-3 text-sm font-semibold">Subscribe</Link>}</section>) : <section className="rounded-2xl border border-slate-200 bg-white p-6"><h2 className="text-xl font-semibold">{interval === "month" ? "Monthly" : "Yearly"} subscription</h2><p className="mt-4 text-lg font-semibold text-slate-700">Pricing will be published here</p><p className="mt-2 text-sm text-slate-500">Contact the platform administrator for availability.</p><Features /></section>}
+  </div>
+  {!data.paymentsEnabled && <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Online subscription payments are not configured yet. Your organization can still start its free trial.</p>}
+  {data.testMode && <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Development payment testing is enabled. No real money will be charged.</p>}
+ </div>;
+}
+function Features() {return <ul className="mt-6 space-y-3 text-sm text-slate-600">{["Customer, loan and repayment management", "Staff access governed by your permissions", "Reports, audit logs and customer portal", "Your organization's data stays isolated"].map(text => <li key={text} className="flex items-start gap-2"><Check size={16} className="mt-0.5 shrink-0 text-red-600" />{text}</li>)}</ul>;}

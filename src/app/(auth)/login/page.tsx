@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -28,6 +29,7 @@ export default function LoginPage() {
   // Unified login credentials state
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedPortal, setSelectedPortal] = useState<
@@ -48,7 +50,7 @@ export default function LoginPage() {
         return { token: result.token, role: result.user.role, id: result.user.id };
       };
       const authenticateCustomer = async () => {
-        const result = await api.customerLogin(identifier.trim(), password);
+        const result = await api.customerLogin(identifier.trim(), password, organizationId.trim() || undefined);
         return { token: result.token, role: "Customer" as const, id: result.customer.id };
       };
       // Accounts are authenticated by separate backend endpoints. The selected
@@ -298,6 +300,7 @@ export default function LoginPage() {
               />
             </div>
 
+            {selectedPortal === "customer" && <details className="mb-3 text-xs text-slate-500"><summary className="cursor-pointer">Organization ID (if supplied by your lender)</summary><input aria-label="Organization ID" value={organizationId} onChange={e => setOrganizationId(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 p-2" /></details>}
             <div className="login-password-heading">
               <label htmlFor="login-password">Password</label>
               <button
@@ -354,6 +357,7 @@ export default function LoginPage() {
               Sign in
               <ArrowRight size={18} />
             </button>
+            <div className="mt-3 flex flex-wrap justify-between gap-2 text-xs"><Link href={selectedPortal === "customer" ? "/customer-register" : "/register"} className="font-semibold text-red-700">{selectedPortal === "customer" ? "Create customer account" : "Start organization free trial"}</Link>{selectedPortal !== "customer" && <Link href="/pricing" className="text-slate-500">View plans</Link>}</div>
           </form>
 
           <div className="login-security-note">
