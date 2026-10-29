@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -20,6 +24,9 @@ import (
 func main() {
 	// 1. Load configuration
 	cfg := config.LoadConfig()
+	if cfg.Env == "production" && (len(cfg.JWTSecret) < 32 || cfg.JWTSecret == "super-secret-jwt-key-loan-mgmt-system-psi-2026") {
+		log.Fatal("Configure a unique JWT_SECRET of at least 32 characters in production")
+	}
 
 	log.Println("==================================================")
 	log.Println(" Starting PSI ONE Loan Management Backend (Go/PostgreSQL)")
@@ -32,6 +39,31 @@ func main() {
 		log.Println("👉 Please ensure PostgreSQL is running and check your .env settings.")
 	} else {
 		defer db.Close()
+		if err := db.ValidateSaaS(); err != nil {
+			log.Fatalf("SaaS database configuration: %v", err)
+		}
+	}
+	if cfg.BillingProvider != "" && (cfg.BillingProvider != "test" || cfg.Env != "development" || len(cfg.BillingTestSecret) < 32) {
+		log.Fatal("BILLING_PROVIDER is unsupported or unsafe: only an explicitly configured development test provider is available")
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if db != nil {
+		billingRepo := repository.NewBillingRepository(db)
+		go func() {
+			ticker := time.NewTicker(time.Minute)
+			defer ticker.Stop()
+			for {
+				if err := billingRepo.Sweep(ctx); err != nil && ctx.Err() == nil {
+					log.Printf("Billing maintenance: %v", err)
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+				}
+			}
+		}()
 	}
 
 	r := newRouter(db, cfg)
@@ -39,13 +71,20 @@ func main() {
 	// 6. Start HTTP Server
 	serverAddr := ":" + cfg.Port
 	log.Printf("🚀 Server listening on http://localhost%s", serverAddr)
-	if err := http.ListenAndServe(serverAddr, r); err != nil && err != http.ErrServerClosed {
+	server := &http.Server{Addr: serverAddr, Handler: r, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 45 * time.Second, IdleTimeout: 60 * time.Second}
+	go func() {
+		<-ctx.Done()
+		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdown)
+	}()
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
 		os.Exit(1)
 	}
 }
 
-func newRouter(db *database.DB, cfg *config.Config) http.Handler {
+func legacyRouter(db *database.DB, cfg *config.Config) http.Handler {
 	// 3. Initialize Repositories
 	userRepo := repository.NewUserRepository(db)
 	custRepo := repository.NewCustomerRepository(db)

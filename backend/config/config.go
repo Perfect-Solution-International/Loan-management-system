@@ -9,16 +9,18 @@ import (
 )
 
 type Config struct {
-	Port           string
-	Env            string
-	DBHost         string
-	DBPort         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	DBSSLMode      string
-	JWTSecret      string
-	AllowedOrigins []string
+	Port              string
+	Env               string
+	DBHost            string
+	DBPort            string
+	DBUser            string
+	DBPassword        string
+	DBName            string
+	DBSSLMode         string
+	JWTSecret         string
+	AllowedOrigins    []string
+	BillingProvider   string
+	BillingTestSecret string
 }
 
 func LoadConfig() *Config {
@@ -39,16 +41,18 @@ func LoadConfig() *Config {
 	allowed := strings.Split(getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"), ",")
 
 	return &Config{
-		Port:           port,
-		Env:            env,
-		DBHost:         dbHost,
-		DBPort:         dbPort,
-		DBUser:         dbUser,
-		DBPassword:     dbPass,
-		DBName:         dbName,
-		DBSSLMode:      dbSSL,
-		JWTSecret:      jwtSecret,
-		AllowedOrigins: allowed,
+		Port:              port,
+		Env:               env,
+		DBHost:            dbHost,
+		DBPort:            dbPort,
+		DBUser:            dbUser,
+		DBPassword:        dbPass,
+		DBName:            dbName,
+		DBSSLMode:         dbSSL,
+		JWTSecret:         jwtSecret,
+		AllowedOrigins:    allowed,
+		BillingProvider:   getEnv("BILLING_PROVIDER", ""),
+		BillingTestSecret: getEnv("BILLING_TEST_WEBHOOK_SECRET", ""),
 	}
 }
 
