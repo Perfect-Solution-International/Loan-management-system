@@ -59,6 +59,8 @@ export interface SubscriptionSnapshot {
   organizationName: string;
   organizationStatus: string;
   paymentsEnabled: boolean;
+  provider?: string;
+  configError?: string | null;
   testMode: boolean;
   recurring: boolean;
 }
@@ -71,6 +73,8 @@ export interface BillingNotification {
 export interface PlansResponse {
   plans: SubscriptionPlan[];
   paymentsEnabled: boolean;
+  provider?: string;
+  configError?: string | null;
   testMode: boolean;
   recurring: boolean;
 }

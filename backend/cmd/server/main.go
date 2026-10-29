@@ -44,12 +44,14 @@ func main() {
 			log.Fatalf("SaaS database configuration: %v", err)
 		}
 	}
-	if cfg.BillingProvider == "onepay" {
-		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL}
+	if cfg.BillingProviderName() == "onepay" {
+		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL, AppToken: cfg.OnePayAppToken, APIBase: cfg.OnePayAPIBase}
 		if err := provider.ValidateConfig(); err != nil {
-			log.Fatal(err)
+			log.Printf("OnePay checkout disabled: %v", err)
+		} else {
+			log.Println("💳 OnePay payment gateway configured and active")
 		}
-	} else if cfg.BillingProvider != "" && (cfg.BillingProvider != "test" || cfg.Env != "development" || len(cfg.BillingTestSecret) < 32) {
+	} else if cfg.BillingProviderName() != "" && cfg.BillingProviderName() != "disabled" && (cfg.BillingProviderName() != "test" || cfg.Env != "development" || len(cfg.BillingTestSecret) < 32) {
 		log.Fatal("BILLING_PROVIDER must be blank, onepay, or an explicitly configured development test provider")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

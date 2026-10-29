@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -292,6 +294,139 @@ func TestSaaSIntegration(t *testing.T) {
 			if err := db.QueryRow(`SELECT count(*) FROM subscription_payments WHERE organization_id=$1 AND checkout_started_at IS NOT NULL AND status='pending'`, org["organizationId"]).Scan(&count); err != nil || count != 1 {
 				t.Fatalf("saved claim lost: %d %v", count, err)
 			}
+		}
+	})
+
+	run("onepay_configuration_and_monthly_yearly_verified_checkout", func(t *testing.T) {
+		oneCfg := &config.Config{Env: "development", JWTSecret: cfg.JWTSecret, OnePayAppID: "fixture-app", OnePayHashSalt: "fixture-salt", OnePayReturnURL: "https://lender.example/dashboard/billing/success"}
+		oneRouter := newRouter(root, oneCfg)
+		invoke := func(router http.Handler, method, path, token string, body any, want int) []byte {
+			payload, _ := json.Marshal(body)
+			req := httptest.NewRequest(method, path, bytes.NewReader(payload))
+			if token != "" {
+				req.Header.Set("Authorization", "Bearer "+token)
+			}
+			res := httptest.NewRecorder()
+			router.ServeHTTP(res, req)
+			if res.Code != want {
+				t.Fatalf("%s: got %d want %d: %s", path, res.Code, want, res.Body.String())
+			}
+			return res.Body.Bytes()
+		}
+		for _, scenario := range []struct {
+			provider, id, salt, url string
+			enabled                 bool
+			message                 string
+		}{
+			{"", "fixture-app", "fixture-salt", oneCfg.OnePayReturnURL, true, ""},
+			{"ONEPAY", "fixture-app", "fixture-salt", oneCfg.OnePayReturnURL, true, ""},
+			{"onepay", "", "fixture-salt", oneCfg.OnePayReturnURL, false, "ONEPAY_APP_ID"},
+			{"onepay", "fixture-app", "", oneCfg.OnePayReturnURL, false, "ONEPAY_HASH_SALT"},
+			{"onepay", "fixture-app", "fixture-salt", "https://localhost:3000/", false, "localhost"},
+			{"disabled", "fixture-app", "fixture-salt", oneCfg.OnePayReturnURL, false, "disabled"},
+		} {
+			c := *oneCfg
+			c.BillingProvider = scenario.provider
+			c.OnePayAppID = scenario.id
+			c.OnePayHashSalt = scenario.salt
+			c.OnePayReturnURL = scenario.url
+			response := decodeSaaS[map[string]any](t, invoke(newRouter(root, &c), "GET", "/api/billing/plans", "", nil, 200))
+			snapshotResponse := decodeSaaS[map[string]any](t, invoke(newRouter(root, &c), "GET", "/api/billing/subscription", tokenA, nil, 200))
+			if snapshotResponse["paymentsEnabled"] != response["paymentsEnabled"] || snapshotResponse["configError"] != response["configError"] {
+				t.Fatal("plans and subscription disagree on configuration")
+			}
+			if !scenario.enabled {
+				invoke(newRouter(root, &c), "POST", "/api/billing/checkout", tokenA, map[string]string{"planId": monthID, "idempotencyKey": uuid.NewString()}, 503)
+			}
+			if response["paymentsEnabled"] != scenario.enabled {
+				t.Fatalf("configuration detection: %+v", response)
+			}
+			if !scenario.enabled && !strings.Contains(fmt.Sprint(response["configError"]), scenario.message) {
+				t.Fatalf("missing actionable error: %+v", response)
+			}
+		}
+		previousTransport := http.DefaultTransport
+		defer func() { http.DefaultTransport = previousTransport }()
+		sessions := map[string]map[string]any{}
+		confirmed := false
+		mismatch := false
+		createCalls := 0
+		http.DefaultTransport = onePayRoundTrip(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Host != "api.onepay.lk" {
+				return nil, fmt.Errorf("unexpected host")
+			}
+			var input map[string]any
+			json.NewDecoder(req.Body).Decode(&input)
+			var result any
+			if req.URL.Path == "/v3/checkout/link/" {
+				createCalls++
+				id := fmt.Sprintf("ONEPAY-%d", createCalls)
+				sessions[id] = input
+				result = map[string]any{"ipg_transaction_id": id, "redirect_url": "https://checkout.onepay.lk/pay/" + id}
+			} else {
+				id := input["onepay_transaction_id"].(string)
+				amount := sessions[id]["amount"].(float64)
+				if mismatch {
+					amount++
+				}
+				result = map[string]any{"status": confirmed, "ipg_transaction_id": id, "amount": amount, "currency": "LKR"}
+			}
+			data, _ := json.Marshal(result)
+			return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(data))}, nil
+		})
+		account := reg("OnePay full flow", "onepay-full@test.local")
+		token := account["token"]
+		for _, plan := range []string{monthID, yearID} {
+			confirmed = false
+			mismatch = false
+			snapshotBefore := decodeSaaS[billing.Snapshot](t, invoke(oneRouter, "GET", "/api/billing/subscription", token, nil, 200))
+			if plan == monthID && (snapshotBefore.Subscription.Status != "trialing" || snapshotBefore.TrialDaysRemaining != 7) {
+				t.Fatal("seven day trial lost")
+			}
+			payment := decodeSaaS[billing.Payment](t, invoke(oneRouter, "POST", "/api/billing/checkout", token, map[string]string{"planId": plan, "idempotencyKey": uuid.NewString()}, 200))
+			if payment.SessionID == nil || payment.CheckoutURL == nil || payment.Status != "pending" {
+				t.Fatal("hosted checkout missing")
+			}
+			again := decodeSaaS[billing.Payment](t, invoke(oneRouter, "POST", "/api/billing/checkout", token, map[string]string{"planId": plan, "idempotencyKey": uuid.NewString()}, 200))
+			if again.ID != payment.ID {
+				t.Fatal("duplicate checkout")
+			}
+			invoke(oneRouter, "POST", "/api/billing/payments/"+payment.ID+"/reconcile", tokenB, map[string]any{}, 404)
+			callback := map[string]any{"transaction_id": *payment.SessionID, "status": 1, "additional_data": "untrusted"}
+			invoke(oneRouter, "POST", "/api/billing/webhooks/onepay", "", callback, 200)
+			pending, _ := repository.NewBillingRepository(root).Payment(account["organizationId"], payment.ID)
+			if pending.Status != "pending" {
+				t.Fatal("unsigned callback activated payment")
+			}
+			confirmed = true
+			mismatch = true
+			invoke(oneRouter, "POST", "/api/billing/webhooks/onepay", "", callback, 503)
+			pending, _ = repository.NewBillingRepository(root).Payment(account["organizationId"], payment.ID)
+			if pending.Status != "pending" {
+				t.Fatal("wrong amount activated payment")
+			}
+			mismatch = false
+			paid := decodeSaaS[billing.Payment](t, invoke(oneRouter, "POST", "/api/billing/payments/"+payment.ID+"/reconcile", token, map[string]any{}, 200))
+			if paid.Status != "succeeded" || paid.PeriodEnd == nil {
+				t.Fatal("verified payment did not activate")
+			}
+			months := 1
+			if plan == yearID {
+				months = 12
+			}
+			if !paid.PeriodEnd.Equal(billing.AddCalendarMonths(*paid.PeriodStart, months)) {
+				t.Fatal("wrong purchased period")
+			}
+			invoke(oneRouter, "POST", "/api/billing/webhooks/onepay", "", callback, 200)
+			invoke(oneRouter, "POST", "/api/billing/webhooks/onepay", "", callback, 200)
+			snapshotAfter := decodeSaaS[billing.Snapshot](t, invoke(oneRouter, "GET", "/api/billing/subscription", token, nil, 200))
+			if snapshotAfter.Subscription.Status != "active" || !snapshotAfter.Subscription.PeriodEnd.Equal(*paid.PeriodEnd) {
+				t.Fatal("duplicate callback changed period")
+			}
+			invoke(oneRouter, "GET", "/api/billing/payments/"+payment.ID+"/receipt", token, nil, 200)
+		}
+		if createCalls != 2 {
+			t.Fatalf("external sessions: %d", createCalls)
 		}
 	})
 	run("expired_trial_preserves_recordkeeping", func(t *testing.T) {
@@ -630,3 +765,7 @@ func TestSaaSIntegration(t *testing.T) {
 	}
 	t.Logf("%d authenticated/public API checks plus RLS, migration preservation and concurrent webhook assertions", calls.Load())
 }
+
+type onePayRoundTrip func(*http.Request) (*http.Response, error)
+
+func (f onePayRoundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }

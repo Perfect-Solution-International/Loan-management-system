@@ -26,27 +26,33 @@ import (
 )
 
 type BillingHandler struct {
-	db       *database.DB
-	repo     *repository.BillingRepository
-	cfg      *config.Config
-	provider billing.Provider
+	db        *database.DB
+	repo      *repository.BillingRepository
+	cfg       *config.Config
+	provider  billing.Provider
+	configErr error
 }
 
 func NewBillingHandler(db *database.DB, cfg *config.Config) *BillingHandler {
 	h := &BillingHandler{db: db, repo: repository.NewBillingRepository(db), cfg: cfg}
-	if cfg.Env == "development" && cfg.BillingProvider == "test" && len(cfg.BillingTestSecret) >= 32 {
+	if cfg.Env == "development" && cfg.BillingProviderName() == "test" && len(cfg.BillingTestSecret) >= 32 {
 		h.provider = &billing.TestProvider{Secret: cfg.BillingTestSecret}
 	}
-	if cfg.BillingProvider == "onepay" {
-		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL}
+	if cfg.BillingProviderName() == "onepay" {
+		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL, AppToken: cfg.OnePayAppToken, APIBase: cfg.OnePayAPIBase}
 		provider.Contact = func(ctx context.Context, org string) (billing.BillingContact, error) {
 			var contact billing.BillingContact
-			err := db.QueryRowContext(ctx, `SELECT COALESCE(u.name,o.name),o.email,o.phone FROM organizations o LEFT JOIN users u ON u.id=o.owner_id AND u.organization_id=o.id WHERE o.id=$1`, org).Scan(&contact.Name, &contact.Email, &contact.Phone)
+			err := db.QueryRowContext(ctx, `SELECT COALESCE(NULLIF(TRIM(u.name),''),o.name),o.email,o.phone FROM organizations o LEFT JOIN users u ON u.id=o.owner_id AND u.organization_id=o.id WHERE o.id=$1`, org).Scan(&contact.Name, &contact.Email, &contact.Phone)
+			if err != nil {
+				return contact, err
+			}
 			contact.Phone = strings.NewReplacer(" ", "", "-", "", "(", "", ")", "").Replace(contact.Phone)
 			if len(contact.Phone) == 10 && strings.HasPrefix(contact.Phone, "0") {
 				contact.Phone = "+94" + contact.Phone[1:]
+			} else if len(contact.Phone) == 9 && !strings.HasPrefix(contact.Phone, "+") {
+				contact.Phone = "+94" + contact.Phone
 			}
-			return contact, err
+			return contact, nil
 		}
 		provider.Lookup = func(ctx context.Context, session string) (billing.Payment, error) {
 			var org, id string
@@ -55,8 +61,20 @@ func NewBillingHandler(db *database.DB, cfg *config.Config) *BillingHandler {
 			}
 			return h.repo.Payment(org, id)
 		}
-		if provider.ValidateConfig() == nil {
+		if err := provider.ValidateConfig(); err != nil {
+			h.configErr = err
+		} else {
 			h.provider = provider
+		}
+	}
+	if h.provider == nil && h.configErr == nil {
+		switch cfg.BillingProviderName() {
+		case "", "disabled":
+			h.configErr = errors.New("Online subscription payments are disabled. Configure BILLING_PROVIDER=onepay and the OnePay backend settings. Your 7-day free trial remains available.")
+		case "test":
+			h.configErr = errors.New("Development payment testing requires ENV=development and a test secret of at least 32 characters")
+		default:
+			h.configErr = errors.New("Unsupported billing provider. Configure BILLING_PROVIDER=onepay")
 		}
 	}
 	return h
@@ -107,7 +125,21 @@ func (h *BillingHandler) Plans(w http.ResponseWriter, r *http.Request) {
 		billingFail(w, err)
 		return
 	}
-	sendJSON(w, 200, map[string]any{"plans": plans, "paymentsEnabled": h.provider != nil, "testMode": h.provider != nil && h.provider.Name() == "test", "recurring": h.provider != nil && h.provider.Recurring()})
+	resp := map[string]any{
+		"plans":           plans,
+		"paymentsEnabled": h.provider != nil,
+		"testMode":        h.provider != nil && h.provider.Name() == "test",
+		"recurring":       h.provider != nil && h.provider.Recurring(),
+	}
+	if h.provider != nil {
+		resp["provider"] = h.provider.Name()
+	} else if h.cfg.BillingProviderName() != "" {
+		resp["provider"] = h.cfg.BillingProviderName()
+	}
+	if h.configErr != nil {
+		resp["configError"] = h.configErr.Error()
+	}
+	sendJSON(w, 200, resp)
 }
 func (h *BillingHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var in struct {
@@ -156,11 +188,36 @@ func (h *BillingHandler) Subscription(w http.ResponseWriter, r *http.Request) {
 	s.PaymentsEnabled = h.provider != nil
 	s.TestMode = h.provider != nil && h.provider.Name() == "test"
 	s.Recurring = h.provider != nil && h.provider.Recurring()
-	sendJSON(w, 200, s)
+	resp := map[string]any{
+		"subscription":       s.Subscription,
+		"plan":               s.Plan,
+		"serverTime":         s.ServerTime,
+		"trialDaysRemaining": s.TrialDaysRemaining,
+		"canCreate":          s.CanCreate,
+		"legacyAccessUntil":  s.LegacyAccessUntil,
+		"organizationName":   s.OrganizationName,
+		"organizationStatus": s.OrganizationStatus,
+		"paymentsEnabled":    s.PaymentsEnabled,
+		"testMode":           s.TestMode,
+		"recurring":          s.Recurring,
+	}
+	if h.provider != nil {
+		resp["provider"] = h.provider.Name()
+	} else if h.cfg.BillingProviderName() != "" {
+		resp["provider"] = h.cfg.BillingProviderName()
+	}
+	if h.configErr != nil {
+		resp["configError"] = h.configErr.Error()
+	}
+	sendJSON(w, 200, resp)
 }
 func (h *BillingHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if h.provider == nil {
-		sendJSON(w, 503, map[string]string{"error": "Online subscription payments are not configured. Contact the platform administrator."})
+		msg := "Online subscription payments are not configured. Contact the platform administrator."
+		if h.configErr != nil {
+			msg = fmt.Sprintf("Payment configuration error: %v", h.configErr)
+		}
+		sendJSON(w, 503, map[string]string{"error": msg})
 		return
 	}
 	var in struct {

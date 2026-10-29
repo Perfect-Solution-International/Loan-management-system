@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -25,20 +26,41 @@ type BillingContact struct{ Name, Email, Phone string }
 // OnePay's unsigned callback is only a trigger. The stored session and the
 // server-to-server status response are the payment evidence.
 type OnePayProvider struct {
-	AppID, HashSalt, ReturnURL string
-	Contact                    func(context.Context, string) (BillingContact, error)
-	Lookup                     func(context.Context, string) (Payment, error)
-	client                     *http.Client
-	baseURL                    string
+	AppID, HashSalt, ReturnURL, AppToken string
+	APIBase                              string
+	Contact                              func(context.Context, string) (BillingContact, error)
+	Lookup                               func(context.Context, string) (Payment, error)
+	client                               *http.Client
+	baseURL                              string
 }
 
 func (*OnePayProvider) Name() string    { return "onepay" }
 func (*OnePayProvider) Recurring() bool { return false }
 func (p *OnePayProvider) ValidateConfig() error {
-	u, err := url.Parse(p.ReturnURL)
-	if p.AppID == "" || p.HashSalt == "" || err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" {
-		return errors.New("OnePay requires ONEPAY_APP_ID, ONEPAY_HASH_SALT and an HTTPS ONEPAY_RETURN_URL")
+	if p.APIBase != "" {
+		api, err := url.Parse(p.APIBase)
+		if err != nil || api.Scheme != "https" || api.Hostname() == "" || api.User != nil || api.RawQuery != "" || api.Fragment != "" || (api.Path != "" && api.Path != "/") {
+			return errors.New("OnePay configuration: ONEPAY_API_BASE must be an HTTPS API origin, for example https://api.onepay.lk")
+		}
 	}
+	if strings.TrimSpace(p.AppID) == "" {
+		return errors.New("OnePay configuration: ONEPAY_APP_ID is missing")
+	}
+	if strings.TrimSpace(p.HashSalt) == "" {
+		return errors.New("OnePay configuration: ONEPAY_HASH_SALT is missing")
+	}
+	u, err := url.Parse(p.ReturnURL)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" {
+		return errors.New("OnePay configuration: ONEPAY_RETURN_URL must be a public HTTPS billing return URL")
+	}
+	host := strings.ToLower(u.Hostname())
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+		return errors.New("OnePay configuration: ONEPAY_RETURN_URL points to localhost; configure a public HTTPS frontend or tunnel URL")
+	}
+	if ip := net.ParseIP(host); ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsUnspecified()) {
+		return errors.New("OnePay configuration: ONEPAY_RETURN_URL must use a public HTTPS address")
+	}
+
 	return nil
 }
 func (p *OnePayProvider) Validate(ctx context.Context, payment Payment) error {
@@ -66,6 +88,9 @@ func (p *OnePayProvider) post(ctx context.Context, path string, payload any, res
 	}
 	base := p.baseURL
 	if base == "" {
+		base = strings.TrimRight(p.APIBase, "/")
+	}
+	if base == "" {
 		base = "https://api.onepay.lk"
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+path, bytes.NewReader(body))
@@ -73,6 +98,9 @@ func (p *OnePayProvider) post(ctx context.Context, path string, payload any, res
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if p.AppToken != "" {
+		req.Header.Set("Authorization", p.AppToken)
+	}
 	client := p.client
 	if client == nil {
 		client = &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
