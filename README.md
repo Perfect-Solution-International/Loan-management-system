@@ -1,5 +1,7 @@
 # PSI One Loan Management System (PSI One LMS)
 
+Organization-based SaaS subscriptions, tenant isolation, trial registration and billing are documented in [docs/saas-subscriptions.md](docs/saas-subscriptions.md). Use `go run ./cmd/migrate` from `backend` for current versioned migrations. Read the safe existing-data rollout and database-role requirements before deploying this update. Live subscription payments remain disabled until a provider is selected and implemented.
+
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.3.0-blue?style=for-the-badge&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)

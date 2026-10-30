@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"loan-management-backend/config"
@@ -26,6 +27,16 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	organizationID := strings.TrimSpace(os.Getenv("ADMIN_ORGANIZATION_ID"))
+	if organizationID == "" {
+		log.Fatal("Set ADMIN_ORGANIZATION_ID explicitly; organization administrators cannot be created without a tenant")
+	}
+	scoped, release, err := db.Tenant(context.Background(), organizationID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer release()
+	db = scoped
 	users := repository.NewUserRepository(db)
 	user, err := users.FindByEmail(email)
 	if err != nil {

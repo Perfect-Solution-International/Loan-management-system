@@ -9,21 +9,29 @@ import (
 )
 
 type Config struct {
-	Port           string
-	Env            string
-	DBHost         string
-	DBPort         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	DBSSLMode      string
-	JWTSecret      string
-	AllowedOrigins []string
+	Port              string
+	Env               string
+	DBHost            string
+	DBPort            string
+	DBUser            string
+	DBPassword        string
+	DBName            string
+	DBSSLMode         string
+	JWTSecret         string
+	AllowedOrigins    []string
+	BillingProvider   string
+	BillingTestSecret string
+	OnePayAppID       string
+	OnePayHashSalt    string
+	OnePayReturnURL   string
+	OnePayAppToken    string
+	OnePayAPIBase     string
 }
 
 func LoadConfig() *Config {
 	// Try loading .env file if it exists
-	_ = godotenv.Load()
+	_ = godotenv.Load(".env")
+	_ = godotenv.Load("backend/.env")
 
 	port := getEnv("PORT", "8080")
 	env := getEnv("ENV", "development")
@@ -38,17 +46,34 @@ func LoadConfig() *Config {
 	jwtSecret := getEnv("JWT_SECRET", "super-secret-jwt-key-loan-mgmt-system-psi-2026")
 	allowed := strings.Split(getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"), ",")
 
+	billingProvider := getEnv("BILLING_PROVIDER", "")
+	onepayAppID := getEnv("ONEPAY_APP_ID", "")
+	onepayHashSalt := getEnv("ONEPAY_HASH_SALT", "")
+	onepayReturnURL := getEnv("ONEPAY_RETURN_URL", "")
+	if onepayReturnURL == "" {
+		if base := strings.TrimSpace(getEnv("ONEPAY_RETURN_BASE_URL", "")); base != "" {
+			onepayReturnURL = strings.TrimRight(base, "/") + "/dashboard/billing/success"
+		}
+	}
+
 	return &Config{
-		Port:           port,
-		Env:            env,
-		DBHost:         dbHost,
-		DBPort:         dbPort,
-		DBUser:         dbUser,
-		DBPassword:     dbPass,
-		DBName:         dbName,
-		DBSSLMode:      dbSSL,
-		JWTSecret:      jwtSecret,
-		AllowedOrigins: allowed,
+		Port:              port,
+		Env:               env,
+		DBHost:            dbHost,
+		DBPort:            dbPort,
+		DBUser:            dbUser,
+		DBPassword:        dbPass,
+		DBName:            dbName,
+		DBSSLMode:         dbSSL,
+		JWTSecret:         jwtSecret,
+		AllowedOrigins:    allowed,
+		BillingProvider:   billingProvider,
+		BillingTestSecret: getEnv("BILLING_TEST_WEBHOOK_SECRET", ""),
+		OnePayAppID:       onepayAppID,
+		OnePayHashSalt:    onepayHashSalt,
+		OnePayReturnURL:   onepayReturnURL,
+		OnePayAppToken:    getEnv("ONEPAY_APP_TOKEN", ""),
+		OnePayAPIBase:     strings.TrimRight(strings.TrimSpace(getEnv("ONEPAY_API_BASE", "https://api.onepay.lk")), "/"),
 	}
 }
 
@@ -62,4 +87,13 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+// Resolve the provider consistently for environment and programmatic configuration.
+func (c *Config) BillingProviderName() string {
+	provider := strings.ToLower(strings.TrimSpace(c.BillingProvider))
+	if provider == "" && (strings.TrimSpace(c.OnePayAppID) != "" || strings.TrimSpace(c.OnePayHashSalt) != "") {
+		return "onepay"
+	}
+	return provider
 }

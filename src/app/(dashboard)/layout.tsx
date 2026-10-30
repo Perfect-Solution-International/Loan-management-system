@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Menu, Bell, BellRing, CheckCircle2, ArrowRight } from "lucide-react";
 import { useData } from "@/providers/data-provider";
 import Sidebar from "@/components/layout/Sidebar";
+import { SubscriptionBanner } from "@/components/billing/subscription-banner";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -29,6 +30,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   // Dynamic header breadcrumb name
   const pageTitle = React.useMemo(() => {
     if (pathname === "/" || pathname === "/dashboard") return "Dashboard";
+    if (pathname.startsWith("/dashboard/billing")) return "Subscription & Billing";
     if (pathname === "/staffdashboard") return "Staff Dashboard";
     if (pathname.startsWith("/customers/new")) return "New Customer";
     if (pathname.startsWith("/customers/")) return "Customer Profile";
@@ -196,6 +198,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <div id="main-content" role="main" tabIndex={-1} className="workspace-content flex-1 min-h-0 min-w-0 overflow-y-auto outline-none">
+          <SubscriptionBanner enabled={currentUser?.role === "Admin" && !pathname.startsWith("/dashboard/billing")} />
           {children}
         </div>
       </div>

@@ -2,6 +2,8 @@
 -- INITIAL SEED DATA FOR LOAN MANAGEMENT SYSTEM (PRODUCTION / CLEAN SLATE)
 -- ============================================================================
 -- Default account roles
+-- After the SaaS migration, this seed is explicitly limited to the legacy portfolio.
+SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',false);
 INSERT INTO
     roles (name)
 VALUES
@@ -35,14 +37,14 @@ VALUES
         250.0,
         2.0,
         3
-    ) ON CONFLICT (id) DO NOTHING;
+    ) ON CONFLICT DO NOTHING;
 
 -- 2. One default user for each account role (fresh database seeds).
 -- Seeded users use only Admin, Staff, or Customer.
 -- Credentials:
 --   STF-01  System Admin    admin@psione.lk    admin123
---   STF-02  Staff Officer   staff@psione.lk    Staff@123
---   CUS-01  Demo Customer   customer@psione.lk Customer@123
+--   STF-02  Staff Officer   staff@psione.lk    staff123
+--   CUS-01  Demo Customer   customer@psione.lk customer123
 -- Repair only the original unusable seed hash; preserve changed passwords.
 INSERT INTO
     users (

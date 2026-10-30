@@ -13,17 +13,9 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/migrations/001_create_users.sql:/docker-entrypoint-initdb.d/001_create_users.sql:ro
-      - ./database/migrations/002_create_customers.sql:/docker-entrypoint-initdb.d/002_create_customers.sql:ro
-      - ./database/migrations/003_create_loans.sql:/docker-entrypoint-initdb.d/003_create_loans.sql:ro
-      - ./database/migrations/004_create_payments.sql:/docker-entrypoint-initdb.d/004_create_payments.sql:ro
-      - ./database/migrations/005_create_audit_logs.sql:/docker-entrypoint-initdb.d/005_create_audit_logs.sql:ro
-      - ./database/migrations/006_create_system_settings.sql:/docker-entrypoint-initdb.d/006_create_system_settings.sql:ro
-      - ./database/migrations/007_create_online_payments.sql:/docker-entrypoint-initdb.d/007_create_online_payments.sql:ro
-      - ./database/migrations/008_create_loan_notes.sql:/docker-entrypoint-initdb.d/008_create_loan_notes.sql:ro
-      - ./database/migrations/009_create_roles.sql:/docker-entrypoint-initdb.d/009_create_roles.sql:ro
-      - ./database/migrations/010_link_users_role.sql:/docker-entrypoint-initdb.d/010_link_users_role.sql:ro
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/999_seed.sql:ro
+      - ./database/migrations:/psi-migrations:ro
+      - ./database/seed.sql:/psi-seed.sql:ro
+      - ./database/bootstrap.sh:/docker-entrypoint-initdb.d/001_bootstrap.sh:ro
 
 volumes:
   postgres_data:

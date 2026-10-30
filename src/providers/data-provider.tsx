@@ -74,7 +74,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
    const timer = window.setInterval(focused, 30000);
    return () => { generation.current++; window.removeEventListener("psi-session", sessionChanged); window.removeEventListener("focus", focused); clearInterval(timer); };
  }, [refresh]);
- const isPublic = pathname === "/login" || pathname === "/register" || pathname === "/";
+ const isPublic = pathname === "/login" || pathname === "/register" || pathname === "/customer-register" || pathname === "/pricing" || pathname.startsWith("/platform") || pathname === "/";
+ useEffect(() => {
+   const subscriptionRequired = () => { if (data.currentUser?.role === "Admin") router.push("/dashboard/billing"); };
+   window.addEventListener("psi-subscription-required", subscriptionRequired);
+   return () => window.removeEventListener("psi-subscription-required", subscriptionRequired);
+ }, [data.currentUser?.role, router]);
  useEffect(() => {
    if (loading || isPublic) return;
    if (!getToken()) router.replace("/login");

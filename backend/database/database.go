@@ -13,6 +13,8 @@ import (
 
 type DB struct {
 	*sql.DB
+	conn *sql.Conn
+	ctx  context.Context
 }
 
 func Connect(cfg *config.Config) (*DB, error) {
@@ -35,5 +37,5 @@ func Connect(cfg *config.Config) (*DB, error) {
 	}
 
 	log.Printf(" Successfully connected to PostgreSQL database [%s:%s/%s]", cfg.DBHost, cfg.DBPort, cfg.DBName)
-	return &DB{db}, nil
+	return &DB{DB: db}, nil
 }

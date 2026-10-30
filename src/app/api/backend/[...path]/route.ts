@@ -8,7 +8,10 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
     const authorization = request.headers.get("authorization");
     const response = await fetch(target, {
       method: request.method,
-      headers: { "Content-Type": "application/json", ...(authorization ? { Authorization: authorization } : {}) },
+      headers: { "Content-Type": "application/json", ...(authorization ? { Authorization: authorization } : {}),
+        ...(request.headers.get("x-billing-signature") ? { "X-Billing-Signature": request.headers.get("x-billing-signature")! } : {}),
+        ...(request.headers.get("x-billing-timestamp") ? { "X-Billing-Timestamp": request.headers.get("x-billing-timestamp")! } : {}),
+      },
       body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.text(),
       cache: "no-store",
       redirect: "error",
