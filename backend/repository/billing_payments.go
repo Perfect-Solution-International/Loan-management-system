@@ -86,7 +86,7 @@ func (r *BillingRepository) Checkout(ctx context.Context, org, planID, key strin
 			return p, claimErr
 		}
 		if count != 1 {
-			return p, errors.New("OnePay checkout is already being prepared or requires reconciliation; open the saved payment from billing history")
+			return p, errors.New("OnePay checkout is already being prepared or requires reconciliation; contact support before starting another payment")
 		}
 	}
 	// Providers with documented idempotency may retry; OnePay uses the claim above.

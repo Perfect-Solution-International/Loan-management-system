@@ -37,6 +37,8 @@ func newRouter(db *database.DB, cfg *config.Config) http.Handler {
 	r.Group(func(admin chi.Router) {
 		admin.Use(middleware.AuthMiddleware(cfg), billing.Organization, billing.RequireOrganizationAdmin)
 		admin.Get("/api/billing/subscription", billing.Subscription)
+		admin.Get("/api/billing/contact", billing.BillingContact)
+		admin.Put("/api/billing/contact", billing.SaveBillingContact)
 		admin.Get("/api/billing/payments", billing.Payments)
 		admin.Get("/api/billing/payments/{id}", billing.Payment)
 		admin.Get("/api/billing/payments/{id}/receipt", billing.Receipt)

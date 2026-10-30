@@ -1,5 +1,7 @@
 import { request } from "@/lib/api-client";
 
+export interface BillingContact { name: string; email: string; phone: string }
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -102,6 +104,8 @@ export interface OrganizationSummary {
 const paymentPath = (id: string) =>
   "/billing/payments/" + encodeURIComponent(id);
 export const billingApi = {
+  contact: () => request<BillingContact>("/billing/contact"),
+  saveContact: (contact: BillingContact) => request<BillingContact>("/billing/contact", "PUT", contact),
   plans: () => request<PlansResponse>("/billing/plans", "GET", undefined, null),
   register: (body: OrganizationRegistration) =>
     request<{ token: string; organizationId: string; userId: string }>(

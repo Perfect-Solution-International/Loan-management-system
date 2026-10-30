@@ -52,10 +52,19 @@ export function PaymentResult({
     if (!paymentId || currentUser?.role !== "Admin") return;
     let live = true;
     let loading = false;
+    let completed = false;
     const reload = () => {
-      if (live && !loading) {
+      if (live && !loading && !completed) {
         loading = true;
         void load()
+          .then((p) => {
+            if (!live) return;
+            completed = p.status !== "pending";
+            if (p.status === "succeeded") {
+              window.dispatchEvent(new Event("psi-subscription-updated"));
+              void refresh();
+            }
+          })
           .catch((e) => {
             if (live) setError(e.message);
           })
@@ -70,7 +79,7 @@ export function PaymentResult({
       live = false;
       clearInterval(timer);
     };
-  }, [paymentId, currentUser?.role, load]);
+  }, [paymentId, currentUser?.role, load, refresh]);
   async function complete(status: string) {
     setBusy(true);
     try {
@@ -135,9 +144,9 @@ export function PaymentResult({
           <>
             <p className="mt-3 text-sm text-slate-600">
               {payment.status === "succeeded"
-                ? "The backend verified this payment and recorded the purchased billing period."
+                ? "Your payment was successful and your subscription billing period has been updated."
                 : payment.status === "pending"
-                  ? "We have not received verified payment confirmation. This screen checks the backend automatically; arriving here does not activate a subscription."
+                  ? "We are checking your payment with OnePay. Your subscription activates automatically once payment is confirmed."
                   : "This attempt did not activate a subscription. You can return to billing to start a new checkout."}
             </p>
             {payment.provider === "test" && (

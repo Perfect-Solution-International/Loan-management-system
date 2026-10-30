@@ -360,6 +360,10 @@ func TestSaaSIntegration(t *testing.T) {
 			var result any
 			if req.URL.Path == "/v3/checkout/link/" {
 				createCalls++
+				if input["customer_first_name"] != "Billing" || input["customer_email"] != "billing@test.local" || input["customer_phone_number"] != "+94771234567" {
+					t.Error("OnePay did not receive confirmed billing details")
+				}
+
 				id := fmt.Sprintf("ONEPAY-%d", createCalls)
 				sessions[id] = input
 				result = map[string]any{"ipg_transaction_id": id, "redirect_url": "https://checkout.onepay.lk/pay/" + id}
@@ -376,6 +380,26 @@ func TestSaaSIntegration(t *testing.T) {
 		})
 		account := reg("OnePay full flow", "onepay-full@test.local")
 		token := account["token"]
+		invoke(oneRouter, "GET", "/api/billing/contact", "", nil, 401)
+		invoke(oneRouter, "PUT", "/api/billing/contact", token, map[string]string{"name": "", "email": "bad", "phone": "1"}, 400)
+		invoke(oneRouter, "PUT", "/api/billing/contact", token, map[string]string{"name": "Billing Contact", "email": "billing@test.local", "phone": "0771234567", "organizationId": b["organizationId"]}, 400)
+		savedContact := decodeSaaS[billing.BillingContact](t, invoke(oneRouter, "PUT", "/api/billing/contact", token, map[string]string{"name": "Billing Contact", "email": "billing@test.local", "phone": "0771234567"}, 200))
+		if savedContact.Phone != "+94771234567" {
+			t.Fatal("billing phone not normalized")
+		}
+		loadedContact := decodeSaaS[billing.BillingContact](t, invoke(oneRouter, "GET", "/api/billing/contact", token, nil, 200))
+		if loadedContact != savedContact {
+			t.Fatal("billing contact not persisted")
+		}
+		var owner string
+		if err := db.QueryRow("SELECT owner_id FROM organizations WHERE id=$1", account["organizationId"]).Scan(&owner); err != nil || owner != account["userId"] {
+			t.Fatal("billing contact changed organization ownership")
+		}
+		otherContact := decodeSaaS[billing.BillingContact](t, invoke(oneRouter, "GET", "/api/billing/contact", tokenB, nil, 200))
+		if otherContact.Email == savedContact.Email {
+			t.Fatal("billing contact crossed organizations")
+		}
+
 		for _, plan := range []string{monthID, yearID} {
 			confirmed = false
 			mismatch = false

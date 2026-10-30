@@ -12,10 +12,13 @@ import {
 export function PaymentHistory({
   payments,
   onError,
+  limit,
 }: {
   payments: SubscriptionPayment[];
   onError: (message: string) => void;
+  limit?: number;
 }) {
+  const history = payments.filter(p => p.status !== "pending").slice(0, limit);
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
       <table className="w-full min-w-[850px] text-left text-sm">
@@ -39,7 +42,7 @@ export function PaymentHistory({
           </tr>
         </thead>
         <tbody>
-          {payments.map((p) => (
+          {history.map((p) => (
             <tr key={p.id} className="border-t border-slate-100">
               <td className="p-4">
                 {billingDate(p.paymentDate || p.createdAt)}
@@ -52,7 +55,7 @@ export function PaymentHistory({
                     to {billingDate(p.periodEnd)}
                   </>
                 ) : (
-                  "Pending verification"
+                  "—"
                 )}
               </td>
               <td className="max-w-[180px] break-all p-4 text-xs">
@@ -73,7 +76,7 @@ export function PaymentHistory({
               </td>
               <td className="p-4">
                 <span
-                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${p.status === "succeeded" ? "bg-emerald-50 text-emerald-800" : p.status === "pending" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700"}`}
+                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${p.status === "succeeded" ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}
                 >
                   {p.status}
                 </span>
@@ -97,10 +100,10 @@ export function PaymentHistory({
               </td>
             </tr>
           ))}
-          {!payments.length && (
+          {!history.length && (
             <tr>
               <td colSpan={6} className="p-8 text-center text-slate-500">
-                No subscription payments yet. Borrower loan repayments are
+                No completed subscription payments yet. Borrower loan repayments are
                 recorded separately.
               </td>
             </tr>

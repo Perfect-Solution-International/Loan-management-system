@@ -21,7 +21,25 @@ import (
 
 var ErrPaymentPending = errors.New("payment is awaiting confirmation from OnePay")
 
-type BillingContact struct{ Name, Email, Phone string }
+type BillingContact struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}
+
+func (c BillingContact) Normalize() (BillingContact, error) {
+	c.Name = strings.TrimSpace(c.Name)
+	c.Email = strings.TrimSpace(c.Email)
+	c.Phone = strings.NewReplacer(" ", "", "-", "", "(", "", ")", "").Replace(strings.TrimSpace(c.Phone))
+	if len(c.Phone) == 10 && strings.HasPrefix(c.Phone, "0") {
+		c.Phone = "+94" + c.Phone[1:]
+	}
+	address, err := mail.ParseAddress(c.Email)
+	if c.Name == "" || len(c.Name) > 200 || len(c.Email) > 254 || err != nil || address.Address != c.Email || !regexp.MustCompile(`^\+[1-9][0-9]{7,14}$`).MatchString(c.Phone) {
+		return c, errors.New("Enter a billing name, valid email, and international phone number (for example +94771234567)")
+	}
+	return c, nil
+}
 
 // OnePay's unsigned callback is only a trigger. The stored session and the
 // server-to-server status response are the payment evidence.
@@ -74,9 +92,8 @@ func (p *OnePayProvider) Validate(ctx context.Context, payment Payment) error {
 	if err != nil {
 		return errors.New("organization billing contact is unavailable")
 	}
-	address, err := mail.ParseAddress(c.Email)
-	if err != nil || address.Address != c.Email || strings.TrimSpace(c.Name) == "" || !regexp.MustCompile(`^\+[1-9][0-9]{7,14}$`).MatchString(c.Phone) {
-		return errors.New("organization billing contact requires a name, email and international phone number (for example +94771234567)")
+	if _, err := c.Normalize(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -137,6 +154,10 @@ func (p *OnePayProvider) Create(ctx context.Context, payment Payment) (string, s
 		return "", "", err
 	}
 	c, err := p.Contact(ctx, payment.OrganizationID)
+	if err != nil {
+		return "", "", err
+	}
+	c, err = c.Normalize()
 	if err != nil {
 		return "", "", err
 	}

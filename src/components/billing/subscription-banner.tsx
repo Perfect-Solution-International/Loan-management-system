@@ -29,10 +29,12 @@ export function SubscriptionBanner({ enabled }: { enabled: boolean }) {
     void load();
     const timer = window.setInterval(load, 60000);
     window.addEventListener("focus", load);
+    window.addEventListener("psi-subscription-updated", load);
     return () => {
       live = false;
       clearInterval(timer);
       window.removeEventListener("focus", load);
+      window.removeEventListener("psi-subscription-updated", load);
     };
   }, [enabled]);
   if (!enabled) return null;

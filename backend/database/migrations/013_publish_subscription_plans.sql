@@ -22,4 +22,3 @@ SET owner_id = COALESCE(owner_id, (SELECT id FROM users WHERE organization_id = 
     email = CASE WHEN email = '' OR email IS NULL THEN 'admin@psione.lk' ELSE email END,
     phone = CASE WHEN phone = '' OR phone IS NULL THEN '+94771234567' ELSE phone END
 WHERE id = '00000000-0000-0000-0000-000000000001';
-

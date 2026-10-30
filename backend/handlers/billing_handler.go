@@ -40,20 +40,7 @@ func NewBillingHandler(db *database.DB, cfg *config.Config) *BillingHandler {
 	}
 	if cfg.BillingProviderName() == "onepay" {
 		provider := &billing.OnePayProvider{AppID: cfg.OnePayAppID, HashSalt: cfg.OnePayHashSalt, ReturnURL: cfg.OnePayReturnURL, AppToken: cfg.OnePayAppToken, APIBase: cfg.OnePayAPIBase}
-		provider.Contact = func(ctx context.Context, org string) (billing.BillingContact, error) {
-			var contact billing.BillingContact
-			err := db.QueryRowContext(ctx, `SELECT COALESCE(NULLIF(TRIM(u.name),''),o.name),o.email,o.phone FROM organizations o LEFT JOIN users u ON u.id=o.owner_id AND u.organization_id=o.id WHERE o.id=$1`, org).Scan(&contact.Name, &contact.Email, &contact.Phone)
-			if err != nil {
-				return contact, err
-			}
-			contact.Phone = strings.NewReplacer(" ", "", "-", "", "(", "", ")", "").Replace(contact.Phone)
-			if len(contact.Phone) == 10 && strings.HasPrefix(contact.Phone, "0") {
-				contact.Phone = "+94" + contact.Phone[1:]
-			} else if len(contact.Phone) == 9 && !strings.HasPrefix(contact.Phone, "+") {
-				contact.Phone = "+94" + contact.Phone
-			}
-			return contact, nil
-		}
+		provider.Contact = h.repo.BillingContact
 		provider.Lookup = func(ctx context.Context, session string) (billing.Payment, error) {
 			var org, id string
 			if err := db.QueryRowContext(ctx, `SELECT organization_id,id FROM subscription_payments WHERE provider='onepay' AND provider_session_id=$1`, session).Scan(&org, &id); err != nil {
